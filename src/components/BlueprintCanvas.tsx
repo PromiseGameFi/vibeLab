@@ -99,10 +99,13 @@ export default function BlueprintCanvas({ stack, onClose }: BlueprintCanvasProps
                             >
                                 Export .md
                             </button>
-                            <button className="px-8 py-4 rounded-2xl bg-accent-secondary/20 border border-accent-secondary/40 text-accent-secondary font-bold text-sm hover:bg-accent-secondary hover:text-white transition-all flex items-center gap-2 group">
+                            <Link
+                                href={`/${tools[0]?.slug}`}
+                                className="px-8 py-4 rounded-2xl bg-accent-secondary/20 border border-accent-secondary/40 text-accent-secondary font-bold text-sm hover:bg-accent-secondary hover:text-white transition-all flex items-center gap-2 group"
+                            >
                                 Launch Stack
                                 <ExternalLink className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                            </button>
+                            </Link>
                         </div>
                     </div>
                 </div>

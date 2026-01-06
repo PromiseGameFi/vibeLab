@@ -5,6 +5,7 @@ import { toolsData, resolveIntent, SpawnerStack } from "@/lib/toolsData";
 import ToolCard from "@/components/ToolCard";
 import SpawnerTerminal from "@/components/SpawnerTerminal";
 import BlueprintCanvas from "@/components/BlueprintCanvas";
+import { Layers, ArrowUpRight } from "lucide-react";
 
 export default function Home() {
   const [search, setSearch] = useState("");
@@ -63,6 +64,43 @@ export default function Home() {
               </button>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Trending Blueprints (Community Simulation) */}
+      <section className="mb-24 px-6 md:px-12">
+        <div className="flex items-center gap-3 mb-10">
+          <div className="w-10 h-10 rounded-xl bg-accent-secondary/10 border border-accent-secondary/20 flex items-center justify-center text-accent-secondary">
+            <Layers className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black">Trending Blueprints</h2>
+            <p className="text-white/30 text-[10px] font-bold uppercase tracking-[0.2em]">Community Stacks • Just Spun</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { name: "3D Character Prep", tools: ["MJ", "Meshy"], author: "AiArchitect" },
+            { name: "Viral Video Ads", tools: ["Flux", "Luma", "11Labs"], author: "GrowthVibe" },
+            { name: "Indie SaaS MVP", tools: ["Vibecode", "Supabase"], author: "SoloDev" },
+            { name: "Cinematic Trailer", tools: ["MJ", "Kling", "AE"], author: "VibeMotion" }
+          ].map((stack, i) => (
+            <div key={i} className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 hover:border-accent-secondary/30 transition-all group cursor-pointer relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                <ArrowUpRight className="w-3 h-3 text-accent-secondary" />
+              </div>
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="text-sm font-black group-hover:text-accent-secondary transition-colors">{stack.name}</h3>
+                <span className="text-[8px] text-white/20 font-black uppercase tracking-widest">@{stack.author}</span>
+              </div>
+              <div className="flex gap-2">
+                {stack.tools.map(t => (
+                  <span key={t} className="px-2 py-1 rounded-md bg-white/5 text-[8px] font-bold text-white/40">{t}</span>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
