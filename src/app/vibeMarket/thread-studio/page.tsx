@@ -2,16 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-    ArrowLeft,
-    Sparkles,
-    Copy,
-    Plus,
-    Trash2,
-    Wand2,
-    MessageSquare,
-    Check
-} from "lucide-react";
+import { ArrowLeft, Sparkles, Copy, Plus, Trash2, Wand2, Check, MessageSquare } from "lucide-react";
 
 interface Thread {
     id: string;
@@ -19,17 +10,15 @@ interface Thread {
 }
 
 const hookTemplates = [
-    "I spent 100 hours learning [topic]. Here's what I wish I knew from the start:",
+    "I spent 100 hours learning [topic]. Here's what I wish I knew:",
     "The harsh truth about [topic] nobody tells you:",
-    "Stop doing [common mistake]. Here's what actually works:",
-    "I analyzed 1,000 [things]. Here's what separates winners from losers:",
+    "Stop doing [common mistake]. Here's what works:",
+    "I analyzed 1,000 [things]. Here's what separates winners:",
     "The [number] rules of [topic] I learned the hard way:"
 ];
 
 export default function ThreadStudioPage() {
-    const [threads, setThreads] = useState<Thread[]>([
-        { id: "1", content: "" }
-    ]);
+    const [threads, setThreads] = useState<Thread[]>([{ id: "1", content: "" }]);
     const [copied, setCopied] = useState(false);
 
     const addThread = () => {
@@ -63,51 +52,44 @@ export default function ThreadStudioPage() {
         const cliffhangers = [
             "But here's where it gets interesting...",
             "And that's just the beginning.",
-            "The next part changed everything for me.",
-            "Wait until you see what comes next.",
-            "This is where most people give up. Don't."
+            "The next part changed everything.",
+            "Wait until you see what comes next."
         ];
-        const randomCliffhanger = cliffhangers[Math.floor(Math.random() * cliffhangers.length)];
-        updateThread(threads[index].id, threads[index].content + "\n\n" + randomCliffhanger);
+        const random = cliffhangers[Math.floor(Math.random() * cliffhangers.length)];
+        updateThread(threads[index].id, threads[index].content + "\n\n" + random);
     };
 
     return (
-        <div className="max-w-4xl mx-auto px-6 pb-24">
+        <div className="max-w-3xl mx-auto px-6 pb-24">
             {/* Header */}
-            <div className="flex items-center justify-between mb-10">
-                <Link
-                    href="/vibeMarket"
-                    className="inline-flex items-center gap-2 text-[var(--foreground-secondary)] hover:text-[var(--foreground)] transition-colors"
-                >
+            <div className="flex items-center justify-between mb-12">
+                <Link href="/vibeMarket" className="btn-ghost text-[var(--foreground-secondary)]">
                     <ArrowLeft className="w-4 h-4" />
-                    Back to VibeMarket
+                    Back
                 </Link>
-                <button
-                    onClick={copyAllThreads}
-                    className="vibe-btn-primary flex items-center gap-2"
-                >
+                <button onClick={copyAllThreads} className="btn-primary">
                     {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     {copied ? "Copied!" : "Copy Thread"}
                 </button>
             </div>
 
             {/* Title */}
-            <header className="mb-10">
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="w-12 h-12 rounded-xl bg-[var(--accent-primary)] bg-opacity-10 flex items-center justify-center">
-                        <MessageSquare className="w-6 h-6 text-[var(--accent-primary)]" />
+            <header className="mb-12">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-[var(--accent)] bg-opacity-20 flex items-center justify-center">
+                        <MessageSquare className="w-6 h-6 text-[var(--accent)]" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-[var(--foreground)]">Thread Studio</h1>
-                        <p className="text-[var(--foreground-secondary)] text-sm">Build viral threads with AI-powered hooks</p>
+                        <h1 className="text-2xl font-semibold text-white">Thread Studio</h1>
+                        <p className="text-[var(--foreground-secondary)]">Build viral threads with AI hooks</p>
                     </div>
                 </div>
             </header>
 
             {/* Hook Templates */}
             <section className="mb-10">
-                <h2 className="text-sm font-semibold text-[var(--foreground-secondary)] uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-[var(--accent-primary)]" />
+                <h2 className="text-sm text-[var(--foreground-muted)] uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-[var(--accent)]" />
                     Hook Templates
                 </h2>
                 <div className="flex flex-wrap gap-2">
@@ -115,9 +97,9 @@ export default function ThreadStudioPage() {
                         <button
                             key={i}
                             onClick={() => applyHook(template)}
-                            className="vibe-badge hover:bg-[var(--accent-primary)] hover:text-white hover:border-[var(--accent-primary)] transition-all cursor-pointer"
+                            className="badge hover:bg-[var(--accent)] hover:text-white hover:border-[var(--accent)] transition-all cursor-pointer"
                         >
-                            {template.slice(0, 40)}...
+                            {template.slice(0, 35)}...
                         </button>
                     ))}
                 </div>
@@ -127,24 +109,24 @@ export default function ThreadStudioPage() {
             <section className="space-y-4">
                 {threads.map((thread, index) => (
                     <div key={thread.id} className="relative">
-                        <div className="absolute -left-8 top-6 text-[var(--foreground-secondary)] font-mono text-sm font-semibold">
+                        <span className="absolute -left-8 top-6 text-[var(--foreground-muted)] font-mono text-sm">
                             {index + 1}/
-                        </div>
-                        <div className="vibe-card p-6">
+                        </span>
+                        <div className="card p-6">
                             <textarea
                                 value={thread.content}
                                 onChange={(e) => updateThread(thread.id, e.target.value)}
                                 placeholder={index === 0 ? "Start with a hook..." : "Continue your thread..."}
-                                className="w-full bg-transparent border-none outline-none text-[var(--foreground)] resize-none min-h-[100px] placeholder:text-[var(--foreground-secondary)] placeholder:opacity-50"
+                                className="w-full bg-transparent border-none outline-none text-white resize-none min-h-[100px] placeholder:text-[var(--foreground-muted)]"
                             />
                             <div className="flex items-center justify-between mt-4 pt-4 border-t border-[var(--border)]">
-                                <span className="text-xs text-[var(--foreground-secondary)] font-mono">
+                                <span className="text-xs text-[var(--foreground-muted)] font-mono">
                                     {thread.content.length}/280
                                 </span>
                                 <div className="flex items-center gap-2">
                                     <button
                                         onClick={() => generateCliffhanger(index)}
-                                        className="vibe-badge hover:bg-[var(--accent-secondary)] hover:text-white hover:border-[var(--accent-secondary)] transition-all cursor-pointer flex items-center gap-1"
+                                        className="badge hover:bg-[var(--accent-secondary)] hover:text-white hover:border-[var(--accent-secondary)] cursor-pointer"
                                     >
                                         <Wand2 className="w-3 h-3" />
                                         Cliffhanger
@@ -152,7 +134,7 @@ export default function ThreadStudioPage() {
                                     {threads.length > 1 && (
                                         <button
                                             onClick={() => removeThread(thread.id)}
-                                            className="p-2 rounded-lg text-[var(--foreground-secondary)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
+                                            className="p-2 rounded-lg text-[var(--foreground-muted)] hover:text-red-400 transition-colors"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
@@ -163,36 +145,13 @@ export default function ThreadStudioPage() {
                     </div>
                 ))}
 
-                {/* Add Thread Button */}
                 <button
                     onClick={addThread}
-                    className="w-full p-6 rounded-xl border-2 border-dashed border-[var(--border)] text-[var(--foreground-secondary)] font-semibold flex items-center justify-center gap-2 hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)] hover:bg-opacity-5 transition-all"
+                    className="w-full p-6 rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--border)] text-[var(--foreground-secondary)] font-medium flex items-center justify-center gap-2 hover:border-[var(--accent)] hover:text-[var(--accent)] transition-all"
                 >
                     <Plus className="w-5 h-5" />
                     Add Tweet to Thread
                 </button>
-            </section>
-
-            {/* Preview */}
-            <section className="mt-10 vibe-card p-8">
-                <h2 className="text-sm font-semibold text-[var(--foreground-secondary)] uppercase tracking-wider mb-6">Thread Preview</h2>
-                <div className="space-y-4">
-                    {threads.map((thread, index) => (
-                        <div key={thread.id} className="flex gap-4">
-                            <div className="w-10 h-10 rounded-full bg-[var(--background-secondary)] flex-shrink-0"></div>
-                            <div>
-                                <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-[var(--foreground)] font-semibold">@yourusername</span>
-                                    <span className="text-[var(--foreground-secondary)] text-sm">· now</span>
-                                </div>
-                                <p className="text-[var(--foreground)] whitespace-pre-wrap">{thread.content || "(empty tweet)"}</p>
-                                {index < threads.length - 1 && (
-                                    <div className="w-0.5 h-4 bg-[var(--border)] ml-4 mt-2"></div>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-                </div>
             </section>
         </div>
     );

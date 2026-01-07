@@ -2,15 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import {
-    ArrowLeft,
-    Trophy,
-    Flame,
-    Target,
-    CheckCircle2,
-    Circle,
-    Sparkles
-} from "lucide-react";
+import { ArrowLeft, Trophy, Flame, Target, CheckCircle2, Circle, Sparkles } from "lucide-react";
 
 interface Goal {
     id: string;
@@ -53,10 +45,8 @@ export default function ScorecardPage() {
     };
 
     const resetDaily = () => {
-        const allDailyComplete = goals.filter(g => g.type === "daily").every(g => g.current >= g.target);
-        if (allDailyComplete) {
-            setStreak(streak + 1);
-        }
+        const allComplete = goals.filter(g => g.type === "daily").every(g => g.current >= g.target);
+        if (allComplete) setStreak(streak + 1);
         setGoals(goals.map(g => g.type === "daily" ? { ...g, current: 0 } : g));
     };
 
@@ -65,118 +55,108 @@ export default function ScorecardPage() {
     const progressPercent = Math.round((totalProgress / totalTarget) * 100);
 
     return (
-        <div className="max-w-4xl mx-auto px-6 pb-24">
+        <div className="max-w-3xl mx-auto px-6 pb-24">
             {/* Header */}
-            <div className="flex items-center justify-between mb-10">
-                <Link
-                    href="/vibeMarket"
-                    className="inline-flex items-center gap-2 text-[var(--foreground-secondary)] hover:text-[var(--foreground)] transition-colors"
-                >
+            <div className="flex items-center justify-between mb-12">
+                <Link href="/vibeMarket" className="btn-ghost text-[var(--foreground-secondary)]">
                     <ArrowLeft className="w-4 h-4" />
-                    Back to VibeMarket
+                    Back
                 </Link>
-                <button
-                    onClick={resetDaily}
-                    className="vibe-btn-secondary text-sm"
-                >
-                    Reset Daily Goals
+                <button onClick={resetDaily} className="btn-secondary text-sm">
+                    Reset Daily
                 </button>
             </div>
 
             {/* Title */}
-            <header className="mb-10">
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="w-12 h-12 rounded-xl bg-[var(--accent-primary)] bg-opacity-10 flex items-center justify-center">
-                        <Trophy className="w-6 h-6 text-[var(--accent-primary)]" />
+            <header className="mb-12">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-[var(--accent)] bg-opacity-20 flex items-center justify-center">
+                        <Trophy className="w-6 h-6 text-[var(--accent)]" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-[var(--foreground)]">Engagement Scorecard</h1>
-                        <p className="text-[var(--foreground-secondary)] text-sm">Gamified daily goals and streaks</p>
+                        <h1 className="text-2xl font-semibold text-white">Engagement Scorecard</h1>
+                        <p className="text-[var(--foreground-secondary)]">Gamified daily goals</p>
                     </div>
                 </div>
             </header>
 
-            {/* Stats Row */}
+            {/* Stats */}
             <div className="grid grid-cols-3 gap-4 mb-10">
-                <div className="vibe-card p-6 text-center">
+                <div className="card p-6 text-center">
                     <Flame className="w-8 h-8 text-orange-500 mx-auto mb-2" />
                     <div className="text-3xl font-bold text-orange-500">{streak}</div>
-                    <p className="text-[var(--foreground-secondary)] text-sm">Day Streak</p>
+                    <p className="text-[var(--foreground-secondary)] text-sm">Streak</p>
                 </div>
-                <div className="vibe-card p-6 text-center">
-                    <Target className="w-8 h-8 text-[var(--accent-primary)] mx-auto mb-2" />
-                    <div className="text-3xl font-bold text-[var(--foreground)]">{progressPercent}%</div>
-                    <p className="text-[var(--foreground-secondary)] text-sm">Today's Progress</p>
+                <div className="card p-6 text-center">
+                    <Target className="w-8 h-8 text-[var(--accent)] mx-auto mb-2" />
+                    <div className="text-3xl font-bold text-white">{progressPercent}%</div>
+                    <p className="text-[var(--foreground-secondary)] text-sm">Progress</p>
                 </div>
-                <div className="vibe-card p-6 text-center">
+                <div className="card p-6 text-center">
                     <CheckCircle2 className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                    <div className="text-3xl font-bold text-green-500">{goals.filter(g => g.current >= g.target).length}</div>
-                    <p className="text-[var(--foreground-secondary)] text-sm">Goals Complete</p>
+                    <div className="text-3xl font-bold text-green-500">
+                        {goals.filter(g => g.current >= g.target).length}
+                    </div>
+                    <p className="text-[var(--foreground-secondary)] text-sm">Complete</p>
                 </div>
             </div>
 
             {/* Goals */}
-            <section>
-                <h2 className="text-lg font-bold text-[var(--foreground)] mb-6">Today's Goals</h2>
-                <div className="space-y-4">
-                    {goals.map(goal => {
-                        const isComplete = goal.current >= goal.target;
-                        return (
-                            <div
-                                key={goal.id}
-                                className={`vibe-card p-5 ${isComplete ? 'border-green-500 border-opacity-50 bg-green-50 dark:bg-green-500/5' : ''}`}
-                            >
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        {isComplete ? (
-                                            <CheckCircle2 className="w-6 h-6 text-green-500" />
-                                        ) : (
-                                            <Circle className="w-6 h-6 text-[var(--foreground-secondary)]" />
-                                        )}
-                                        <div>
-                                            <p className={`font-semibold ${isComplete ? 'text-green-600 dark:text-green-400' : 'text-[var(--foreground)]'}`}>
-                                                {goal.label}
-                                            </p>
-                                            <p className="text-xs text-[var(--foreground-secondary)] uppercase">{goal.type}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <button
-                                            onClick={() => decrementGoal(goal.id)}
-                                            className="w-8 h-8 rounded-lg bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground-secondary)] hover:border-[var(--border-hover)] flex items-center justify-center font-semibold"
-                                        >
-                                            -
-                                        </button>
-                                        <span className="text-lg font-bold text-[var(--foreground)] w-16 text-center">
-                                            {goal.current}/{goal.target}
-                                        </span>
-                                        <button
-                                            onClick={() => incrementGoal(goal.id)}
-                                            className="w-8 h-8 rounded-lg bg-[var(--accent-primary)] text-white flex items-center justify-center font-semibold"
-                                        >
-                                            +
-                                        </button>
+            <section className="space-y-4">
+                {goals.map(goal => {
+                    const isComplete = goal.current >= goal.target;
+                    return (
+                        <div key={goal.id} className={`card p-5 ${isComplete ? 'border-green-500/50' : ''}`}>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    {isComplete ? (
+                                        <CheckCircle2 className="w-6 h-6 text-green-500" />
+                                    ) : (
+                                        <Circle className="w-6 h-6 text-[var(--foreground-muted)]" />
+                                    )}
+                                    <div>
+                                        <p className={`font-semibold ${isComplete ? 'text-green-400' : 'text-white'}`}>
+                                            {goal.label}
+                                        </p>
+                                        <p className="text-xs text-[var(--foreground-muted)] uppercase">{goal.type}</p>
                                     </div>
                                 </div>
-                                <div className="mt-4 h-2 rounded-full bg-[var(--background-secondary)] overflow-hidden">
-                                    <div
-                                        className={`h-full transition-all ${isComplete ? 'bg-green-500' : 'bg-[var(--accent-primary)]'}`}
-                                        style={{ width: `${Math.min((goal.current / goal.target) * 100, 100)}%` }}
-                                    ></div>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => decrementGoal(goal.id)}
+                                        className="w-8 h-8 rounded-full bg-[var(--background-card)] border border-[var(--border)] text-[var(--foreground-secondary)] flex items-center justify-center font-semibold hover:border-[var(--border-hover)]"
+                                    >
+                                        -
+                                    </button>
+                                    <span className="text-lg font-bold text-white w-16 text-center">
+                                        {goal.current}/{goal.target}
+                                    </span>
+                                    <button
+                                        onClick={() => incrementGoal(goal.id)}
+                                        className="w-8 h-8 rounded-full bg-[var(--accent)] text-white flex items-center justify-center font-semibold"
+                                    >
+                                        +
+                                    </button>
                                 </div>
                             </div>
-                        );
-                    })}
-                </div>
+                            <div className="mt-4 h-2 rounded-full bg-[var(--background-card)] overflow-hidden">
+                                <div
+                                    className={`h-full transition-all ${isComplete ? 'bg-green-500' : 'bg-[var(--accent)]'}`}
+                                    style={{ width: `${Math.min((goal.current / goal.target) * 100, 100)}%` }}
+                                ></div>
+                            </div>
+                        </div>
+                    );
+                })}
             </section>
 
-            {/* Motivation */}
+            {/* Celebration */}
             {progressPercent >= 100 && (
-                <section className="mt-10 p-8 rounded-xl bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] text-center text-white">
-                    <Sparkles className="w-12 h-12 mx-auto mb-4" />
-                    <h2 className="text-2xl font-bold mb-2">🎉 All Goals Complete!</h2>
-                    <p className="text-white/80">You're on fire! Keep the streak going.</p>
-                </section>
+                <div className="card p-8 mt-10 text-center bg-gradient-to-r from-[var(--accent)] to-[var(--accent-secondary)]">
+                    <Sparkles className="w-12 h-12 mx-auto mb-4 text-white" />
+                    <h2 className="text-2xl font-bold text-white mb-2">🎉 All Goals Complete!</h2>
+                    <p className="text-white/80">Keep the streak going!</p>
+                </div>
             )}
         </div>
     );

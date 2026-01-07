@@ -7,11 +7,9 @@ import {
     Layers,
     ChevronRight,
     ExternalLink,
-    CheckCircle2,
     Twitter,
     Linkedin,
-    Share2,
-    Info
+    ArrowRight
 } from "lucide-react";
 import Link from "next/link";
 import CopyButton from "@/components/CopyButton";
@@ -25,25 +23,25 @@ export default async function ToolPage({ params }: { params: Promise<{ slug: str
     }
 
     const shareUrl = `https://vibelab.ai/${tool.slug}`;
-    const shareText = `Check out the pro-blueprint for ${tool.name} on VibeLab! #AI #VibeLab`;
+    const shareText = `Check out the pro-blueprint for ${tool.name} on VibeLab!`;
 
     return (
         <div className="max-w-4xl mx-auto px-6 pb-24">
-            {/* Back Button & Share */}
-            <div className="flex justify-between items-center mb-10">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-12">
                 <Link
                     href="/"
-                    className="inline-flex items-center gap-2 text-[var(--foreground-secondary)] hover:text-[var(--foreground)] transition-colors"
+                    className="btn-ghost text-[var(--foreground-secondary)]"
                 >
                     <ArrowLeft className="w-4 h-4" />
-                    Back to Directory
+                    Back
                 </Link>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     <a
                         href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-2 rounded-lg bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground-secondary)] hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)] transition-all"
+                        className="p-2 rounded-full hover:bg-[var(--background-card)] transition-colors text-[var(--foreground-secondary)] hover:text-white"
                     >
                         <Twitter className="w-4 h-4" />
                     </a>
@@ -51,176 +49,144 @@ export default async function ToolPage({ params }: { params: Promise<{ slug: str
                         href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-2 rounded-lg bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground-secondary)] hover:text-[var(--accent-secondary)] hover:border-[var(--accent-secondary)] transition-all"
+                        className="p-2 rounded-full hover:bg-[var(--background-card)] transition-colors text-[var(--foreground-secondary)] hover:text-white"
                     >
                         <Linkedin className="w-4 h-4" />
                     </a>
                 </div>
             </div>
 
-            {/* Header */}
-            <header className="mb-12">
+            {/* Title */}
+            <header className="mb-16">
                 <div className="flex flex-wrap items-center gap-2 mb-6">
-                    <span className="vibe-badge-primary">
-                        {tool.category}
-                    </span>
+                    <span className="badge badge-accent">{tool.category}</span>
                     {tool.goals.map((goal) => (
-                        <span key={goal} className="vibe-badge flex items-center gap-1.5">
-                            <CheckCircle2 className="w-3 h-3 text-[var(--accent-secondary)]" />
-                            {goal}
-                        </span>
+                        <span key={goal} className="badge">{goal}</span>
                     ))}
                 </div>
-                <h1 className="text-3xl md:text-5xl font-black mb-4 tracking-tight text-[var(--foreground)]">
-                    {tool.name} <span className="text-[var(--foreground-secondary)]">Manual</span>
+                <h1 className="hero-title text-white mb-4">
+                    {tool.name}
                 </h1>
-                <p className="text-[var(--foreground-secondary)] text-lg leading-relaxed max-w-2xl">{tool.description}</p>
+                <p className="text-xl text-[var(--foreground-secondary)] max-w-2xl">
+                    {tool.description}
+                </p>
             </header>
 
-            <div className="grid gap-8">
-                {/* Visual Blueprint (Tool Chains) */}
-                <section className="vibe-card p-8">
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className="w-10 h-10 rounded-xl bg-[var(--background-secondary)] flex items-center justify-center text-[var(--foreground-secondary)] border border-[var(--border)]">
-                            <Layers className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-bold text-[var(--foreground)]">The Blueprint</h2>
-                            <p className="text-sm text-[var(--foreground-secondary)]">Standard Operating Procedures</p>
-                        </div>
+            {/* Blueprint Section */}
+            <section className="card p-8 mb-8">
+                <div className="flex items-center gap-3 mb-8">
+                    <div className="w-10 h-10 rounded-full bg-[var(--background-card)] border border-[var(--border)] flex items-center justify-center">
+                        <Layers className="w-5 h-5 text-white" />
                     </div>
+                    <div>
+                        <h2 className="text-lg font-semibold text-white">The Blueprint</h2>
+                        <p className="text-sm text-[var(--foreground-secondary)]">Standard workflows</p>
+                    </div>
+                </div>
 
-                    <div className="space-y-4">
-                        {tool.workflows.map((workflow, index) => (
-                            <div key={index} className="p-6 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] group hover:border-[var(--accent-secondary)] transition-all">
-                                <div className="flex items-center justify-between mb-4">
-                                    <span className="text-xs font-semibold text-[var(--accent-secondary)] uppercase tracking-wider">
-                                        Recipe {index + 1}
-                                    </span>
-                                    <Share2 className="w-4 h-4 text-[var(--foreground-secondary)] opacity-30 group-hover:opacity-100 transition-opacity" />
+                <div className="space-y-4">
+                    {tool.workflows.map((workflow, index) => (
+                        <div key={index} className="p-5 rounded-2xl bg-[var(--background-card)] border border-[var(--border)] group hover:border-[var(--accent)] transition-all">
+                            <span className="text-xs text-[var(--foreground-muted)] uppercase tracking-wider mb-3 block">
+                                Recipe {index + 1}
+                            </span>
+                            <div className="flex flex-wrap items-center gap-2">
+                                {workflow.split(' -> ').map((step, i, arr) => (
+                                    <div key={i} className="flex items-center gap-2">
+                                        <span className={`px-4 py-2 rounded-full text-sm font-medium ${step.toLowerCase().includes(tool.name.toLowerCase())
+                                                ? "bg-[var(--accent)] text-white"
+                                                : "bg-[var(--background-card)] text-[var(--foreground-secondary)] border border-[var(--border)]"
+                                            }`}>
+                                            {step}
+                                        </span>
+                                        {i < arr.length - 1 && (
+                                            <ChevronRight className="w-4 h-4 text-[var(--foreground-muted)]" />
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* Pro Prompts Section */}
+            <section className="card p-8 mb-8">
+                <div className="flex items-center gap-3 mb-8">
+                    <div className="w-10 h-10 rounded-full bg-[var(--accent)] bg-opacity-20 flex items-center justify-center">
+                        <Terminal className="w-5 h-5 text-[var(--accent)]" />
+                    </div>
+                    <div>
+                        <h2 className="text-lg font-semibold text-white">Pro Prompts</h2>
+                        <p className="text-sm text-[var(--foreground-secondary)]">Annotated templates</p>
+                    </div>
+                </div>
+
+                <div className="space-y-6">
+                    {tool.prompts.map((prompt, index) => {
+                        const fullText = prompt.parts.map(p => p.text).join("");
+                        return (
+                            <div key={index} className="p-6 rounded-2xl bg-[var(--background-card)] border border-[var(--border)]">
+                                <div className="flex justify-between items-start mb-4">
+                                    <span className="badge badge-accent">Blueprint Pro</span>
+                                    <CopyButton text={fullText} />
                                 </div>
-                                <div className="flex flex-wrap items-center gap-3">
-                                    {workflow.split(' -> ').map((step, i, arr) => (
-                                        <div key={i} className="flex items-center gap-3">
-                                            <div className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${step.toLowerCase().includes(tool.name.toLowerCase())
-                                                ? "bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] text-white"
-                                                : "bg-[var(--card-bg)] text-[var(--foreground-secondary)] border border-[var(--border)]"
-                                                }`}>
-                                                {step}
-                                            </div>
-                                            {i < arr.length - 1 && (
-                                                <ChevronRight className="w-4 h-4 text-[var(--foreground-secondary)]" />
-                                            )}
-                                        </div>
+
+                                <div className="font-mono text-sm text-[var(--foreground-secondary)] p-4 rounded-xl bg-black/50 mb-4 leading-relaxed">
+                                    {prompt.parts.map((part, i) => (
+                                        <span
+                                            key={i}
+                                            className={part.annotation ? "text-[var(--accent)] border-b border-[var(--accent)] border-opacity-30" : ""}
+                                        >
+                                            {part.text}
+                                        </span>
                                     ))}
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-                </section>
 
-                {/* Annotated Prompts Section */}
-                <section className="vibe-card p-8">
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className="w-10 h-10 rounded-xl bg-[var(--accent-secondary)] bg-opacity-10 flex items-center justify-center">
-                            <Terminal className="w-5 h-5 text-[var(--accent-secondary)]" />
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-bold text-[var(--foreground)]">Deep Annotations</h2>
-                            <p className="text-sm text-[var(--foreground-secondary)]">Reverse engineering pro results</p>
-                        </div>
-                    </div>
-
-                    <div className="grid gap-6">
-                        {tool.prompts.map((prompt, index) => {
-                            const fullText = prompt.parts.map(p => p.text).join("");
-                            return (
-                                <div key={index} className="p-6 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] group hover:border-[var(--accent-secondary)] transition-all">
-                                    <div className="flex justify-between items-start gap-4 mb-6">
-                                        <div className="flex items-center gap-2">
-                                            <span className="vibe-badge-primary text-xs">
-                                                BLUEPRINT PRO
-                                            </span>
-                                            <div className="flex items-center gap-1 text-[var(--foreground-secondary)] hover:text-[var(--foreground)] transition-colors cursor-help group/info relative">
-                                                <Info className="w-3 h-3" />
-                                                <div className="absolute bottom-full left-0 mb-2 w-48 p-2 bg-[var(--card-bg)] border border-[var(--border)] rounded-lg text-xs opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
-                                                    Hover over highlighted terms to see parameter explanations.
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <CopyButton text={fullText} />
-                                    </div>
-
-                                    <div className="text-[var(--foreground)] font-mono text-sm leading-relaxed mb-6 p-4 rounded-xl bg-[var(--card-bg)] border border-[var(--border)]">
-                                        {prompt.parts.map((part, i) => (
-                                            <span
-                                                key={i}
-                                                className={part.annotation ? "text-[var(--accent-primary)] border-b border-[var(--accent-primary)] border-opacity-30 cursor-help relative group/part" : "text-[var(--foreground-secondary)]"}
-                                            >
-                                                {part.text}
-                                                {part.annotation && (
-                                                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[200px] bg-[var(--accent-primary)] p-2 rounded-lg text-xs font-sans font-medium text-white opacity-0 group-hover/part:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
-                                                        {part.annotation}
-                                                    </span>
-                                                )}
-                                            </span>
-                                        ))}
-                                    </div>
-
-                                    <div className="pl-4 border-l-2 border-[var(--accent-secondary)]">
-                                        <p className="text-xs font-semibold text-[var(--foreground-secondary)] uppercase tracking-wider mb-1">Strategy</p>
-                                        <p className="text-[var(--foreground-secondary)] text-sm leading-relaxed">{prompt.description}</p>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </section>
-
-                {/* Pro Tips Section */}
-                <section className="vibe-card p-8">
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className="w-10 h-10 rounded-xl bg-[var(--accent-primary)] bg-opacity-10 flex items-center justify-center">
-                            <Lightbulb className="w-5 h-5 text-[var(--accent-primary)]" />
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-bold text-[var(--foreground)]">Expert Intelligence</h2>
-                            <p className="text-sm text-[var(--foreground-secondary)]">The high-skill ceiling tips</p>
-                        </div>
-                    </div>
-
-                    <div className="grid gap-3">
-                        {tool.tips.map((tip, index) => (
-                            <div key={index} className="flex gap-4 p-5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--border-hover)] transition-colors group">
-                                <span className="text-[var(--accent-primary)] font-mono font-bold text-lg">
-                                    {String(index + 1).padStart(2, '0')}
-                                </span>
-                                <p className="text-[var(--foreground-secondary)] leading-relaxed group-hover:text-[var(--foreground)] transition-colors">
-                                    "{tip}"
+                                <p className="text-sm text-[var(--foreground-secondary)] pl-4 border-l-2 border-[var(--accent)]">
+                                    {prompt.description}
                                 </p>
                             </div>
-                        ))}
-                    </div>
-                </section>
+                        );
+                    })}
+                </div>
+            </section>
 
-                {/* Action Bar */}
-                <div className="flex flex-col items-center gap-6 mt-8 pt-8 border-t border-[var(--border)]">
-                    <p className="text-[var(--foreground-secondary)] text-sm font-medium">Execute the Blueprint</p>
-                    <a
-                        href="#"
-                        className="vibe-btn-primary px-10 py-4 text-lg flex items-center gap-3"
-                    >
-                        Launch Application
-                        <ExternalLink className="w-5 h-5" />
-                    </a>
-                    <div className="flex items-center gap-4">
-                        <span className="text-[var(--foreground-secondary)] text-xs font-medium">Stack Compatibility</span>
-                        <div className="flex gap-2">
-                            {tool.integrations.map(int => (
-                                <span key={int} className="vibe-badge text-xs">{int}</span>
-                            ))}
-                        </div>
+            {/* Tips Section */}
+            <section className="card p-8 mb-8">
+                <div className="flex items-center gap-3 mb-8">
+                    <div className="w-10 h-10 rounded-full bg-[var(--accent-secondary)] bg-opacity-20 flex items-center justify-center">
+                        <Lightbulb className="w-5 h-5 text-[var(--accent-secondary)]" />
                     </div>
+                    <div>
+                        <h2 className="text-lg font-semibold text-white">Pro Tips</h2>
+                        <p className="text-sm text-[var(--foreground-secondary)]">Expert techniques</p>
+                    </div>
+                </div>
+
+                <div className="space-y-3">
+                    {tool.tips.map((tip, index) => (
+                        <div key={index} className="flex gap-4 p-4 rounded-xl hover:bg-[var(--background-card)] transition-colors">
+                            <span className="text-[var(--accent)] font-mono font-bold">
+                                {String(index + 1).padStart(2, '0')}
+                            </span>
+                            <p className="text-[var(--foreground-secondary)]">{tip}</p>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* CTA */}
+            <div className="text-center py-12">
+                <a href="#" className="btn-primary text-lg px-8 py-4">
+                    Launch {tool.name}
+                    <ExternalLink className="w-5 h-5" />
+                </a>
+                <div className="flex items-center justify-center gap-2 mt-6">
+                    <span className="text-sm text-[var(--foreground-muted)]">Works with:</span>
+                    {tool.integrations.map(int => (
+                        <span key={int} className="badge">{int}</span>
+                    ))}
                 </div>
             </div>
         </div>
