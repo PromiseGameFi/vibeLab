@@ -24,11 +24,11 @@
 ## Planned
 - [ ] Real-world User Feedback Session
 - [ ] Production Deployment
-- [/] VibeMarket Phase (/vibeMarket) - X-First SMM Tool
-    - [ ] Scaffold /vibeMarket route and layout
-    - [ ] Thread Studio (AI thread builder)
-    - [ ] Posting Planner (visual calendar)
-    - [ ] Evergreen Vault (content recycler)
-    - [ ] Personality Profiles (multi-account voice)
-    - [ ] Engagement Scorecard (gamified tracker)
-    - [ ] Browser Agent (automated browser engagement)
+- [x] VibeMarket Phase (/vibeMarket) - X-First SMM Tool
+    - [x] Scaffold /vibeMarket route and layout
+    - [x] Thread Studio (AI thread builder)
+    - [x] Posting Planner (visual calendar)
+    - [x] Evergreen Vault (content recycler)
+    - [x] Personality Profiles (multi-account voice)
+    - [x] Engagement Scorecard (gamified tracker)
+    - [x] Browser Agent (automated browser engagement)
