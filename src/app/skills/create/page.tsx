@@ -1,12 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
     ArrowLeft, Plus, Trash2, Download, Copy, Check, Sparkles,
-    Layout, Server, Container, TestTube, Brain
+    Wand2, Loader2
 } from "lucide-react";
 import { skillCategories, agentFormats, exportToCursor, exportToClaudeCode, exportToAntigravity, Skill } from "@/lib/skillsData";
+import { generateWithGemini, SKILL_SYSTEM_PROMPT, parseJsonResponse, hasApiKey } from "@/lib/gemini";
+import ApiKeyInput from "@/components/ApiKeyInput";
+
+interface GeneratedSkill {
+    name: string;
+    description: string;
+    instructions: string[];
+    rules: string[];
+    examples: string[];
+}
 
 export default function CreateSkillPage() {
     const [name, setName] = useState("");
@@ -18,6 +28,16 @@ export default function CreateSkillPage() {
     const [examples, setExamples] = useState<string[]>([""]);
     const [exportFormat, setExportFormat] = useState("cursor");
     const [copied, setCopied] = useState(false);
+
+    // AI Generation state
+    const [hasKey, setHasKey] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [aiPrompt, setAiPrompt] = useState("");
+    const [aiError, setAiError] = useState<string | null>(null);
+
+    useEffect(() => {
+        setHasKey(hasApiKey());
+    }, []);
 
     const toggleAgent = (agent: string) => {
         setAgents(prev =>
@@ -37,6 +57,39 @@ export default function CreateSkillPage() {
 
     const removeItem = (setter: React.Dispatch<React.SetStateAction<string[]>>, index: number) => {
         setter(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const generateWithAI = async () => {
+        if (!aiPrompt.trim()) {
+            setAiError("Please describe what skill you want to create");
+            return;
+        }
+
+        setIsGenerating(true);
+        setAiError(null);
+
+        try {
+            const prompt = `Create a comprehensive coding skill for: ${aiPrompt}
+
+Category: ${skillCategories.find(c => c.id === category)?.name || category}
+
+Generate a skill that will help AI coding agents write better code following best practices.`;
+
+            const response = await generateWithGemini(prompt, SKILL_SYSTEM_PROMPT);
+            const parsed = parseJsonResponse<GeneratedSkill>(response);
+
+            // Apply generated content
+            setName(parsed.name || aiPrompt);
+            setDescription(parsed.description || "");
+            setInstructions(parsed.instructions?.length ? parsed.instructions : [""]);
+            setRules(parsed.rules?.length ? parsed.rules : [""]);
+            setExamples(parsed.examples?.length ? parsed.examples : [""]);
+        } catch (error) {
+            console.error("AI generation error:", error);
+            setAiError(error instanceof Error ? error.message : "Failed to generate skill");
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     const buildSkill = (): Skill => ({
@@ -111,6 +164,52 @@ export default function CreateSkillPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Editor */}
                 <div className="space-y-6">
+                    {/* AI Generation */}
+                    <div className="card p-6 border-2 border-[var(--accent)]/30 bg-[var(--accent)]/5">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Wand2 className="w-5 h-5 text-[var(--accent)]" />
+                            <h2 className="font-semibold text-white">Generate with AI</h2>
+                            <span className="badge badge-accent text-xs">Gemini</span>
+                        </div>
+
+                        <ApiKeyInput onKeySet={() => setHasKey(true)} />
+
+                        {hasKey && (
+                            <div className="mt-4 space-y-3">
+                                <textarea
+                                    value={aiPrompt}
+                                    onChange={(e) => { setAiPrompt(e.target.value); setAiError(null); }}
+                                    placeholder="Describe the skill you want to create...
+
+e.g., 'React performance optimization best practices' or 'Python async/await patterns'"
+                                    className="input resize-none min-h-[100px]"
+                                />
+
+                                {aiError && (
+                                    <p className="text-sm text-red-400">{aiError}</p>
+                                )}
+
+                                <button
+                                    onClick={generateWithAI}
+                                    disabled={isGenerating || !aiPrompt.trim()}
+                                    className="btn-primary w-full disabled:opacity-40"
+                                >
+                                    {isGenerating ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            Generating...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Wand2 className="w-4 h-4" />
+                                            Generate Skill
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
                     {/* Basics */}
                     <div className="card p-6">
                         <h2 className="text-sm text-[var(--foreground-muted)] uppercase tracking-wider mb-4">Basics</h2>
@@ -145,8 +244,8 @@ export default function CreateSkillPage() {
                                             key={cat.id}
                                             onClick={() => setCategory(cat.id)}
                                             className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${category === cat.id
-                                                    ? 'bg-[var(--accent)] text-white'
-                                                    : 'bg-[var(--background-card)] border border-[var(--border)] text-[var(--foreground-secondary)]'
+                                                ? 'bg-[var(--accent)] text-white'
+                                                : 'bg-[var(--background-card)] border border-[var(--border)] text-[var(--foreground-secondary)]'
                                                 }`}
                                         >
                                             {cat.name}
@@ -163,8 +262,8 @@ export default function CreateSkillPage() {
                                             key={format.id}
                                             onClick={() => toggleAgent(format.id)}
                                             className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${agents.includes(format.id)
-                                                    ? 'bg-[var(--accent-secondary)] text-white'
-                                                    : 'bg-[var(--background-card)] border border-[var(--border)] text-[var(--foreground-secondary)]'
+                                                ? 'bg-[var(--accent-secondary)] text-white'
+                                                : 'bg-[var(--background-card)] border border-[var(--border)] text-[var(--foreground-secondary)]'
                                                 }`}
                                         >
                                             {format.name}
@@ -278,8 +377,8 @@ export default function CreateSkillPage() {
                                     key={format.id}
                                     onClick={() => setExportFormat(format.id)}
                                     className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${exportFormat === format.id
-                                            ? 'bg-[var(--accent)] text-white'
-                                            : 'bg-[var(--background-card)] border border-[var(--border)] text-[var(--foreground-secondary)]'
+                                        ? 'bg-[var(--accent)] text-white'
+                                        : 'bg-[var(--background-card)] border border-[var(--border)] text-[var(--foreground-secondary)]'
                                         }`}
                                 >
                                     {format.name}

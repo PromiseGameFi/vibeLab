@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
     ArrowLeft, Rocket, Target, Users, Megaphone, Calendar, TrendingUp,
-    Copy, Check, Download, Sparkles, ChevronRight
+    Copy, Check, Download, Sparkles, ChevronRight, Loader2, Wand2
 } from "lucide-react";
+import { generateWithGemini, GTM_SYSTEM_PROMPT, parseJsonResponse, hasApiKey } from "@/lib/gemini";
+import ApiKeyInput from "@/components/ApiKeyInput";
 
 interface GTMStrategy {
     positioning: string;
@@ -50,14 +52,59 @@ export default function GTMPage() {
     const [strategy, setStrategy] = useState<GTMStrategy | null>(null);
     const [copied, setCopied] = useState(false);
 
+    // AI state
+    const [hasKey, setHasKey] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [aiError, setAiError] = useState<string | null>(null);
+    const [useAI, setUseAI] = useState(true);
+
+    useEffect(() => {
+        setHasKey(hasApiKey());
+    }, []);
+
     const toggleChannel = (id: string) => {
         setSelectedChannels(prev =>
             prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
         );
     };
 
-    const generateStrategy = () => {
-        // Generate a strategy based on inputs
+    const generateWithAI = async () => {
+        setIsGenerating(true);
+        setAiError(null);
+
+        const channelNames = selectedChannels.map(id =>
+            channelOptions.find(c => c.id === id)?.name || id
+        );
+
+        try {
+            const prompt = `Create a detailed go-to-market strategy for:
+
+**Product:** ${productName}
+**Description:** ${productDescription}
+**Industry:** ${industry}
+**Target Audience:** ${targetAudience}
+**Marketing Channels:** ${channelNames.join(", ")}
+**Budget:** ${budget === "bootstrap" ? "$0-$1k (organic focus)" : budget === "funded" ? "$1k-$10k (mix of organic and paid)" : "$10k+ (full-funnel campaigns)"}
+**Timeline:** ${timeline === "sprint" ? "2 weeks (quick launch)" : timeline === "quarter" ? "3 months (balanced approach)" : "12 months (comprehensive strategy)"}
+
+Generate a comprehensive, actionable GTM strategy with specific tactics, realistic metrics, and a clear timeline.`;
+
+            const response = await generateWithGemini(prompt, GTM_SYSTEM_PROMPT);
+            const parsed = parseJsonResponse<GTMStrategy>(response);
+
+            setStrategy(parsed);
+            setStep(4);
+        } catch (error) {
+            console.error("AI generation error:", error);
+            setAiError(error instanceof Error ? error.message : "Failed to generate strategy");
+            // Fallback to basic generation
+            generateBasicStrategy();
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const generateBasicStrategy = () => {
         const channelNames = selectedChannels.map(id =>
             channelOptions.find(c => c.id === id)?.name || id
         );
@@ -105,6 +152,14 @@ export default function GTMPage() {
 
         setStrategy(generatedStrategy);
         setStep(4);
+    };
+
+    const handleGenerate = () => {
+        if (useAI && hasKey) {
+            generateWithAI();
+        } else {
+            generateBasicStrategy();
+        }
     };
 
     const exportStrategy = () => {
@@ -178,69 +233,95 @@ export default function GTMPage() {
 
             {/* Step 1: Product Info */}
             {step === 1 && (
-                <div className="card p-8">
-                    <h2 className="text-lg font-semibold text-white mb-6">Tell us about your product</h2>
-
-                    <div className="space-y-6">
-                        <div>
-                            <label className="text-sm text-[var(--foreground-secondary)] mb-2 block">Product Name *</label>
-                            <input
-                                type="text"
-                                value={productName}
-                                onChange={(e) => setProductName(e.target.value)}
-                                placeholder="e.g., VibeLab"
-                                className="input"
-                            />
+                <div className="space-y-6">
+                    {/* API Key Setup */}
+                    <div className="card p-6 border-2 border-[var(--accent)]/30 bg-[var(--accent)]/5">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Wand2 className="w-5 h-5 text-[var(--accent)]" />
+                            <h2 className="font-semibold text-white">AI-Powered Generation</h2>
+                            <span className="badge badge-accent text-xs">Gemini</span>
                         </div>
+                        <ApiKeyInput onKeySet={() => setHasKey(true)} />
 
-                        <div>
-                            <label className="text-sm text-[var(--foreground-secondary)] mb-2 block">What does it do? *</label>
-                            <textarea
-                                value={productDescription}
-                                onChange={(e) => setProductDescription(e.target.value)}
-                                placeholder="e.g., Helps developers master AI tools and export coding skills..."
-                                className="input resize-none min-h-[100px]"
-                            />
-                        </div>
+                        {hasKey && (
+                            <div className="mt-4 flex items-center gap-3">
+                                <label className="flex items-center gap-2 text-sm text-[var(--foreground-secondary)] cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={useAI}
+                                        onChange={(e) => setUseAI(e.target.checked)}
+                                        className="w-4 h-4 rounded"
+                                    />
+                                    Use AI for more detailed, contextual strategies
+                                </label>
+                            </div>
+                        )}
+                    </div>
 
-                        <div>
-                            <label className="text-sm text-[var(--foreground-secondary)] mb-3 block">Industry</label>
-                            <div className="flex flex-wrap gap-2">
-                                {industryOptions.map(ind => (
-                                    <button
-                                        key={ind}
-                                        onClick={() => setIndustry(ind)}
-                                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${industry === ind
+                    <div className="card p-8">
+                        <h2 className="text-lg font-semibold text-white mb-6">Tell us about your product</h2>
+
+                        <div className="space-y-6">
+                            <div>
+                                <label className="text-sm text-[var(--foreground-secondary)] mb-2 block">Product Name *</label>
+                                <input
+                                    type="text"
+                                    value={productName}
+                                    onChange={(e) => setProductName(e.target.value)}
+                                    placeholder="e.g., VibeLab"
+                                    className="input"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-sm text-[var(--foreground-secondary)] mb-2 block">What does it do? *</label>
+                                <textarea
+                                    value={productDescription}
+                                    onChange={(e) => setProductDescription(e.target.value)}
+                                    placeholder="e.g., Helps developers master AI tools and export coding skills..."
+                                    className="input resize-none min-h-[100px]"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-sm text-[var(--foreground-secondary)] mb-3 block">Industry</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {industryOptions.map(ind => (
+                                        <button
+                                            key={ind}
+                                            onClick={() => setIndustry(ind)}
+                                            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${industry === ind
                                                 ? 'bg-[var(--accent)] text-white'
                                                 : 'bg-[var(--background-card)] border border-[var(--border)] text-[var(--foreground-secondary)]'
-                                            }`}
-                                    >
-                                        {ind}
-                                    </button>
-                                ))}
+                                                }`}
+                                        >
+                                            {ind}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-sm text-[var(--foreground-secondary)] mb-2 block">Target Audience *</label>
+                                <input
+                                    type="text"
+                                    value={targetAudience}
+                                    onChange={(e) => setTargetAudience(e.target.value)}
+                                    placeholder="e.g., Indie developers, startup founders, AI enthusiasts"
+                                    className="input"
+                                />
                             </div>
                         </div>
 
-                        <div>
-                            <label className="text-sm text-[var(--foreground-secondary)] mb-2 block">Target Audience *</label>
-                            <input
-                                type="text"
-                                value={targetAudience}
-                                onChange={(e) => setTargetAudience(e.target.value)}
-                                placeholder="e.g., Indie developers, startup founders, AI enthusiasts"
-                                className="input"
-                            />
-                        </div>
+                        <button
+                            onClick={() => setStep(2)}
+                            disabled={!productName || !productDescription || !targetAudience}
+                            className="btn-primary w-full mt-8 disabled:opacity-40"
+                        >
+                            Next: Choose Channels
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
                     </div>
-
-                    <button
-                        onClick={() => setStep(2)}
-                        disabled={!productName || !productDescription || !targetAudience}
-                        className="btn-primary w-full mt-8 disabled:opacity-40"
-                    >
-                        Next: Choose Channels
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
                 </div>
             )}
 
@@ -255,8 +336,8 @@ export default function GTMPage() {
                                 key={channel.id}
                                 onClick={() => toggleChannel(channel.id)}
                                 className={`p-4 rounded-xl text-center transition-all ${selectedChannels.includes(channel.id)
-                                        ? 'bg-[var(--accent)]/10 border-2 border-[var(--accent)]'
-                                        : 'bg-[var(--background-card)] border border-[var(--border)] hover:border-[var(--border-hover)]'
+                                    ? 'bg-[var(--accent)]/10 border-2 border-[var(--accent)]'
+                                    : 'bg-[var(--background-card)] border border-[var(--border)] hover:border-[var(--border-hover)]'
                                     }`}
                             >
                                 <div className="text-2xl mb-2">{channel.icon}</div>
@@ -299,8 +380,8 @@ export default function GTMPage() {
                                         key={b.id}
                                         onClick={() => setBudget(b.id as any)}
                                         className={`p-4 rounded-xl text-left transition-all ${budget === b.id
-                                                ? 'bg-[var(--accent-secondary)]/10 border-2 border-[var(--accent-secondary)]'
-                                                : 'bg-[var(--background-card)] border border-[var(--border)]'
+                                            ? 'bg-[var(--accent-secondary)]/10 border-2 border-[var(--accent-secondary)]'
+                                            : 'bg-[var(--background-card)] border border-[var(--border)]'
                                             }`}
                                     >
                                         <p className="font-semibold text-white">{b.label}</p>
@@ -323,8 +404,8 @@ export default function GTMPage() {
                                         key={t.id}
                                         onClick={() => setTimeline(t.id as any)}
                                         className={`p-4 rounded-xl text-left transition-all ${timeline === t.id
-                                                ? 'bg-[var(--accent)]/10 border-2 border-[var(--accent)]'
-                                                : 'bg-[var(--background-card)] border border-[var(--border)]'
+                                            ? 'bg-[var(--accent)]/10 border-2 border-[var(--accent)]'
+                                            : 'bg-[var(--background-card)] border border-[var(--border)]'
                                             }`}
                                     >
                                         <p className="font-semibold text-white">{t.label}</p>
@@ -336,13 +417,32 @@ export default function GTMPage() {
                         </div>
                     </div>
 
+                    {aiError && (
+                        <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+                            {aiError}
+                        </div>
+                    )}
+
                     <div className="flex gap-4 mt-8">
                         <button onClick={() => setStep(2)} className="btn-secondary flex-1">
                             Back
                         </button>
-                        <button onClick={generateStrategy} className="btn-primary flex-1">
-                            <Sparkles className="w-4 h-4" />
-                            Generate Strategy
+                        <button
+                            onClick={handleGenerate}
+                            disabled={isGenerating}
+                            className="btn-primary flex-1 disabled:opacity-40"
+                        >
+                            {isGenerating ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Generating...
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles className="w-4 h-4" />
+                                    {useAI && hasKey ? "Generate with AI" : "Generate Strategy"}
+                                </>
+                            )}
                         </button>
                     </div>
                 </div>

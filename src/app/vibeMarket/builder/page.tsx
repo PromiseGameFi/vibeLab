@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
     ArrowLeft, Copy, Check, Download, Sparkles, Palette,
-    Target, Megaphone, DollarSign, Calendar
+    Target, Megaphone, DollarSign, Calendar, Wand2, Loader2
 } from "lucide-react";
+import { generateWithGemini, MARKETING_BUILDER_SYSTEM_PROMPT, hasApiKey } from "@/lib/gemini";
+import ApiKeyInput from "@/components/ApiKeyInput";
 
 interface BuilderConfig {
     sentiment: string;
@@ -68,6 +70,16 @@ export default function BuilderPage() {
     const [generated, setGenerated] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
 
+    // AI state
+    const [hasKey, setHasKey] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [useAI, setUseAI] = useState(true);
+    const [aiError, setAiError] = useState<string | null>(null);
+
+    useEffect(() => {
+        setHasKey(hasApiKey());
+    }, []);
+
     const toggleGoal = (id: string) => {
         setConfig(prev => ({
             ...prev,
@@ -88,10 +100,57 @@ export default function BuilderPage() {
 
     const isComplete = config.sentiment && config.goals.length > 0 && config.channels.length > 0 && config.budget && config.timeline;
 
-    const generateStrategy = () => {
+    const generateWithAI = async () => {
+        setIsGenerating(true);
+        setAiError(null);
+
         const sentiment = sentimentOptions.find(s => s.id === config.sentiment);
         const goals = config.goals.map(g => goalOptions.find(go => go.id === g)?.name).join(", ");
         const channels = config.channels.map(c => channelOptions.find(ch => ch.id === c)?.name).join(", ");
+        const budgetInfo = budgetOptions.find(b => b.id === config.budget);
+        const timelineInfo = timelineOptions.find(t => t.id === config.timeline);
+
+        try {
+            const prompt = `Create a detailed, personalized marketing strategy with these specifications:
+
+**Brand Sentiment:** ${sentiment?.name} - ${sentiment?.desc}
+**Example Tone:** "${sentiment?.example}"
+
+**Goals:** ${goals}
+
+**Marketing Channels:** ${channels}
+
+**Budget:** ${budgetInfo?.name} (${budgetInfo?.range}) - ${budgetInfo?.desc}
+
+**Timeline:** ${timelineInfo?.name} (${timelineInfo?.duration}) - ${timelineInfo?.desc}
+
+Generate a comprehensive, actionable marketing strategy in markdown format. Include:
+1. Brand voice guidelines with 3-5 do's and don'ts
+2. Specific tactics for each goal
+3. Channel-by-channel strategy with posting frequency
+4. Budget allocation percentages
+5. Detailed timeline with milestones
+6. Content pillars tailored to the sentiment
+7. Success metrics with realistic targets
+8. A next steps checklist
+
+Make it practical and immediately actionable. Use the brand sentiment consistently throughout.`;
+
+            const response = await generateWithGemini(prompt, MARKETING_BUILDER_SYSTEM_PROMPT);
+            setGenerated(response);
+        } catch (error) {
+            console.error("AI generation error:", error);
+            setAiError(error instanceof Error ? error.message : "Failed to generate strategy");
+            // Fallback to basic generation
+            generateBasicStrategy();
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const generateBasicStrategy = () => {
+        const sentiment = sentimentOptions.find(s => s.id === config.sentiment);
+        const goals = config.goals.map(g => goalOptions.find(go => go.id === g)?.name).join(", ");
         const budgetInfo = budgetOptions.find(b => b.id === config.budget);
         const timelineInfo = timelineOptions.find(t => t.id === config.timeline);
 
@@ -242,6 +301,14 @@ ${config.goals.map(g => {
         setGenerated(strategy);
     };
 
+    const handleGenerate = () => {
+        if (useAI && hasKey) {
+            generateWithAI();
+        } else {
+            generateBasicStrategy();
+        }
+    };
+
     const copyStrategy = () => {
         if (generated) {
             navigator.clipboard.writeText(generated);
@@ -288,6 +355,30 @@ ${config.goals.map(g => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Builder Form */}
                 <div className="space-y-6">
+                    {/* AI Setup */}
+                    <div className="card p-6 border-2 border-pink-500/30 bg-pink-500/5">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Wand2 className="w-5 h-5 text-pink-500" />
+                            <h2 className="font-semibold text-white">AI-Powered Generation</h2>
+                            <span className="badge text-xs" style={{ background: 'rgba(236, 72, 153, 0.2)', color: 'rgb(236, 72, 153)' }}>Gemini</span>
+                        </div>
+                        <ApiKeyInput onKeySet={() => setHasKey(true)} />
+
+                        {hasKey && (
+                            <div className="mt-4 flex items-center gap-3">
+                                <label className="flex items-center gap-2 text-sm text-[var(--foreground-secondary)] cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={useAI}
+                                        onChange={(e) => setUseAI(e.target.checked)}
+                                        className="w-4 h-4 rounded"
+                                    />
+                                    Use AI for richer, more detailed strategies
+                                </label>
+                            </div>
+                        )}
+                    </div>
+
                     {/* Sentiment */}
                     <div className="card p-6">
                         <div className="flex items-center gap-2 mb-4">
@@ -300,8 +391,8 @@ ${config.goals.map(g => {
                                     key={s.id}
                                     onClick={() => setConfig(prev => ({ ...prev, sentiment: s.id }))}
                                     className={`p-4 rounded-xl text-left transition-all ${config.sentiment === s.id
-                                            ? 'bg-pink-500/10 border-2 border-pink-500'
-                                            : 'bg-[var(--background-card)] border border-[var(--border)] hover:border-[var(--border-hover)]'
+                                        ? 'bg-pink-500/10 border-2 border-pink-500'
+                                        : 'bg-[var(--background-card)] border border-[var(--border)] hover:border-[var(--border-hover)]'
                                         }`}
                                 >
                                     <p className="font-semibold text-white text-sm">{s.name}</p>
@@ -323,8 +414,8 @@ ${config.goals.map(g => {
                                     key={g.id}
                                     onClick={() => toggleGoal(g.id)}
                                     className={`w-full p-4 rounded-xl flex items-center justify-between transition-all ${config.goals.includes(g.id)
-                                            ? 'bg-[var(--accent)]/10 border-2 border-[var(--accent)]'
-                                            : 'bg-[var(--background-card)] border border-[var(--border)]'
+                                        ? 'bg-[var(--accent)]/10 border-2 border-[var(--accent)]'
+                                        : 'bg-[var(--background-card)] border border-[var(--border)]'
                                         }`}
                                 >
                                     <div className="text-left">
@@ -349,8 +440,8 @@ ${config.goals.map(g => {
                                     key={c.id}
                                     onClick={() => toggleChannel(c.id)}
                                     className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${config.channels.includes(c.id)
-                                            ? 'bg-orange-500 text-white'
-                                            : 'bg-[var(--background-card)] border border-[var(--border)] text-[var(--foreground-secondary)]'
+                                        ? 'bg-orange-500 text-white'
+                                        : 'bg-[var(--background-card)] border border-[var(--border)] text-[var(--foreground-secondary)]'
                                         }`}
                                 >
                                     {c.name}
@@ -371,8 +462,8 @@ ${config.goals.map(g => {
                                     key={b.id}
                                     onClick={() => setConfig(prev => ({ ...prev, budget: b.id }))}
                                     className={`w-full p-4 rounded-xl flex items-center justify-between transition-all ${config.budget === b.id
-                                            ? 'bg-green-500/10 border-2 border-green-500'
-                                            : 'bg-[var(--background-card)] border border-[var(--border)]'
+                                        ? 'bg-green-500/10 border-2 border-green-500'
+                                        : 'bg-[var(--background-card)] border border-[var(--border)]'
                                         }`}
                                 >
                                     <div className="text-left">
@@ -397,8 +488,8 @@ ${config.goals.map(g => {
                                     key={t.id}
                                     onClick={() => setConfig(prev => ({ ...prev, timeline: t.id }))}
                                     className={`p-4 rounded-xl text-center transition-all ${config.timeline === t.id
-                                            ? 'bg-[var(--accent-secondary)]/10 border-2 border-[var(--accent-secondary)]'
-                                            : 'bg-[var(--background-card)] border border-[var(--border)]'
+                                        ? 'bg-[var(--accent-secondary)]/10 border-2 border-[var(--accent-secondary)]'
+                                        : 'bg-[var(--background-card)] border border-[var(--border)]'
                                         }`}
                                 >
                                     <p className="font-semibold text-white text-sm">{t.name}</p>
@@ -408,14 +499,29 @@ ${config.goals.map(g => {
                         </div>
                     </div>
 
+                    {aiError && (
+                        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+                            {aiError}
+                        </div>
+                    )}
+
                     {/* Generate Button */}
                     <button
-                        onClick={generateStrategy}
-                        disabled={!isComplete}
+                        onClick={handleGenerate}
+                        disabled={!isComplete || isGenerating}
                         className="btn-primary w-full disabled:opacity-40"
                     >
-                        <Sparkles className="w-4 h-4" />
-                        Generate Custom Strategy
+                        {isGenerating ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Generating...
+                            </>
+                        ) : (
+                            <>
+                                <Sparkles className="w-4 h-4" />
+                                {useAI && hasKey ? "Generate with AI" : "Generate Custom Strategy"}
+                            </>
+                        )}
                     </button>
                 </div>
 
