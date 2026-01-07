@@ -43,3 +43,14 @@ VibeLab is built using **Next.js 14 (App Router)** with a focus on modularity an
 - `tailwind.config.ts` - Design system variables (Accents, Colors, Spacing).
 - `tsconfig.json` - TypeScript configuration and path aliases.
 - `package.json` - Dependency management (Next.js, Tailwind, Lucide React).
+
+---
+
+## 📁 `src/app/vibeMarket/` (VibeMarket SMM Tool)
+- `page.tsx` - **VibeMarket Landing**: The hero section for the X-first SMM tool.
+- `thread-studio/` - AI-powered thread builder and preview.
+- `planner/` - Visual posting calendar with best-time recommendations.
+- `vault/` - Evergreen content storage and recycling.
+- `profiles/` - Multi-account personality presets.
+- `scorecard/` - Gamified engagement tracker.
+- `agent/` - Browser agent for automated X engagement.
