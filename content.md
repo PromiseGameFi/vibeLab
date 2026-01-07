@@ -42,3 +42,47 @@ This file contains the deep research findings used to populate VibeLab.
 ## ElevenLabs (Audio)
 - **Advanced Workflow**: '[Audio Tags]' - Using bracketed cues like `[happy]` or `[whispers]` to direct the AI performance.
 - **Tip**: Speech-to-Speech is the most reliable way to get custom emotional cadence.
+
+---
+
+## Universal Skills Content
+
+Skills are reusable instruction sets for AI coding agents. Each skill contains:
+
+### Skill Categories
+| Category | Description |
+|---|---|
+| Frontend | React, Next.js, Vue, Tailwind, CSS |
+| Backend | Node, Python, Go, APIs, Databases |
+| DevOps | Docker, CI/CD, Deployment, Git |
+| Testing | Jest, Playwright, Vitest, TDD |
+| AI/ML | Prompting, Fine-tuning, RAG |
+| General | TypeScript, Code Style, Architecture |
+
+### Pre-built Skills
+1. **Next.js App Router** - Server Components, App Router patterns
+2. **React Best Practices** - Hooks, composition, performance
+3. **TypeScript Strict Mode** - Type-safe development patterns
+4. **Tailwind CSS Patterns** - Utility-first CSS organization
+5. **REST API Design** - Endpoints, status codes, error handling
+6. **Git Commit Convention** - Conventional commits, branching
+
+### Skill Anatomy
+```yaml
+---
+name: skill-name
+description: What it does and when to use it
+category: frontend | backend | devops | testing | ai-ml | general
+agents: [cursor, claude-code, antigravity, codex, windsurf, cline]
+---
+
+## Instructions
+- Step-by-step guidance
+
+## Rules
+- NEVER do X
+- ALWAYS do Y
+
+## Examples
+- Code snippets
+```

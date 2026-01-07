@@ -17,13 +17,7 @@
 - [x] Vibe Spawner (Advanced Orchestrator)
 - [x] Trending Blueprints (Community Simulation)
 - [x] Blueprint Export (.md)
-
-## In Progress
-- [ ] Final Performance Mini-Audits
-
-## Planned
-- [ ] Real-world User Feedback Session
-- [ ] Production Deployment
+- [x] Framer-Style UI Redesign
 - [x] VibeMarket Phase (/vibeMarket) - X-First SMM Tool
     - [x] Scaffold /vibeMarket route and layout
     - [x] Thread Studio (AI thread builder)
@@ -32,3 +26,18 @@
     - [x] Personality Profiles (multi-account voice)
     - [x] Engagement Scorecard (gamified tracker)
     - [x] Browser Agent (automated browser engagement)
+- [x] Universal Skills (/skills) - AI Coding Agent Skills
+    - [x] skillsData.ts with Skill interface
+    - [x] Skills landing page with search & filters
+    - [x] Skill detail modal with export
+    - [x] Skill Creator with live preview
+    - [x] Export to Cursor, Claude Code, Antigravity
+
+## In Progress
+- [ ] Skills community features (save, share)
+
+## Planned
+- [ ] Real-world User Feedback Session
+- [ ] Production Deployment
+- [ ] Skills API for programmatic access
+- [ ] IDE plugins (VS Code, JetBrains)

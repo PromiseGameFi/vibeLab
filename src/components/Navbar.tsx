@@ -30,6 +30,12 @@ export default function Navbar() {
                         VibeMarket
                     </Link>
                     <Link
+                        href="/skills"
+                        className="text-sm text-[var(--foreground-secondary)] hover:text-white transition-colors"
+                    >
+                        Skills
+                    </Link>
+                    <Link
                         href="/#tools"
                         className="text-sm text-[var(--foreground-secondary)] hover:text-white transition-colors"
                     >

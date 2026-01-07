@@ -34,3 +34,30 @@ The User Experience
 A user struggles to get good video from Kling. They go to your site and type /kling. They immediately see a list of settings and prompts that fix their problem.
 
 It is a knowledge base for builders.
+
+---
+
+## NEW: Universal Skills (localhost:3000/skills)
+
+A skill marketplace for AI coding agents.
+
+### The Problem
+Every AI coding agent has its own format:
+- Cursor: `.cursorrules`
+- Claude Code: `CLAUDE.md`
+- Antigravity: `.agent/workflows/`
+- Codex: System prompts
+- Windsurf: `.windsurfrules`
+- Cline: `.clinerules`
+
+### The Solution
+VibeLab provides a **Universal Skill Format** that:
+1. Creates once → Exports to any agent format
+2. Portable → Works in Cursor, Claude Code, Antigravity, etc.
+3. Shareable → Community skill marketplace
+
+### Features
+- **Skill Directory**: Browse skills by category (Frontend, Backend, DevOps, Testing, AI/ML)
+- **Skill Creator**: Build custom skills with instructions, rules, and examples
+- **Export**: Download as `.cursorrules`, `CLAUDE.md`, or workflows
+- **Community**: Share and discover skills from other developers
