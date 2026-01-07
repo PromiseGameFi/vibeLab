@@ -36,22 +36,6 @@ export default function Navbar() {
                         Tools
                     </Link>
                 </div>
-
-                {/* Right Actions */}
-                <div className="flex items-center gap-4">
-                    <Link
-                        href="#"
-                        className="hidden md:inline text-sm text-[var(--foreground-secondary)] hover:text-white transition-colors"
-                    >
-                        Log in
-                    </Link>
-                    <Link
-                        href="#"
-                        className="btn-primary text-sm"
-                    >
-                        Sign up
-                    </Link>
-                </div>
             </div>
         </nav>
     );
