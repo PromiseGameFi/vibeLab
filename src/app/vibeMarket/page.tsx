@@ -7,10 +7,13 @@ import {
     Trophy,
     Bot,
     ArrowRight,
-    Zap
+    Zap,
+    Rocket,
+    TrendingUp,
+    Palette
 } from "lucide-react";
 
-const features = [
+const smmTools = [
     {
         id: "thread-studio",
         name: "Thread Studio",
@@ -49,6 +52,30 @@ const features = [
     }
 ];
 
+const strategyTools = [
+    {
+        id: "gtm",
+        name: "GTM Strategy Generator",
+        description: "Generate a complete go-to-market strategy for your product launch.",
+        icon: Rocket,
+        color: "var(--accent)"
+    },
+    {
+        id: "templates",
+        name: "Strategy Templates",
+        description: "Pre-built marketing playbooks for SaaS, Creator, E-commerce, and more.",
+        icon: TrendingUp,
+        color: "var(--accent-secondary)"
+    },
+    {
+        id: "builder",
+        name: "Custom Builder",
+        description: "Create a personalized strategy based on your brand sentiment.",
+        icon: Palette,
+        color: "#ec4899"
+    }
+];
+
 export default function VibeMarketPage() {
     return (
         <div className="min-h-screen">
@@ -57,40 +84,81 @@ export default function VibeMarketPage() {
                 <div className="max-w-4xl mx-auto text-center">
                     <span className="badge badge-accent mb-6">
                         <Zap className="w-3 h-3" />
-                        X-First SMM Tool
+                        Marketing Skills
                     </span>
 
                     <h1 className="hero-title text-white mb-6">
                         Vibe<em>Market</em>
                     </h1>
                     <p className="text-xl text-[var(--foreground-secondary)] max-w-2xl mx-auto mb-12">
-                        The SMM replacement for X. <span className="text-white">No API needed.</span> Build threads, plan posts, and automate engagement.
+                        AI-powered marketing suite. <span className="text-white">SMM tools + Strategy generators.</span> Build threads, plan launches, and grow your brand.
                     </p>
 
                     <div className="flex items-center justify-center gap-4">
-                        <Link href="/vibeMarket/thread-studio" className="btn-primary">
-                            Start Creating
+                        <Link href="/vibeMarket/gtm" className="btn-primary">
+                            Generate GTM Strategy
                         </Link>
-                        <Link href="/" className="btn-secondary">
-                            Back to Manual
+                        <Link href="/vibeMarket/thread-studio" className="btn-secondary">
+                            Create Thread
                             <ArrowRight className="w-4 h-4" />
                         </Link>
                     </div>
                 </div>
             </section>
 
-            {/* Features Grid */}
+            {/* Strategy Tools - NEW */}
             <section className="py-24 px-6 border-t border-[var(--border)]">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-16">
-                        <h2 className="section-title text-white mb-4">Your X Command Center</h2>
+                        <span className="badge mb-4">New</span>
+                        <h2 className="section-title text-white mb-4">Marketing Strategy</h2>
                         <p className="text-[var(--foreground-secondary)]">
-                            Everything you need to grow on X, without the bloat.
+                            Generate custom marketing strategies tailored to your product and goals.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {strategyTools.map((tool) => (
+                            <Link
+                                key={tool.id}
+                                href={`/vibeMarket/${tool.id}`}
+                                className="card card-interactive p-8 group text-center"
+                            >
+                                <div
+                                    className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"
+                                    style={{ backgroundColor: `${tool.color}20` }}
+                                >
+                                    <tool.icon className="w-8 h-8" style={{ color: tool.color }} />
+                                </div>
+
+                                <h3 className="text-xl font-semibold text-white mb-3 group-hover:text-[var(--accent)] transition-colors">
+                                    {tool.name}
+                                </h3>
+                                <p className="text-[var(--foreground-secondary)] text-sm mb-6">
+                                    {tool.description}
+                                </p>
+
+                                <span className="btn-ghost">
+                                    Get Started <ArrowRight className="w-4 h-4" />
+                                </span>
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* SMM Tools */}
+            <section className="py-24 px-6 border-t border-[var(--border)]">
+                <div className="max-w-7xl mx-auto">
+                    <div className="text-center mb-16">
+                        <h2 className="section-title text-white mb-4">SMM Toolkit</h2>
+                        <p className="text-[var(--foreground-secondary)]">
+                            Your X command center. No API required.
                         </p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {features.map((feature) => (
+                        {smmTools.map((feature) => (
                             <Link
                                 key={feature.id}
                                 href={`/vibeMarket/${feature.id}`}
@@ -108,7 +176,7 @@ export default function VibeMarketPage() {
                                 </p>
 
                                 <span className="btn-ghost text-sm">
-                                    Learn more <ArrowRight className="w-3 h-3" />
+                                    Open <ArrowRight className="w-3 h-3" />
                                 </span>
                             </Link>
                         ))}
@@ -132,7 +200,7 @@ export default function VibeMarketPage() {
                             </div>
                             <div>
                                 <div className="text-4xl font-bold text-[var(--accent-secondary)] mb-2">∞</div>
-                                <p className="text-[var(--foreground-secondary)] text-sm">Threads & Profiles</p>
+                                <p className="text-[var(--foreground-secondary)] text-sm">Strategies & Threads</p>
                             </div>
                         </div>
                     </div>
