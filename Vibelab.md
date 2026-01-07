@@ -6,7 +6,7 @@
 
 ## Vision
 
-**VibeLab is the universal hub for AI tool optimization** — providing blueprints, pro prompts, and now **universal coding agent skills** that work across every major AI IDE.
+**VibeLab is the universal hub for AI tool optimization** — providing blueprints, pro prompts, and **skills** that work across AI tools and coding agents.
 
 ---
 
@@ -15,109 +15,80 @@
 ### 1. Tool Directory
 Curated guides for AI tools (Vibecode, Kling, Midjourney, etc.) with pro tips and workflow blueprints.
 
-### 2. VibeMarket
-SMM toolkit for X (Twitter) — Thread Studio, Planner, Vault, Browser Agent, Scorecard, Profiles.
+### 2. Universal Skills (`/skills`)
+**The Hugging Face of AI skills** — create, share, and export skills that work across all coding agents.
 
-### 3. Universal Skills *(NEW)*
-**The Hugging Face of AI coding skills** — create, share, and export skills that work across all coding agents.
+#### 2.1 Coding Skills
+Skills for AI coding agents: Next.js, React, TypeScript, API design, Git conventions.
+- **Export to**: Cursor, Claude Code, Antigravity, Codex, Windsurf, Cline
+- **Create once** → Works everywhere
 
----
+#### 2.2 Marketing Skills (`/skills/marketing`)
+**The AI-powered marketing suite** — formerly VibeMarket, now part of Skills.
 
-## Universal Skills
-
-### The Problem
-Every AI coding agent has its own format:
-
-| Agent | Format |
+##### SMM Toolkit (X-First)
+| Tool | Purpose |
 |---|---|
-| Cursor | `.cursorrules` |
-| Claude Code | `CLAUDE.md` / Skills |
-| Codex / ChatGPT | System prompts |
-| Windsurf | `.windsurfrules` |
-| Antigravity | `.agent/workflows/` |
-| Cline | `.clinerules` |
+| Thread Studio | AI thread builder with hooks & cliffhangers |
+| Posting Planner | Visual calendar with best-time recommendations |
+| Evergreen Vault | Content recycler with performance tags |
+| Personality Profiles | Multi-account voice presets with AI prompt export |
+| Engagement Scorecard | Gamified tracker with badges |
+| Browser Agent | Automated X engagement scripts |
 
-Developers rewrite the same knowledge for each tool. There's no universal standard.
+##### Go-To-Market Strategy Generator *(NEW)*
+AI-powered strategy builder for product launches:
+- Market positioning
+- Competitor analysis
+- Channel selection
+- Launch timeline
+- Content calendar
+- Growth metrics
 
-### The Solution
-VibeLab introduces a **Universal Skill Format** that:
-1. **Creates once** → Exports to any agent format
-2. **Portable** → Works in Cursor, Claude Code, Antigravity, etc.
-3. **Shareable** → Community skill marketplace
+##### Marketing Strategy Templates *(NEW)*
+Pre-built strategies for:
+- **SaaS Launch**: Product-led growth, freemium, B2B sales
+- **Creator Economy**: Audience building, monetization, community
+- **E-commerce**: D2C, marketplace, subscription box
+- **Agency**: Client acquisition, retainer models, case studies
+- **Developer Tools**: DevRel, documentation, open source
 
-### Skill Format
-
-```yaml
----
-name: nextjs-app-router
-description: Best practices for Next.js App Router development
-agents: [cursor, claude-code, antigravity, codex]
-category: frontend
----
-```
-
-```markdown
-# Next.js App Router
-
-## Instructions
-- Use `app/` directory structure
-- Prefer Server Components by default
-- Use `"use client"` only when needed
-- ...
-
-## Examples
-[Concrete examples]
-```
-
-### Export Targets
-
-| Target | Output |
-|---|---|
-| Cursor | `.cursorrules` file |
-| Claude Code | `CLAUDE.md` + Skills folder |
-| Antigravity | `.agent/workflows/*.md` |
-| Codex | System prompt text |
-| Copy/Paste | Raw markdown |
-
-### Skill Categories
-- **Frontend**: React, Next.js, Vue, Tailwind
-- **Backend**: Node, Python, Go, APIs
-- **DevOps**: Docker, CI/CD, Deployment
-- **Testing**: Jest, Playwright, Vitest
-- **AI/ML**: Prompting, Fine-tuning, RAG
-
-### Revenue Model
-- **Free**: Browse & use community skills
-- **Pro**: Create private skills, analytics, team sharing
-- **Enterprise**: Custom skill library, SSO, API access
+##### Custom Marketing Builder *(NEW)*
+Create personalized marketing structures based on:
+- **Sentiment**: Brand tone (Professional, Casual, Bold, Minimal)
+- **Goals**: Awareness, Leads, Sales, Retention
+- **Channels**: Social, Content, Paid, Partnerships, SEO
+- **Budget**: Bootstrap, Funded, Enterprise
+- **Timeline**: Sprint (2 weeks), Quarter, Year
 
 ---
 
-## Why This Wins
+## Why Skills Win
 
 | Factor | Advantage |
 |---|---|
-| **First mover** | No dominant standard exists |
-| **Real pain point** | Devs hate rewriting rules per IDE |
-| **Viral potential** | Skills are shareable |
-| **Low barrier** | Just markdown + YAML |
-| **Network effects** | More skills → more users → more skills |
+| **Universal Format** | One skill works in any tool |
+| **Community Driven** | Share and discover skills |
+| **AI-Powered** | Smart strategy generation |
+| **Portable** | Export to any format |
 
 ---
 
 ## Roadmap
 
-### Phase 1: Foundation
-- [ ] Universal Skill format spec
-- [ ] Skill Creator UI
-- [ ] Export to Cursor, Claude Code
+### Phase 1: Foundation ✅
+- [x] Universal Skill format spec
+- [x] Skill Creator UI
+- [x] Export to Cursor, Claude Code, Antigravity
+- [x] SMM Toolkit (Thread Studio, Planner, etc.)
 
-### Phase 2: Marketplace
-- [ ] Community skill directory
-- [ ] Import existing `.cursorrules`
-- [ ] User profiles & ratings
+### Phase 2: Marketing Skills
+- [ ] Go-to-Market Strategy Generator
+- [ ] Marketing Strategy Templates
+- [ ] Custom Marketing Builder
+- [ ] Sentiment-based personalization
 
 ### Phase 3: Ecosystem
+- [ ] Community skill directory
 - [ ] IDE plugins (VS Code, JetBrains)
 - [ ] API for programmatic access
-- [ ] Enterprise features

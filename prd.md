@@ -1,63 +1,63 @@
-We are building VibeStack (or whichever "Vibe" name you choose).
+We are building VibeLab.
 
-It is a specialized web directory and guide for AI tools.
+It is a specialized web directory and guide for AI tools + universal skills.
 
 The Core Concept
-Most lists just give you a link to the tool. Your site is different because it teaches people how to use the tool.
+Most lists just give you a link to the tool. Your site is different because it teaches people how to use the tool AND provides exportable skills.
 
-We are building a "Manual" for the AI era.
-
-The 3 Main Parts
-The Directory (Home)
-
-A clean list of powerful AI tools like Vibecode, Kling, and Midjourney.
-
-A search bar to find them quickly.
-
-The "Cheat Sheet" Pages
-
-Every tool gets its own dedicated URL, like localhost:3000/vibecode.
-
-On this page, you do not just describe the tool. You list:
-
-Pro Tips: "Do this, don't do that."
-
-Best Prompts: Exact text to copy/paste.
-
-Workflows: "Use this tool first, then send the output to Kling."
-
-The Connection
-
-The site focuses on interoperability. You are showing users how to chain these tools together to build full projects (e.g., "Code the UI with Vibecode, generate the assets with Midjourney").
-
-The User Experience
-A user struggles to get good video from Kling. They go to your site and type /kling. They immediately see a list of settings and prompts that fix their problem.
-
-It is a knowledge base for builders.
+We are building a "Manual + Skill Library" for the AI era.
 
 ---
 
-## NEW: Universal Skills (localhost:3000/skills)
+## The 3 Main Parts
 
-A skill marketplace for AI coding agents.
+### 1. The Tool Directory (Home)
+A clean list of powerful AI tools like Vibecode, Kling, and Midjourney.
+- A search bar to find them quickly.
+- Pro Tips, Best Prompts, and Workflows for each tool.
 
-### The Problem
-Every AI coding agent has its own format:
-- Cursor: `.cursorrules`
-- Claude Code: `CLAUDE.md`
-- Antigravity: `.agent/workflows/`
-- Codex: System prompts
-- Windsurf: `.windsurfrules`
-- Cline: `.clinerules`
+### 2. Universal Skills (/skills)
+Skills that can be exported to any AI coding agent.
 
-### The Solution
-VibeLab provides a **Universal Skill Format** that:
-1. Creates once → Exports to any agent format
-2. Portable → Works in Cursor, Claude Code, Antigravity, etc.
-3. Shareable → Community skill marketplace
+#### Coding Skills
+- Next.js, React, TypeScript, Tailwind, REST APIs, Git
+- Export to: Cursor, Claude Code, Antigravity, Codex, Windsurf, Cline
 
-### Features
-- **Skill Directory**: Browse skills by category (Frontend, Backend, DevOps, Testing, AI/ML)
-- **Skill Creator**: Build custom skills with instructions, rules, and examples
-- **Export**: Download as `.cursorrules`, `CLAUDE.md`, or workflows
-- **Community**: Share and discover skills from other developers
+#### Marketing Skills (/skills/marketing)
+The AI-powered marketing suite (formerly VibeMarket):
+
+**SMM Toolkit:**
+- Thread Studio: AI thread builder
+- Posting Planner: Visual calendar
+- Evergreen Vault: Content recycler
+- Personality Profiles: Voice presets
+- Engagement Scorecard: Gamified tracker
+- Browser Agent: Automation scripts
+
+**Strategy Tools:**
+- Go-To-Market Strategy Generator
+- Marketing Strategy Templates (SaaS, Creator, E-commerce, Agency, Dev Tools)
+- Custom Marketing Builder (sentiment-based personalization)
+
+### 3. The Connection
+The site focuses on interoperability. You are showing users how to:
+- Chain AI tools together to build full projects
+- Use skills across different coding agents
+- Build marketing strategies tailored to their brand
+
+---
+
+## The User Experience
+
+**Tool User:**
+A user struggles to get good video from Kling. They go to your site and type /kling. They immediately see a list of settings and prompts that fix their problem.
+
+**Developer:**
+A developer wants consistent coding standards. They browse /skills, find "TypeScript Strict Mode", and export it to their Cursor IDE.
+
+**Marketer:**
+A founder needs a go-to-market strategy. They go to /skills/marketing, input their product sentiment, and get a personalized marketing framework.
+
+---
+
+It is a knowledge base for builders, developers, and marketers.

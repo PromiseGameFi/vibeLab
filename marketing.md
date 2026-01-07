@@ -1,34 +1,93 @@
-# Marketing & Usability Strategy: VibeLab
+# Marketing & Strategy - VibeLab
 
 ## The Core Problem
-**AI Fragmentation & Prompt Fatigue.** Users have access to 10+ powerful models but:
-1. They don't know the **Pro-Parameters** (e.g., `--sref`, `--cw`) that separate a "toy" result from a "pro" result.
-2. They don't know how to **Chain** tools (e.g., "How do I get my Midjourney character into a Kling video?").
-3. They waste time "tinkering" instead of "shipping".
+**AI Fragmentation & Marketing Fatigue.** Users have:
+1. **AI Tools** but don't know how to chain them for marketing outcomes
+2. **Content ideas** but no structured execution framework
+3. **Products** but no go-to-market playbook
 
-## The Solution: "The AI Blueprint"
-VibeLab will be positioned not as a list, but as a **recipe book** for specific outcomes.
+---
 
-### 1. "Goal-First" Navigation (UX)
-- **Problem**: Users search for "Kling" (Tool-First).
-- **Usability Lift**: Users should search for "Consistent Character Video" (Goal-First).
-- **Implementation**: Map every tool and workflow to "Goal Keywords".
+## The Solution: Marketing Skills
 
-### 2. The "Chain" Visualizer
-- **Problem**: Text lists of integrations look like links, not processes.
-- **Usability Lift**: A visual "Node-based" layout (CSS-based) for Tool Chains.
-- **Implementation**: Update `[slug]/page.tsx` to use a more diagram-like UI.
+VibeLab's Marketing Skills combine AI tools with proven marketing frameworks.
 
-### 3. "Copy/Paste to Pro" One-Click
-- **Problem**: Copying a prompt is one thing; understanding *why* it works is another.
-- **Usability Lift**: Annotate prompts (e.g., "This part handles the lighting, this part handles the physics").
+---
+
+## Marketing Skills Suite
+
+### 1. SMM Toolkit (X-First)
+| Tool | Purpose |
+|---|---|
+| Thread Studio | AI thread builder with hooks, cliffhangers, CTAs |
+| Posting Planner | Visual calendar with best-time optimization |
+| Evergreen Vault | Content recycler with performance tags |
+| Personality Profiles | Voice presets with AI prompt export |
+| Engagement Scorecard | Gamified daily goals with streaks/badges |
+| Browser Agent | Console scripts for automated engagement |
+
+### 2. Go-To-Market Strategy Generator
+AI-powered strategy builder that creates:
+- **Positioning Statement**: How you're different
+- **Ideal Customer Profile**: Who you're targeting
+- **Channel Strategy**: Where to reach them
+- **Content Calendar**: What to post and when
+- **Launch Timeline**: Phase-by-phase rollout
+- **Success Metrics**: KPIs to track
+
+### 3. Marketing Strategy Templates
+
+#### SaaS Launch
+- Product-led growth funnel
+- Free trial → paid conversion
+- Content marketing + SEO
+- Developer relations
+
+#### Creator Economy
+- Audience building on X/YouTube
+- Newsletter monetization
+- Community management
+- Sponsorship playbook
+
+#### E-commerce
+- D2C brand strategy
+- Influencer partnerships
+- Email automation
+- Retention loops
+
+#### Agency Model
+- Client acquisition system
+- Case study framework
+- Retainer pricing
+- Referral program
+
+#### Developer Tools
+- Open source strategy
+- Documentation-first
+- DevRel programs
+- Technical content
+
+### 4. Custom Marketing Builder
+Create personalized strategies based on:
+
+| Input | Options |
+|---|---|
+| **Sentiment** | Professional, Casual, Bold, Minimal, Technical, Friendly |
+| **Goals** | Awareness, Leads, Sales, Retention, Community |
+| **Channels** | Social, Content, Paid, SEO, Email, Partnerships |
+| **Budget** | Bootstrap ($0-1k), Funded ($1k-10k), Enterprise ($10k+) |
+| **Timeline** | Sprint (2 weeks), Quarter (3 months), Annual |
+
+---
 
 ## Marketing Hook
-**"Stop prompting. Start stacking."**
-- Focus on "Stacking" as the new high-skill ceiling for AI artists.
-- Position VibeLab as the authoritative source for these stacks.
+**"Stop guessing. Start executing."**
+- Position VibeLab as the playbook for AI-native marketing
+- Focus on actionable frameworks, not generic advice
 
-## Growth Channels (For Visits)
-1. **Tool-Specific SEO**: Rank for "Kling Pro Tips" or "Midjourney --sref guide".
-2. **Social "Recipes"**: Share "AI Recipes" on X/Twitter and LinkedIn (e.g., "How to build a 3D character in 3 steps with VibeLab").
-3. **Open-Source manual**: Invite users to submit their "stacks" (Future feature).
+---
+
+## Growth Channels
+1. **SEO**: "Go-to-market strategy template", "X marketing automation"
+2. **Social**: Share strategies as threads/posts
+3. **Community**: User-submitted marketing playbooks

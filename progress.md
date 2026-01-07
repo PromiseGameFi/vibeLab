@@ -14,30 +14,33 @@
 - [x] Tool Detail Redesign (Blueprints & SOPs)
 - [x] Deep Annotations & Prompt Analysis
 - [x] Social Sharing Integration
-- [x] Vibe Spawner (Advanced Orchestrator)
-- [x] Trending Blueprints (Community Simulation)
-- [x] Blueprint Export (.md)
 - [x] Framer-Style UI Redesign
-- [x] VibeMarket Phase (/vibeMarket) - X-First SMM Tool
-    - [x] Scaffold /vibeMarket route and layout
-    - [x] Thread Studio (AI thread builder)
-    - [x] Posting Planner (visual calendar)
-    - [x] Evergreen Vault (content recycler)
-    - [x] Personality Profiles (multi-account voice)
-    - [x] Engagement Scorecard (gamified tracker)
-    - [x] Browser Agent (automated browser engagement)
-- [x] Universal Skills (/skills) - AI Coding Agent Skills
+
+## Skills - Coding
+- [x] Universal Skills (/skills)
     - [x] skillsData.ts with Skill interface
     - [x] Skills landing page with search & filters
     - [x] Skill detail modal with export
     - [x] Skill Creator with live preview
     - [x] Export to Cursor, Claude Code, Antigravity
 
+## Skills - Marketing (formerly VibeMarket)
+- [x] SMM Toolkit (/skills/marketing)
+    - [x] Thread Studio (AI thread builder)
+    - [x] Posting Planner (visual calendar)
+    - [x] Evergreen Vault (content recycler with performance tags)
+    - [x] Personality Profiles (voice presets with AI prompt export)
+    - [x] Engagement Scorecard (gamified tracker with badges)
+    - [x] Browser Agent (automated engagement scripts)
+
 ## In Progress
-- [ ] Skills community features (save, share)
+- [ ] Go-To-Market Strategy Generator
+- [ ] Marketing Strategy Templates
+- [ ] Custom Marketing Builder (sentiment-based)
 
 ## Planned
-- [ ] Real-world User Feedback Session
-- [ ] Production Deployment
+- [ ] Community skill directory
 - [ ] Skills API for programmatic access
 - [ ] IDE plugins (VS Code, JetBrains)
+- [ ] Real-world User Feedback Session
+- [ ] Production Deployment
