@@ -77,25 +77,25 @@ export default function ProfilesPage() {
     return (
         <div className="max-w-4xl mx-auto px-6 pb-24">
             {/* Header */}
-            <div className="flex items-center justify-between mb-12">
+            <div className="flex items-center justify-between mb-10">
                 <Link
                     href="/vibeMarket"
-                    className="inline-flex items-center gap-2 text-white/40 hover:text-white transition-colors group"
+                    className="inline-flex items-center gap-2 text-[var(--foreground-secondary)] hover:text-[var(--foreground)] transition-colors"
                 >
-                    <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                    <ArrowLeft className="w-4 h-4" />
                     Back to VibeMarket
                 </Link>
             </div>
 
             {/* Title */}
-            <header className="mb-12">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-2xl bg-accent-secondary/20 flex items-center justify-center text-accent-secondary">
-                        <Users className="w-6 h-6" />
+            <header className="mb-10">
+                <div className="flex items-center gap-3 mb-2">
+                    <div className="w-12 h-12 rounded-xl bg-[var(--accent-secondary)] bg-opacity-10 flex items-center justify-center">
+                        <Users className="w-6 h-6 text-[var(--accent-secondary)]" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-black">Personality Profiles</h1>
-                        <p className="text-white/40 text-sm">Switch voice presets for multi-account management</p>
+                        <h1 className="text-2xl font-bold text-[var(--foreground)]">Personality Profiles</h1>
+                        <p className="text-[var(--foreground-secondary)] text-sm">Switch voice presets for multi-account management</p>
                     </div>
                 </div>
             </header>
@@ -103,12 +103,12 @@ export default function ProfilesPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Profile List */}
                 <div className="lg:col-span-1">
-                    <div className="vibe-glass rounded-3xl p-6 border border-white/5">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-sm font-bold text-white/40 uppercase tracking-widest">Profiles</h3>
+                    <div className="vibe-card p-5">
+                        <div className="flex items-center justify-between mb-5">
+                            <h3 className="text-sm font-semibold text-[var(--foreground-secondary)] uppercase tracking-wider">Profiles</h3>
                             <button
                                 onClick={() => setIsCreating(true)}
-                                className="p-2 rounded-lg bg-accent-secondary/20 text-accent-secondary hover:bg-accent-secondary hover:text-white transition-all"
+                                className="p-2 rounded-lg bg-[var(--accent-secondary)] text-white hover:opacity-90 transition-all"
                             >
                                 <Plus className="w-4 h-4" />
                             </button>
@@ -120,22 +120,22 @@ export default function ProfilesPage() {
                                     key={profile.id}
                                     onClick={() => setActiveProfile(profile.id)}
                                     className={`w-full p-4 rounded-xl text-left transition-all flex items-center justify-between ${activeProfile === profile.id
-                                            ? 'bg-accent-secondary/20 border border-accent-secondary/30'
-                                            : 'bg-white/[0.02] border border-white/5 hover:bg-white/5'
+                                            ? 'bg-[var(--accent-secondary)] bg-opacity-10 border border-[var(--accent-secondary)] border-opacity-30'
+                                            : 'bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--border-hover)]'
                                         }`}
                                 >
                                     <div>
-                                        <p className="font-bold">{profile.name}</p>
-                                        <p className="text-xs text-white/40">{profile.tone}</p>
+                                        <p className="font-semibold text-[var(--foreground)]">{profile.name}</p>
+                                        <p className="text-xs text-[var(--foreground-secondary)]">{profile.tone}</p>
                                     </div>
                                     {activeProfile === profile.id && (
-                                        <Check className="w-4 h-4 text-accent-secondary" />
+                                        <Check className="w-4 h-4 text-[var(--accent-secondary)]" />
                                     )}
                                 </button>
                             ))}
 
                             {profiles.length === 0 && !isCreating && (
-                                <p className="text-white/20 text-sm text-center py-4">No profiles yet</p>
+                                <p className="text-[var(--foreground-secondary)] text-sm text-center py-4">No profiles yet</p>
                             )}
                         </div>
                     </div>
@@ -144,31 +144,31 @@ export default function ProfilesPage() {
                 {/* Profile Editor */}
                 <div className="lg:col-span-2">
                     {isCreating ? (
-                        <div className="vibe-glass rounded-3xl p-8 border border-white/5">
-                            <h2 className="text-xl font-bold mb-6">Create New Profile</h2>
+                        <div className="vibe-card p-6">
+                            <h2 className="text-lg font-bold text-[var(--foreground)] mb-6">Create New Profile</h2>
 
                             <div className="space-y-6">
                                 <div>
-                                    <label className="text-sm font-bold text-white/40 mb-2 block">Profile Name</label>
+                                    <label className="text-sm font-semibold text-[var(--foreground-secondary)] mb-2 block">Profile Name</label>
                                     <input
                                         type="text"
                                         value={newProfile.name}
                                         onChange={(e) => setNewProfile({ ...newProfile, name: e.target.value })}
-                                        placeholder="e.g., Personal Brand, Side Project, Anonymous"
-                                        className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-white placeholder:text-white/20 outline-none focus:border-accent-secondary/30"
+                                        placeholder="e.g., Personal Brand, Side Project"
+                                        className="vibe-input w-full"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="text-sm font-bold text-white/40 mb-2 block">Tone</label>
+                                    <label className="text-sm font-semibold text-[var(--foreground-secondary)] mb-2 block">Tone</label>
                                     <div className="flex flex-wrap gap-2">
                                         {toneOptions.map(tone => (
                                             <button
                                                 key={tone}
                                                 onClick={() => setNewProfile({ ...newProfile, tone })}
                                                 className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${newProfile.tone === tone
-                                                        ? 'bg-accent-primary text-white'
-                                                        : 'bg-white/5 text-white/60 hover:bg-white/10'
+                                                        ? 'bg-[var(--accent-primary)] text-white'
+                                                        : 'bg-[var(--background-secondary)] text-[var(--foreground-secondary)] hover:bg-[var(--border)]'
                                                     }`}
                                             >
                                                 {tone}
@@ -178,15 +178,15 @@ export default function ProfilesPage() {
                                 </div>
 
                                 <div>
-                                    <label className="text-sm font-bold text-white/40 mb-2 block">Emoji Style</label>
+                                    <label className="text-sm font-semibold text-[var(--foreground-secondary)] mb-2 block">Emoji Style</label>
                                     <div className="flex gap-2">
                                         {(["none", "minimal", "heavy"] as const).map(style => (
                                             <button
                                                 key={style}
                                                 onClick={() => setNewProfile({ ...newProfile, emojiStyle: style })}
                                                 className={`px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${newProfile.emojiStyle === style
-                                                        ? 'bg-accent-secondary text-white'
-                                                        : 'bg-white/5 text-white/60 hover:bg-white/10'
+                                                        ? 'bg-[var(--accent-secondary)] text-white'
+                                                        : 'bg-[var(--background-secondary)] text-[var(--foreground-secondary)] hover:bg-[var(--border)]'
                                                     }`}
                                             >
                                                 <Smile className="w-4 h-4" />
@@ -199,14 +199,14 @@ export default function ProfilesPage() {
                                 <div className="flex gap-4">
                                     <button
                                         onClick={() => setIsCreating(false)}
-                                        className="flex-1 py-3 rounded-xl bg-white/5 text-white/60 font-bold hover:bg-white/10 transition-all"
+                                        className="vibe-btn-secondary flex-1"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         onClick={createProfile}
                                         disabled={!newProfile.name?.trim()}
-                                        className="flex-1 py-3 rounded-xl bg-accent-secondary text-white font-bold hover:bg-accent-secondary/80 transition-all disabled:opacity-50"
+                                        className="vibe-btn-primary flex-1 disabled:opacity-50"
                                     >
                                         Create Profile
                                     </button>
@@ -214,38 +214,38 @@ export default function ProfilesPage() {
                             </div>
                         </div>
                     ) : active ? (
-                        <div className="vibe-glass rounded-3xl p-8 border border-white/5">
-                            <div className="flex items-center justify-between mb-8">
-                                <h2 className="text-xl font-bold">{active.name}</h2>
+                        <div className="vibe-card p-6">
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-lg font-bold text-[var(--foreground)]">{active.name}</h2>
                                 <button
                                     onClick={() => deleteProfile(active.id)}
-                                    className="p-2 rounded-lg text-white/20 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                                    className="p-2 rounded-lg text-[var(--foreground-secondary)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
                                 >
                                     <Trash2 className="w-4 h-4" />
                                 </button>
                             </div>
 
                             <div className="grid grid-cols-3 gap-4">
-                                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
-                                    <MessageSquare className="w-5 h-5 text-white/20 mb-2" />
-                                    <p className="text-sm font-bold">{active.tone}</p>
-                                    <p className="text-xs text-white/40">Tone</p>
+                                <div className="p-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)]">
+                                    <MessageSquare className="w-5 h-5 text-[var(--foreground-secondary)] mb-2" />
+                                    <p className="text-sm font-semibold text-[var(--foreground)]">{active.tone}</p>
+                                    <p className="text-xs text-[var(--foreground-secondary)]">Tone</p>
                                 </div>
-                                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
-                                    <Smile className="w-5 h-5 text-white/20 mb-2" />
-                                    <p className="text-sm font-bold">{active.emojiStyle}</p>
-                                    <p className="text-xs text-white/40">Emoji Style</p>
+                                <div className="p-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)]">
+                                    <Smile className="w-5 h-5 text-[var(--foreground-secondary)] mb-2" />
+                                    <p className="text-sm font-semibold text-[var(--foreground)]">{active.emojiStyle}</p>
+                                    <p className="text-xs text-[var(--foreground-secondary)]">Emoji Style</p>
                                 </div>
-                                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
-                                    <Hash className="w-5 h-5 text-white/20 mb-2" />
-                                    <p className="text-sm font-bold">{active.maxLength}</p>
-                                    <p className="text-xs text-white/40">Max Length</p>
+                                <div className="p-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)]">
+                                    <Hash className="w-5 h-5 text-[var(--foreground-secondary)] mb-2" />
+                                    <p className="text-sm font-semibold text-[var(--foreground)]">{active.maxLength}</p>
+                                    <p className="text-xs text-[var(--foreground-secondary)]">Max Length</p>
                                 </div>
                             </div>
                         </div>
                     ) : (
-                        <div className="vibe-glass rounded-3xl p-8 border border-white/5 text-center text-white/20">
-                            <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <div className="vibe-card p-6 text-center text-[var(--foreground-secondary)]">
+                            <Users className="w-12 h-12 mx-auto mb-4 opacity-30" />
                             <p>Create a profile to get started</p>
                         </div>
                     )}

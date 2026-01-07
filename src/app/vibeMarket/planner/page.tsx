@@ -50,7 +50,6 @@ export default function PlannerPage() {
         setPosts(posts.filter(p => p.id !== id));
     };
 
-    // Generate calendar days for current month
     const today = new Date();
     const currentMonth = today.toLocaleString('default', { month: 'long', year: 'numeric' });
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
@@ -67,25 +66,25 @@ export default function PlannerPage() {
     return (
         <div className="max-w-6xl mx-auto px-6 pb-24">
             {/* Header */}
-            <div className="flex items-center justify-between mb-12">
+            <div className="flex items-center justify-between mb-10">
                 <Link
                     href="/vibeMarket"
-                    className="inline-flex items-center gap-2 text-white/40 hover:text-white transition-colors group"
+                    className="inline-flex items-center gap-2 text-[var(--foreground-secondary)] hover:text-[var(--foreground)] transition-colors"
                 >
-                    <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                    <ArrowLeft className="w-4 h-4" />
                     Back to VibeMarket
                 </Link>
             </div>
 
             {/* Title */}
-            <header className="mb-12">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-2xl bg-accent-secondary/20 flex items-center justify-center text-accent-secondary">
-                        <CalendarIcon className="w-6 h-6" />
+            <header className="mb-10">
+                <div className="flex items-center gap-3 mb-2">
+                    <div className="w-12 h-12 rounded-xl bg-[var(--accent-secondary)] bg-opacity-10 flex items-center justify-center">
+                        <CalendarIcon className="w-6 h-6 text-[var(--accent-secondary)]" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-black">Posting Planner</h1>
-                        <p className="text-white/40 text-sm">Visual calendar with best-time recommendations</p>
+                        <h1 className="text-2xl font-bold text-[var(--foreground)]">Posting Planner</h1>
+                        <p className="text-[var(--foreground-secondary)] text-sm">Visual calendar with best-time recommendations</p>
                     </div>
                 </div>
             </header>
@@ -93,29 +92,27 @@ export default function PlannerPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Calendar */}
                 <div className="lg:col-span-2">
-                    <div className="vibe-glass rounded-3xl p-8 border border-white/5">
-                        <div className="flex items-center justify-between mb-8">
-                            <h2 className="text-xl font-bold">{currentMonth}</h2>
+                    <div className="vibe-card p-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-lg font-bold text-[var(--foreground)]">{currentMonth}</h2>
                             <div className="flex items-center gap-2">
-                                <button className="p-2 rounded-lg bg-white/5 text-white/40 hover:text-white transition-colors">
+                                <button className="p-2 rounded-lg bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground-secondary)] hover:border-[var(--border-hover)]">
                                     <ChevronLeft className="w-4 h-4" />
                                 </button>
-                                <button className="p-2 rounded-lg bg-white/5 text-white/40 hover:text-white transition-colors">
+                                <button className="p-2 rounded-lg bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--foreground-secondary)] hover:border-[var(--border-hover)]">
                                     <ChevronRight className="w-4 h-4" />
                                 </button>
                             </div>
                         </div>
 
-                        {/* Day Headers */}
                         <div className="grid grid-cols-7 gap-2 mb-4">
                             {daysOfWeek.map(day => (
-                                <div key={day} className="text-center text-xs font-bold text-white/30 uppercase">
+                                <div key={day} className="text-center text-xs font-semibold text-[var(--foreground-secondary)] uppercase">
                                     {day}
                                 </div>
                             ))}
                         </div>
 
-                        {/* Calendar Grid */}
                         <div className="grid grid-cols-7 gap-2">
                             {calendarDays.map((day, i) => {
                                 const dateStr = day ? `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}` : '';
@@ -130,13 +127,13 @@ export default function PlannerPage() {
                                         className={`
                       aspect-square rounded-xl flex flex-col items-center justify-center text-sm font-medium transition-all
                       ${!day ? 'opacity-0 pointer-events-none' : ''}
-                      ${isToday ? 'bg-accent-primary/20 text-accent-primary border border-accent-primary/30' : 'bg-white/[0.02] hover:bg-white/5'}
-                      ${selectedDate === dateStr ? 'ring-2 ring-accent-secondary' : ''}
+                      ${isToday ? 'bg-[var(--accent-primary)] text-white' : 'bg-[var(--background-secondary)] hover:bg-[var(--border)] text-[var(--foreground)]'}
+                      ${selectedDate === dateStr ? 'ring-2 ring-[var(--accent-secondary)]' : ''}
                     `}
                                     >
                                         {day}
                                         {hasPost && (
-                                            <div className="w-1.5 h-1.5 rounded-full bg-accent-secondary mt-1"></div>
+                                            <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-secondary)] mt-1"></div>
                                         )}
                                     </button>
                                 );
@@ -148,9 +145,9 @@ export default function PlannerPage() {
                 {/* Sidebar */}
                 <div className="space-y-6">
                     {/* Best Times */}
-                    <div className="vibe-glass rounded-3xl p-6 border border-white/5">
-                        <h3 className="text-sm font-bold text-white/40 uppercase tracking-widest mb-4 flex items-center gap-2">
-                            <Sparkles className="w-4 h-4 text-accent-primary" />
+                    <div className="vibe-card p-5">
+                        <h3 className="text-sm font-semibold text-[var(--foreground-secondary)] uppercase tracking-wider mb-4 flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-[var(--accent-primary)]" />
                             Best Times to Post
                         </h3>
                         <div className="space-y-3">
@@ -158,20 +155,20 @@ export default function PlannerPage() {
                                 <button
                                     key={i}
                                     onClick={() => setSelectedTime(slot.time.replace(' AM', ':00').replace(' PM', ':00').replace('12:00:00', '12:00'))}
-                                    className="w-full flex items-center justify-between p-3 rounded-xl bg-white/[0.02] hover:bg-white/5 transition-colors group"
+                                    className="w-full flex items-center justify-between p-3 rounded-xl bg-[var(--background-secondary)] hover:bg-[var(--border)] transition-colors"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <Clock className="w-4 h-4 text-white/20 group-hover:text-accent-secondary transition-colors" />
-                                        <span className="text-sm font-medium">{slot.time}</span>
+                                        <Clock className="w-4 h-4 text-[var(--foreground-secondary)]" />
+                                        <span className="text-sm font-medium text-[var(--foreground)]">{slot.time}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <div className="w-12 h-2 rounded-full bg-white/10 overflow-hidden">
+                                        <div className="w-12 h-2 rounded-full bg-[var(--border)] overflow-hidden">
                                             <div
-                                                className="h-full bg-accent-secondary"
+                                                className="h-full bg-[var(--accent-primary)]"
                                                 style={{ width: `${slot.score}%` }}
                                             ></div>
                                         </div>
-                                        <span className="text-xs text-white/40">{slot.score}%</span>
+                                        <span className="text-xs text-[var(--foreground-secondary)]">{slot.score}%</span>
                                     </div>
                                 </button>
                             ))}
@@ -179,34 +176,34 @@ export default function PlannerPage() {
                     </div>
 
                     {/* Quick Add */}
-                    <div className="vibe-glass rounded-3xl p-6 border border-white/5">
-                        <h3 className="text-sm font-bold text-white/40 uppercase tracking-widest mb-4">
+                    <div className="vibe-card p-5">
+                        <h3 className="text-sm font-semibold text-[var(--foreground-secondary)] uppercase tracking-wider mb-4">
                             Quick Schedule
                         </h3>
                         <textarea
                             value={newPost}
                             onChange={(e) => setNewPost(e.target.value)}
                             placeholder="What do you want to post?"
-                            className="w-full bg-white/[0.02] border border-white/5 rounded-xl p-4 text-sm text-white placeholder:text-white/20 resize-none min-h-[100px] outline-none focus:border-accent-secondary/30 transition-colors mb-4"
+                            className="vibe-input w-full resize-none min-h-[100px] mb-4"
                         />
                         <div className="flex items-center gap-2 mb-4">
                             <input
                                 type="date"
                                 value={selectedDate}
                                 onChange={(e) => setSelectedDate(e.target.value)}
-                                className="flex-1 bg-white/[0.02] border border-white/5 rounded-xl px-4 py-2 text-sm text-white outline-none"
+                                className="vibe-input flex-1"
                             />
                             <input
                                 type="time"
                                 value={selectedTime}
                                 onChange={(e) => setSelectedTime(e.target.value)}
-                                className="flex-1 bg-white/[0.02] border border-white/5 rounded-xl px-4 py-2 text-sm text-white outline-none"
+                                className="vibe-input flex-1"
                             />
                         </div>
                         <button
                             onClick={addPost}
                             disabled={!newPost.trim()}
-                            className="w-full py-3 rounded-xl bg-accent-secondary/20 border border-accent-secondary/30 text-accent-secondary font-bold text-sm hover:bg-accent-secondary hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="vibe-btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50"
                         >
                             <Plus className="w-4 h-4" />
                             Schedule Post
@@ -217,21 +214,21 @@ export default function PlannerPage() {
 
             {/* Scheduled Posts */}
             {posts.length > 0 && (
-                <section className="mt-12">
-                    <h2 className="text-xl font-bold mb-6">Scheduled Queue ({posts.length})</h2>
+                <section className="mt-10">
+                    <h2 className="text-lg font-bold text-[var(--foreground)] mb-6">Scheduled Queue ({posts.length})</h2>
                     <div className="space-y-4">
                         {posts.sort((a, b) => new Date(a.date + 'T' + a.time).getTime() - new Date(b.date + 'T' + b.time).getTime()).map(post => (
-                            <div key={post.id} className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 flex items-start justify-between gap-4">
+                            <div key={post.id} className="vibe-card p-5 flex items-start justify-between gap-4">
                                 <div className="flex-1">
-                                    <p className="text-white/80 mb-2">{post.content}</p>
-                                    <div className="flex items-center gap-4 text-xs text-white/40">
+                                    <p className="text-[var(--foreground)] mb-2">{post.content}</p>
+                                    <div className="flex items-center gap-4 text-xs text-[var(--foreground-secondary)]">
                                         <span>{new Date(post.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
                                         <span>{post.time}</span>
                                     </div>
                                 </div>
                                 <button
                                     onClick={() => removePost(post.id)}
-                                    className="p-2 rounded-lg text-white/20 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                                    className="p-2 rounded-lg text-[var(--foreground-secondary)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
                                 >
                                     <Trash2 className="w-4 h-4" />
                                 </button>

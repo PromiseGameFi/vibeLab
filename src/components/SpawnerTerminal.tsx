@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Terminal, Sparkles, ChevronRight, Binary, Zap, Cpu } from "lucide-react";
+import { Sparkles, Zap, ArrowRight } from "lucide-react";
 
 interface SpawnerTerminalProps {
     onSpawn: (intent: string) => void;
@@ -14,7 +14,7 @@ export default function SpawnerTerminal({ onSpawn }: SpawnerTerminalProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const addLog = (msg: string) => {
-        setLogs((prev) => [...prev, `> ${msg}`]);
+        setLogs((prev) => [...prev, msg]);
     };
 
     useEffect(() => {
@@ -29,20 +29,17 @@ export default function SpawnerTerminal({ onSpawn }: SpawnerTerminalProps) {
 
         setIsSpawning(true);
         setLogs([]);
-        addLog(`Initializing Vibe Scouter...`);
+        addLog("Initializing Vibe Scouter...");
 
-        // Simulations
         const steps = [
             "Analyzing project intent...",
             "Mapping tool dependencies...",
-            "Calculating optimal P-parameters...",
             "Fetching community blueprints...",
-            "Optimizing synergy coefficients...",
-            "STACK READY TO SPAWN."
+            "Stack ready."
         ];
 
         for (const step of steps) {
-            await new Promise(r => setTimeout(r, 600 + Math.random() * 400));
+            await new Promise(r => setTimeout(r, 500 + Math.random() * 300));
             addLog(step);
         }
 
@@ -51,83 +48,71 @@ export default function SpawnerTerminal({ onSpawn }: SpawnerTerminalProps) {
     };
 
     return (
-        <div className="w-full max-w-3xl mx-auto relative group">
-            {/* Glow Effect */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-accent-primary via-accent-secondary to-accent-primary rounded-2xl blur-xl opacity-20 group-hover:opacity-40 transition duration-1000 animate-pulse"></div>
-
-            <div className="relative vibe-glass rounded-2xl border border-white/10 overflow-hidden bg-black/60 shadow-2xl">
-                {/* Terminal Header */}
-                <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/5">
+        <div className="w-full max-w-2xl mx-auto">
+            <div className="card overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--border)]">
                     <div className="flex gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-red-500/50"></div>
-                        <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/50"></div>
-                        <div className="w-2.5 h-2.5 rounded-full bg-green-500/50"></div>
+                        <div className="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
+                        <div className="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
+                        <div className="w-3 h-3 rounded-full bg-[#27ca40]"></div>
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">
-                        <Binary className="w-3 h-3" />
-                        Vibe Spawner v2.0
-                    </div>
-                    <div className="w-12"></div>
+                    <span className="text-xs text-[var(--foreground-muted)] ml-2">Vibe Spawner</span>
                 </div>
 
-                {/* Terminal Body */}
+                {/* Body */}
                 <div
                     ref={scrollRef}
-                    className="h-48 overflow-y-auto px-6 py-4 font-mono text-sm space-y-1.5 scrollbar-hide"
+                    className="h-32 overflow-y-auto p-4 font-mono text-sm space-y-1"
                 >
                     {logs.length === 0 && !input && (
-                        <div className="text-white/20 flex flex-col gap-2 pt-2">
-                            <p className="flex items-center gap-2 italic">
-                                <Sparkles className="w-3 h-3" />
-                                Input your high-level goal to spawn a custom AI tool stack...
-                            </p>
-                            <p className="text-[10px] opacity-50">e.g. "Build a cinematic 3D game ad with voiceover" or "Rapidly prototype a React web app with deep auth"</p>
+                        <div className="text-[var(--foreground-muted)]">
+                            <span className="flex items-center gap-2">
+                                <Sparkles className="w-4 h-4 text-[var(--accent)]" />
+                                Describe your project to generate a blueprint...
+                            </span>
                         </div>
                     )}
                     {logs.map((log, i) => (
                         <div key={i} className={`
-              ${log.includes("INITIALIZING") ? "text-accent-primary font-bold" : ""}
-              ${log.includes("STACK READY") ? "text-accent-secondary font-black scale-105" : "text-white/40"}
-              transition-all duration-300
-            `}>
-                            {log}
+                            ${log.includes("ready") ? "text-[var(--accent)] font-semibold" : "text-[var(--foreground-secondary)]"}
+                        `}>
+                            → {log}
                         </div>
                     ))}
                 </div>
 
-                {/* Console Input */}
-                <form onSubmit={handleSubmit} className="p-4 bg-white/[0.02] border-t border-white/5 flex items-center gap-4">
-                    <ChevronRight className={`w-5 h-5 ${isSpawning ? "text-white/10 animate-pulse" : "text-accent-primary"}`} />
+                {/* Input */}
+                <form onSubmit={handleSubmit} className="p-4 border-t border-[var(--border)] flex gap-3">
                     <input
                         autoFocus
                         type="text"
                         disabled={isSpawning}
-                        placeholder={isSpawning ? "Processing intentions..." : "EXECUTE INTENT_"}
-                        className="flex-1 bg-transparent border-none outline-none text-white font-mono placeholder:text-white/10 disabled:opacity-50"
+                        placeholder="Build a cinematic 3D game ad..."
+                        className="input flex-1"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                     />
                     <button
                         type="submit"
                         disabled={isSpawning || !input.trim()}
-                        className="p-2 rounded-lg bg-accent-primary/10 border border-accent-primary/20 text-accent-primary hover:bg-accent-primary hover:text-white transition-all disabled:opacity-0"
+                        className="btn-primary disabled:opacity-40"
                     >
                         <Zap className="w-4 h-4" />
+                        Spawn
                     </button>
                 </form>
             </div>
 
-            {/* Decorative Badges */}
-            <div className="flex justify-center gap-8 mt-6 overflow-hidden">
-                <div className="flex items-center gap-2 text-[10px] font-bold text-white/10 uppercase tracking-widest whitespace-nowrap">
-                    <Cpu className="w-3 h-3" />
-                    Multi-Model Agnostic
-                </div>
-                <div className="h-4 w-[1px] bg-white/5"></div>
-                <div className="flex items-center gap-2 text-[10px] font-bold text-white/10 uppercase tracking-widest whitespace-nowrap">
+            {/* Feature Pills */}
+            <div className="flex justify-center gap-4 mt-6">
+                <span className="badge">
                     <Zap className="w-3 h-3" />
                     Instant Blueprinting
-                </div>
+                </span>
+                <span className="badge">
+                    Multi-Model Support
+                </span>
             </div>
         </div>
     );
