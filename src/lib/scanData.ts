@@ -1,7 +1,7 @@
 // Security Scanner Types and Rules
 export interface ScanResult {
     id: string;
-    scanner: 'semgrep' | 'trivy' | 'gitleaks' | 'npm-audit';
+    scanner: 'vibelab-patterns' | 'osv-api';
     severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
     title: string;
     description: string;
@@ -12,6 +12,11 @@ export interface ScanResult {
     cwe?: string;
     owasp?: string;
     fixPrompt?: string;
+    category?: string;
+    package?: string;
+    version?: string;
+    fixedVersion?: string;
+    cve?: string;
 }
 
 export interface ScanSummary {
@@ -22,10 +27,8 @@ export interface ScanSummary {
     low: number;
     info: number;
     scanners: {
-        semgrep: number;
-        trivy: number;
-        gitleaks: number;
-        'npm-audit': number;
+        'vibelab-patterns': number;
+        'osv-api': number;
     };
 }
 
@@ -52,25 +55,15 @@ export const severityConfig = {
 
 // Scanner descriptions
 export const scannerInfo = {
-    semgrep: {
-        name: 'Semgrep',
-        description: 'Static Application Security Testing (SAST)',
+    'vibelab-patterns': {
+        name: 'VibeLab Patterns',
+        description: '100+ Security Patterns (Secrets, SQLi, XSS, etc.)',
         icon: '🔍',
     },
-    trivy: {
-        name: 'Trivy',
-        description: 'Dependency & Container Vulnerability Scanner',
+    'osv-api': {
+        name: 'OSV API',
+        description: 'Open Source Vulnerabilities (40,000+ CVEs)',
         icon: '📦',
-    },
-    gitleaks: {
-        name: 'Gitleaks',
-        description: 'Secret & Credential Detection',
-        icon: '🔐',
-    },
-    'npm-audit': {
-        name: 'npm audit',
-        description: 'JavaScript Dependency Vulnerabilities',
-        icon: '📋',
     },
 };
 
