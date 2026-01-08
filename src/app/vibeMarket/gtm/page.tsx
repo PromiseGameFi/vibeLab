@@ -1,13 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
     ArrowLeft, Rocket, Target, Users, Megaphone, Calendar, TrendingUp,
     Copy, Check, Download, Sparkles, ChevronRight, Loader2, Wand2
 } from "lucide-react";
-import { generateWithGemini, GTM_SYSTEM_PROMPT, parseJsonResponse, hasApiKey } from "@/lib/gemini";
-import ApiKeyInput from "@/components/ApiKeyInput";
 
 interface GTMStrategy {
     positioning: string;
@@ -53,14 +51,8 @@ export default function GTMPage() {
     const [copied, setCopied] = useState(false);
 
     // AI state
-    const [hasKey, setHasKey] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [aiError, setAiError] = useState<string | null>(null);
-    const [useAI, setUseAI] = useState(true);
-
-    useEffect(() => {
-        setHasKey(hasApiKey());
-    }, []);
 
     const toggleChannel = (id: string) => {
         setSelectedChannels(prev =>
@@ -77,22 +69,27 @@ export default function GTMPage() {
         );
 
         try {
-            const prompt = `Create a detailed go-to-market strategy for:
+            const response = await fetch("/api/generate/gtm", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    productName,
+                    productDescription,
+                    industry,
+                    targetAudience,
+                    channels: channelNames,
+                    budget,
+                    timeline
+                })
+            });
 
-**Product:** ${productName}
-**Description:** ${productDescription}
-**Industry:** ${industry}
-**Target Audience:** ${targetAudience}
-**Marketing Channels:** ${channelNames.join(", ")}
-**Budget:** ${budget === "bootstrap" ? "$0-$1k (organic focus)" : budget === "funded" ? "$1k-$10k (mix of organic and paid)" : "$10k+ (full-funnel campaigns)"}
-**Timeline:** ${timeline === "sprint" ? "2 weeks (quick launch)" : timeline === "quarter" ? "3 months (balanced approach)" : "12 months (comprehensive strategy)"}
+            const result = await response.json();
 
-Generate a comprehensive, actionable GTM strategy with specific tactics, realistic metrics, and a clear timeline.`;
+            if (!response.ok) {
+                throw new Error(result.error || "Failed to generate strategy");
+            }
 
-            const response = await generateWithGemini(prompt, GTM_SYSTEM_PROMPT);
-            const parsed = parseJsonResponse<GTMStrategy>(response);
-
-            setStrategy(parsed);
+            setStrategy(result.data);
             setStep(4);
         } catch (error) {
             console.error("AI generation error:", error);
@@ -152,14 +149,6 @@ Generate a comprehensive, actionable GTM strategy with specific tactics, realist
 
         setStrategy(generatedStrategy);
         setStep(4);
-    };
-
-    const handleGenerate = () => {
-        if (useAI && hasKey) {
-            generateWithAI();
-        } else {
-            generateBasicStrategy();
-        }
     };
 
     const exportStrategy = () => {
@@ -225,7 +214,10 @@ Generate a comprehensive, actionable GTM strategy with specific tactics, realist
                         <Rocket className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-semibold text-white">Go-To-Market Strategy</h1>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-2xl font-semibold text-white">Go-To-Market Strategy</h1>
+                            <span className="badge badge-accent text-xs">AI Powered</span>
+                        </div>
                         <p className="text-[var(--foreground-secondary)]">Generate a custom launch strategy for your product</p>
                     </div>
                 </div>
@@ -233,95 +225,69 @@ Generate a comprehensive, actionable GTM strategy with specific tactics, realist
 
             {/* Step 1: Product Info */}
             {step === 1 && (
-                <div className="space-y-6">
-                    {/* API Key Setup */}
-                    <div className="card p-6 border-2 border-[var(--accent)]/30 bg-[var(--accent)]/5">
-                        <div className="flex items-center gap-2 mb-4">
-                            <Wand2 className="w-5 h-5 text-[var(--accent)]" />
-                            <h2 className="font-semibold text-white">AI-Powered Generation</h2>
-                            <span className="badge badge-accent text-xs">Gemini</span>
+                <div className="card p-8">
+                    <h2 className="text-lg font-semibold text-white mb-6">Tell us about your product</h2>
+
+                    <div className="space-y-6">
+                        <div>
+                            <label className="text-sm text-[var(--foreground-secondary)] mb-2 block">Product Name *</label>
+                            <input
+                                type="text"
+                                value={productName}
+                                onChange={(e) => setProductName(e.target.value)}
+                                placeholder="e.g., VibeLab"
+                                className="input"
+                            />
                         </div>
-                        <ApiKeyInput onKeySet={() => setHasKey(true)} />
 
-                        {hasKey && (
-                            <div className="mt-4 flex items-center gap-3">
-                                <label className="flex items-center gap-2 text-sm text-[var(--foreground-secondary)] cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={useAI}
-                                        onChange={(e) => setUseAI(e.target.checked)}
-                                        className="w-4 h-4 rounded"
-                                    />
-                                    Use AI for more detailed, contextual strategies
-                                </label>
-                            </div>
-                        )}
-                    </div>
+                        <div>
+                            <label className="text-sm text-[var(--foreground-secondary)] mb-2 block">What does it do? *</label>
+                            <textarea
+                                value={productDescription}
+                                onChange={(e) => setProductDescription(e.target.value)}
+                                placeholder="e.g., Helps developers master AI tools and export coding skills..."
+                                className="input resize-none min-h-[100px]"
+                            />
+                        </div>
 
-                    <div className="card p-8">
-                        <h2 className="text-lg font-semibold text-white mb-6">Tell us about your product</h2>
-
-                        <div className="space-y-6">
-                            <div>
-                                <label className="text-sm text-[var(--foreground-secondary)] mb-2 block">Product Name *</label>
-                                <input
-                                    type="text"
-                                    value={productName}
-                                    onChange={(e) => setProductName(e.target.value)}
-                                    placeholder="e.g., VibeLab"
-                                    className="input"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="text-sm text-[var(--foreground-secondary)] mb-2 block">What does it do? *</label>
-                                <textarea
-                                    value={productDescription}
-                                    onChange={(e) => setProductDescription(e.target.value)}
-                                    placeholder="e.g., Helps developers master AI tools and export coding skills..."
-                                    className="input resize-none min-h-[100px]"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="text-sm text-[var(--foreground-secondary)] mb-3 block">Industry</label>
-                                <div className="flex flex-wrap gap-2">
-                                    {industryOptions.map(ind => (
-                                        <button
-                                            key={ind}
-                                            onClick={() => setIndustry(ind)}
-                                            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${industry === ind
-                                                ? 'bg-[var(--accent)] text-white'
-                                                : 'bg-[var(--background-card)] border border-[var(--border)] text-[var(--foreground-secondary)]'
-                                                }`}
-                                        >
-                                            {ind}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="text-sm text-[var(--foreground-secondary)] mb-2 block">Target Audience *</label>
-                                <input
-                                    type="text"
-                                    value={targetAudience}
-                                    onChange={(e) => setTargetAudience(e.target.value)}
-                                    placeholder="e.g., Indie developers, startup founders, AI enthusiasts"
-                                    className="input"
-                                />
+                        <div>
+                            <label className="text-sm text-[var(--foreground-secondary)] mb-3 block">Industry</label>
+                            <div className="flex flex-wrap gap-2">
+                                {industryOptions.map(ind => (
+                                    <button
+                                        key={ind}
+                                        onClick={() => setIndustry(ind)}
+                                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${industry === ind
+                                            ? 'bg-[var(--accent)] text-white'
+                                            : 'bg-[var(--background-card)] border border-[var(--border)] text-[var(--foreground-secondary)]'
+                                            }`}
+                                    >
+                                        {ind}
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
-                        <button
-                            onClick={() => setStep(2)}
-                            disabled={!productName || !productDescription || !targetAudience}
-                            className="btn-primary w-full mt-8 disabled:opacity-40"
-                        >
-                            Next: Choose Channels
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
+                        <div>
+                            <label className="text-sm text-[var(--foreground-secondary)] mb-2 block">Target Audience *</label>
+                            <input
+                                type="text"
+                                value={targetAudience}
+                                onChange={(e) => setTargetAudience(e.target.value)}
+                                placeholder="e.g., Indie developers, startup founders, AI enthusiasts"
+                                className="input"
+                            />
+                        </div>
                     </div>
+
+                    <button
+                        onClick={() => setStep(2)}
+                        disabled={!productName || !productDescription || !targetAudience}
+                        className="btn-primary w-full mt-8 disabled:opacity-40"
+                    >
+                        Next: Choose Channels
+                        <ChevronRight className="w-4 h-4" />
+                    </button>
                 </div>
             )}
 
@@ -428,7 +394,7 @@ Generate a comprehensive, actionable GTM strategy with specific tactics, realist
                             Back
                         </button>
                         <button
-                            onClick={handleGenerate}
+                            onClick={generateWithAI}
                             disabled={isGenerating}
                             className="btn-primary flex-1 disabled:opacity-40"
                         >
@@ -439,8 +405,8 @@ Generate a comprehensive, actionable GTM strategy with specific tactics, realist
                                 </>
                             ) : (
                                 <>
-                                    <Sparkles className="w-4 h-4" />
-                                    {useAI && hasKey ? "Generate with AI" : "Generate Strategy"}
+                                    <Wand2 className="w-4 h-4" />
+                                    Generate with AI
                                 </>
                             )}
                         </button>

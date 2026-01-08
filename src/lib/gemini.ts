@@ -1,53 +1,7 @@
-// Gemini AI utility for VibeLab
-// Users can provide their own API key (stored in localStorage)
-
+// Server-side Gemini API utility
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const STORAGE_KEY = "vibelab-gemini-key";
-
-export function getApiKey(): string | null {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(STORAGE_KEY);
-}
-
-export function setApiKey(key: string): void {
-    if (typeof window !== "undefined") {
-        localStorage.setItem(STORAGE_KEY, key);
-    }
-}
-
-export function clearApiKey(): void {
-    if (typeof window !== "undefined") {
-        localStorage.removeItem(STORAGE_KEY);
-    }
-}
-
-export function hasApiKey(): boolean {
-    return !!getApiKey();
-}
-
-export async function generateWithGemini(
-    prompt: string,
-    systemPrompt?: string
-): Promise<string> {
-    const apiKey = getApiKey();
-    if (!apiKey) {
-        throw new Error("No API key configured. Please add your Gemini API key.");
-    }
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-    const fullPrompt = systemPrompt
-        ? `${systemPrompt}\n\n${prompt}`
-        : prompt;
-
-    const result = await model.generateContent(fullPrompt);
-    const response = await result.response;
-    return response.text();
-}
-
-// Skill Generation Prompts
+// System prompts for different use cases
 export const SKILL_SYSTEM_PROMPT = `You are an expert developer creating coding skills for AI coding agents like Cursor, Claude Code, and Antigravity.
 
 Your task is to generate a comprehensive skill document with:
@@ -113,6 +67,29 @@ Output a comprehensive markdown document that includes:
 
 Make it practical, actionable, and tailored to their specific inputs.
 Use markdown formatting with headers, lists, and tables.`;
+
+// Server-side generation function
+export async function generateWithGemini(
+    prompt: string,
+    systemPrompt?: string
+): Promise<string> {
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+        throw new Error("GEMINI_API_KEY is not configured in environment variables");
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const fullPrompt = systemPrompt
+        ? `${systemPrompt}\n\n${prompt}`
+        : prompt;
+
+    const result = await model.generateContent(fullPrompt);
+    const response = await result.response;
+    return response.text();
+}
 
 // Helper function to parse JSON from AI response
 export function parseJsonResponse<T>(response: string): T {

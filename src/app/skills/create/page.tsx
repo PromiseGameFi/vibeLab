@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
     ArrowLeft, Plus, Trash2, Download, Copy, Check, Sparkles,
     Wand2, Loader2
 } from "lucide-react";
 import { skillCategories, agentFormats, exportToCursor, exportToClaudeCode, exportToAntigravity, Skill } from "@/lib/skillsData";
-import { generateWithGemini, SKILL_SYSTEM_PROMPT, parseJsonResponse, hasApiKey } from "@/lib/gemini";
-import ApiKeyInput from "@/components/ApiKeyInput";
 
 interface GeneratedSkill {
     name: string;
@@ -30,14 +28,9 @@ export default function CreateSkillPage() {
     const [copied, setCopied] = useState(false);
 
     // AI Generation state
-    const [hasKey, setHasKey] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [aiPrompt, setAiPrompt] = useState("");
     const [aiError, setAiError] = useState<string | null>(null);
-
-    useEffect(() => {
-        setHasKey(hasApiKey());
-    }, []);
 
     const toggleAgent = (agent: string) => {
         setAgents(prev =>
@@ -69,14 +62,22 @@ export default function CreateSkillPage() {
         setAiError(null);
 
         try {
-            const prompt = `Create a comprehensive coding skill for: ${aiPrompt}
+            const response = await fetch("/api/generate/skill", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    prompt: aiPrompt,
+                    category: skillCategories.find(c => c.id === category)?.name || category
+                })
+            });
 
-Category: ${skillCategories.find(c => c.id === category)?.name || category}
+            const result = await response.json();
 
-Generate a skill that will help AI coding agents write better code following best practices.`;
+            if (!response.ok) {
+                throw new Error(result.error || "Failed to generate skill");
+            }
 
-            const response = await generateWithGemini(prompt, SKILL_SYSTEM_PROMPT);
-            const parsed = parseJsonResponse<GeneratedSkill>(response);
+            const parsed = result.data as GeneratedSkill;
 
             // Apply generated content
             setName(parsed.name || aiPrompt);
@@ -172,42 +173,38 @@ Generate a skill that will help AI coding agents write better code following bes
                             <span className="badge badge-accent text-xs">Gemini</span>
                         </div>
 
-                        <ApiKeyInput onKeySet={() => setHasKey(true)} />
-
-                        {hasKey && (
-                            <div className="mt-4 space-y-3">
-                                <textarea
-                                    value={aiPrompt}
-                                    onChange={(e) => { setAiPrompt(e.target.value); setAiError(null); }}
-                                    placeholder="Describe the skill you want to create...
+                        <div className="space-y-3">
+                            <textarea
+                                value={aiPrompt}
+                                onChange={(e) => { setAiPrompt(e.target.value); setAiError(null); }}
+                                placeholder="Describe the skill you want to create...
 
 e.g., 'React performance optimization best practices' or 'Python async/await patterns'"
-                                    className="input resize-none min-h-[100px]"
-                                />
+                                className="input resize-none min-h-[100px]"
+                            />
 
-                                {aiError && (
-                                    <p className="text-sm text-red-400">{aiError}</p>
+                            {aiError && (
+                                <p className="text-sm text-red-400">{aiError}</p>
+                            )}
+
+                            <button
+                                onClick={generateWithAI}
+                                disabled={isGenerating || !aiPrompt.trim()}
+                                className="btn-primary w-full disabled:opacity-40"
+                            >
+                                {isGenerating ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Generating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Wand2 className="w-4 h-4" />
+                                        Generate Skill
+                                    </>
                                 )}
-
-                                <button
-                                    onClick={generateWithAI}
-                                    disabled={isGenerating || !aiPrompt.trim()}
-                                    className="btn-primary w-full disabled:opacity-40"
-                                >
-                                    {isGenerating ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                            Generating...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Wand2 className="w-4 h-4" />
-                                            Generate Skill
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        )}
+                            </button>
+                        </div>
                     </div>
 
                     {/* Basics */}

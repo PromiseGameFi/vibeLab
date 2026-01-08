@@ -1,13 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
     ArrowLeft, Copy, Check, Download, Sparkles, Palette,
     Target, Megaphone, DollarSign, Calendar, Wand2, Loader2
 } from "lucide-react";
-import { generateWithGemini, MARKETING_BUILDER_SYSTEM_PROMPT, hasApiKey } from "@/lib/gemini";
-import ApiKeyInput from "@/components/ApiKeyInput";
 
 interface BuilderConfig {
     sentiment: string;
@@ -71,14 +69,8 @@ export default function BuilderPage() {
     const [copied, setCopied] = useState(false);
 
     // AI state
-    const [hasKey, setHasKey] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
-    const [useAI, setUseAI] = useState(true);
     const [aiError, setAiError] = useState<string | null>(null);
-
-    useEffect(() => {
-        setHasKey(hasApiKey());
-    }, []);
 
     const toggleGoal = (id: string) => {
         setConfig(prev => ({
@@ -105,39 +97,31 @@ export default function BuilderPage() {
         setAiError(null);
 
         const sentiment = sentimentOptions.find(s => s.id === config.sentiment);
-        const goals = config.goals.map(g => goalOptions.find(go => go.id === g)?.name).join(", ");
-        const channels = config.channels.map(c => channelOptions.find(ch => ch.id === c)?.name).join(", ");
+        const goals = config.goals.map(g => goalOptions.find(go => go.id === g)?.name).filter(Boolean);
+        const channels = config.channels.map(c => channelOptions.find(ch => ch.id === c)?.name).filter(Boolean);
         const budgetInfo = budgetOptions.find(b => b.id === config.budget);
         const timelineInfo = timelineOptions.find(t => t.id === config.timeline);
 
         try {
-            const prompt = `Create a detailed, personalized marketing strategy with these specifications:
+            const response = await fetch("/api/generate/marketing", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    sentiment,
+                    goals,
+                    channels,
+                    budget: budgetInfo,
+                    timeline: timelineInfo
+                })
+            });
 
-**Brand Sentiment:** ${sentiment?.name} - ${sentiment?.desc}
-**Example Tone:** "${sentiment?.example}"
+            const result = await response.json();
 
-**Goals:** ${goals}
+            if (!response.ok) {
+                throw new Error(result.error || "Failed to generate strategy");
+            }
 
-**Marketing Channels:** ${channels}
-
-**Budget:** ${budgetInfo?.name} (${budgetInfo?.range}) - ${budgetInfo?.desc}
-
-**Timeline:** ${timelineInfo?.name} (${timelineInfo?.duration}) - ${timelineInfo?.desc}
-
-Generate a comprehensive, actionable marketing strategy in markdown format. Include:
-1. Brand voice guidelines with 3-5 do's and don'ts
-2. Specific tactics for each goal
-3. Channel-by-channel strategy with posting frequency
-4. Budget allocation percentages
-5. Detailed timeline with milestones
-6. Content pillars tailored to the sentiment
-7. Success metrics with realistic targets
-8. A next steps checklist
-
-Make it practical and immediately actionable. Use the brand sentiment consistently throughout.`;
-
-            const response = await generateWithGemini(prompt, MARKETING_BUILDER_SYSTEM_PROMPT);
-            setGenerated(response);
+            setGenerated(result.data);
         } catch (error) {
             console.error("AI generation error:", error);
             setAiError(error instanceof Error ? error.message : "Failed to generate strategy");
@@ -301,14 +285,6 @@ ${config.goals.map(g => {
         setGenerated(strategy);
     };
 
-    const handleGenerate = () => {
-        if (useAI && hasKey) {
-            generateWithAI();
-        } else {
-            generateBasicStrategy();
-        }
-    };
-
     const copyStrategy = () => {
         if (generated) {
             navigator.clipboard.writeText(generated);
@@ -346,7 +322,10 @@ ${config.goals.map(g => {
                         <Palette className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-semibold text-white">Custom Marketing Builder</h1>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-2xl font-semibold text-white">Custom Marketing Builder</h1>
+                            <span className="badge text-xs" style={{ background: 'rgba(236, 72, 153, 0.2)', color: 'rgb(236, 72, 153)' }}>AI Powered</span>
+                        </div>
                         <p className="text-[var(--foreground-secondary)]">Create a personalized strategy based on your brand sentiment</p>
                     </div>
                 </div>
@@ -355,30 +334,6 @@ ${config.goals.map(g => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Builder Form */}
                 <div className="space-y-6">
-                    {/* AI Setup */}
-                    <div className="card p-6 border-2 border-pink-500/30 bg-pink-500/5">
-                        <div className="flex items-center gap-2 mb-4">
-                            <Wand2 className="w-5 h-5 text-pink-500" />
-                            <h2 className="font-semibold text-white">AI-Powered Generation</h2>
-                            <span className="badge text-xs" style={{ background: 'rgba(236, 72, 153, 0.2)', color: 'rgb(236, 72, 153)' }}>Gemini</span>
-                        </div>
-                        <ApiKeyInput onKeySet={() => setHasKey(true)} />
-
-                        {hasKey && (
-                            <div className="mt-4 flex items-center gap-3">
-                                <label className="flex items-center gap-2 text-sm text-[var(--foreground-secondary)] cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={useAI}
-                                        onChange={(e) => setUseAI(e.target.checked)}
-                                        className="w-4 h-4 rounded"
-                                    />
-                                    Use AI for richer, more detailed strategies
-                                </label>
-                            </div>
-                        )}
-                    </div>
-
                     {/* Sentiment */}
                     <div className="card p-6">
                         <div className="flex items-center gap-2 mb-4">
@@ -507,7 +462,7 @@ ${config.goals.map(g => {
 
                     {/* Generate Button */}
                     <button
-                        onClick={handleGenerate}
+                        onClick={generateWithAI}
                         disabled={!isComplete || isGenerating}
                         className="btn-primary w-full disabled:opacity-40"
                     >
@@ -518,8 +473,8 @@ ${config.goals.map(g => {
                             </>
                         ) : (
                             <>
-                                <Sparkles className="w-4 h-4" />
-                                {useAI && hasKey ? "Generate with AI" : "Generate Custom Strategy"}
+                                <Wand2 className="w-4 h-4" />
+                                Generate with AI
                             </>
                         )}
                     </button>
