@@ -14,7 +14,7 @@ import {
 } from "@/lib/scanData";
 
 type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info';
-type Scanner = 'semgrep' | 'trivy' | 'gitleaks' | 'npm-audit';
+type Scanner = 'vibelab-patterns' | 'osv-api';
 
 interface ScanHistoryItem {
     id: string;
@@ -187,7 +187,7 @@ export default function ScanPage() {
                         <div>
                             <h1 className="text-3xl font-bold text-white">Security Scanner</h1>
                             <p className="text-[var(--foreground-secondary)]">
-                                2200+ security rules • 4 scanners • AI fix prompts
+                                100+ patterns • OSV API • 100% Free • Vercel Ready
                             </p>
                         </div>
                     </div>
