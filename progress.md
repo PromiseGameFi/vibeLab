@@ -33,6 +33,16 @@
     - [x] Engagement Scorecard (gamified tracker with badges)
     - [x] Browser Agent (automated engagement scripts)
 
+## Security Scanner
+- [x] Security Scanner (/scan)
+    - [x] Semgrep SAST integration
+    - [x] Trivy dependency scanning
+    - [x] Gitleaks secret detection
+    - [x] npm audit integration
+    - [x] AI fix prompt generation
+    - [x] Master prompt export
+    - [x] Cost estimation
+
 ## AI Integration
 - [x] Groq API Integration
     - [x] Server-side API routes (/api/generate/*)
