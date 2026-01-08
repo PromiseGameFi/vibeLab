@@ -1,0 +1,683 @@
+# Rust Security Rules (includes Solana smart contract patterns)
+rules:
+  # ============================================
+  # Command Injection
+  # ============================================
+
+  - id: rust-command-arg
+    pattern: Command::new($CMD).arg($ARG)
+    message: Rust command execution - validate arguments
+    languages: [rust]
+    severity: WARNING
+
+  - id: rust-command-shell
+    pattern: Command::new("sh").arg("-c").arg($CMD)
+    message: Rust shell command - command injection risk
+    languages: [rust]
+    severity: ERROR
+
+  - id: rust-command-cmd
+    pattern: Command::new("cmd").arg("/C").arg($CMD)
+    message: Rust Windows shell command - command injection risk
+    languages: [rust]
+    severity: ERROR
+
+  # ============================================
+  # SQL Injection
+  # ============================================
+
+  - id: rust-sql-format
+    pattern: format!("SELECT ... {} ...", $VAR)
+    message: Rust SQL with format! - SQL injection risk
+    languages: [rust]
+    severity: ERROR
+
+  - id: rust-sql-concat
+    pattern: '"SELECT ".to_string() + &$VAR'
+    message: Rust SQL concatenation - SQL injection risk
+    languages: [rust]
+    severity: ERROR
+
+  - id: rust-sqlx-query
+    pattern: sqlx::query($QUERY)
+    message: Rust SQLx query - use parameterized queries
+    languages: [rust]
+    severity: WARNING
+
+  # ============================================
+  # Unsafe Code
+  # ============================================
+
+  - id: rust-unsafe-block
+    pattern: 'unsafe { ... }'
+    message: Rust unsafe block - review carefully for memory safety
+    languages: [rust]
+    severity: WARNING
+
+  - id: rust-unsafe-fn
+    pattern: unsafe fn $NAME(...)
+    message: Rust unsafe function - review carefully
+    languages: [rust]
+    severity: WARNING
+
+  - id: rust-raw-pointer-deref
+    pattern: '*$PTR'
+    message: Rust raw pointer dereference - memory safety risk
+    languages: [rust]
+    severity: WARNING
+
+  - id: rust-transmute
+    pattern: std::mem::transmute(...)
+    message: Rust transmute - type safety bypass, use carefully
+    languages: [rust]
+    severity: WARNING
+
+  # ============================================
+  # Path Traversal
+  # ============================================
+
+  - id: rust-path-join-user
+    pattern: Path::new($BASE).join($USER_INPUT)
+    message: Rust path join with user input - traversal risk
+    languages: [rust]
+    severity: WARNING
+
+  - id: rust-file-open-user
+    pattern: File::open($USER_INPUT)
+    message: Rust file open with user input - traversal risk
+    languages: [rust]
+    severity: WARNING
+
+  - id: rust-fs-read-user
+    pattern: fs::read($USER_INPUT)
+    message: Rust fs::read with user input - traversal risk
+    languages: [rust]
+    severity: WARNING
+
+  # ============================================
+  # SSRF
+  # ============================================
+
+  - id: rust-reqwest-get-user
+    pattern: reqwest::get($USER_INPUT)
+    message: Rust reqwest with user URL - potential SSRF
+    languages: [rust]
+    severity: WARNING
+
+  # ============================================
+  # Weak Cryptography
+  # ============================================
+
+  - id: rust-md5
+    pattern: md5::compute(...)
+    message: Rust MD5 is weak - use SHA-256 or better
+    languages: [rust]
+    severity: WARNING
+
+  - id: rust-sha1
+    pattern: Sha1::new()
+    message: Rust SHA1 is weak - use SHA-256 or better
+    languages: [rust]
+    severity: WARNING
+
+  - id: rust-rand-thread
+    pattern: rand::thread_rng()
+    message: Rust thread_rng - use OsRng for cryptographic purposes
+    languages: [rust]
+    severity: INFO
+
+  # ============================================
+  # TLS/SSL Issues
+  # ============================================
+
+  - id: rust-danger-accept-invalid-certs
+    pattern: danger_accept_invalid_certs(true)
+    message: Rust TLS certificate validation disabled
+    languages: [rust]
+    severity: ERROR
+
+  - id: rust-danger-accept-invalid-hostnames
+    pattern: danger_accept_invalid_hostnames(true)
+    message: Rust TLS hostname verification disabled
+    languages: [rust]
+    severity: ERROR
+
+  # ============================================
+  # Deserialization
+  # ============================================
+
+  - id: rust-serde-deserialize-any
+    pattern: serde_json::from_str($INPUT)
+    message: Rust serde deserialization - validate untrusted input
+    languages: [rust]
+    severity: INFO
+
+  - id: rust-bincode-deserialize
+    pattern: bincode::deserialize($INPUT)
+    message: Rust bincode deserialization - validate untrusted input
+    languages: [rust]
+    severity: WARNING
+
+  # ============================================
+  # Panic/Unwrap Issues
+  # ============================================
+
+  - id: rust-unwrap
+    pattern: $RESULT.unwrap()
+    message: Rust unwrap() may panic - use proper error handling
+    languages: [rust]
+    severity: INFO
+
+  - id: rust-expect
+    pattern: $RESULT.expect($MSG)
+    message: Rust expect() may panic - use proper error handling
+    languages: [rust]
+    severity: INFO
+
+  # ============================================
+  # Hardcoded Credentials
+  # ============================================
+
+  - id: rust-hardcoded-password
+    pattern: 'let password = "..."'
+    message: Rust hardcoded password detected
+    languages: [rust]
+    severity: ERROR
+
+  - id: rust-hardcoded-secret
+    pattern: 'let secret = "..."'
+    message: Rust hardcoded secret detected
+    languages: [rust]
+    severity: ERROR
+
+  - id: rust-hardcoded-apikey
+    pattern: 'let api_key = "..."'
+    message: Rust hardcoded API key detected
+    languages: [rust]
+    severity: ERROR
+
+  - id: rust-const-password
+    pattern: 'const PASSWORD: &str = "..."'
+    message: Rust hardcoded password constant
+    languages: [rust]
+    severity: ERROR
+
+  # ============================================
+  # WebAssembly Specific
+  # ============================================
+
+  - id: rust-wasm-eval
+    pattern: js_sys::eval($CODE)
+    message: Rust WASM eval - code injection risk
+    languages: [rust]
+    severity: ERROR
+
+  # ============================================
+  # Regex DoS
+  # ============================================
+
+  - id: rust-regex-untrusted
+    pattern: Regex::new($USER_INPUT)
+    message: Rust regex from user input - ReDoS risk
+    languages: [rust]
+    severity: WARNING
+
+  # ============================================
+  # Solana Smart Contract Security
+  # ============================================
+
+  - id: solana-missing-signer-check
+    pattern: |
+      if !$ACCOUNT.is_signer {
+        ...
+      }
+    message: Solana account signer check - ensure all required signers are verified
+    languages: [rust]
+    severity: WARNING
+
+  - id: solana-missing-owner-check
+    pattern: |
+      if $ACCOUNT.owner != $PROGRAM_ID {
+        ...
+      }
+    message: Solana account owner check - verify account ownership
+    languages: [rust]
+    severity: WARNING
+
+  - id: solana-unchecked-account
+    pattern: next_account_info($ITER)
+    message: Solana next_account_info - ensure account validation follows
+    languages: [rust]
+    severity: INFO
+
+  - id: solana-arbitrary-cpi
+    pattern: invoke($INSTRUCTION, $ACCOUNTS)
+    message: Solana CPI - ensure program ID and accounts are validated
+    languages: [rust]
+    severity: WARNING
+
+  - id: solana-signed-invoke
+    pattern: invoke_signed($INSTRUCTION, $ACCOUNTS, $SEEDS)
+    message: Solana signed CPI - verify PDA seeds are correct
+    languages: [rust]
+    severity: WARNING
+
+  - id: solana-pda-bump-seed
+    pattern: Pubkey::find_program_address($SEEDS, $PROGRAM_ID)
+    message: Solana PDA creation - store and verify bump seed
+    languages: [rust]
+    severity: INFO
+
+  - id: solana-arithmetic-overflow
+    pattern: $A + $B
+    message: Solana arithmetic - use checked_add to prevent overflow
+    languages: [rust]
+    severity: INFO
+
+  - id: solana-checked-math
+    pattern: $A.checked_add($B)
+    message: Good - using checked arithmetic in Solana
+    languages: [rust]
+    severity: INFO
+
+  - id: solana-lamport-theft
+    pattern: '**$ACCOUNT.lamports.borrow_mut() = 0'
+    message: Solana lamport manipulation - ensure proper authorization
+    languages: [rust]
+    severity: ERROR
+
+  - id: solana-account-close
+    pattern: $ACCOUNT.assign(&system_program::ID)
+    message: Solana account closing - ensure funds are transferred first
+    languages: [rust]
+    severity: WARNING
+
+  - id: solana-reinitialization
+    pattern: |
+      if $ACCOUNT.is_initialized {
+        return Err(...);
+      }
+    message: Solana reinitialization check - prevent double-init attacks
+    languages: [rust]
+    severity: INFO
+
+  - id: solana-type-confusion
+    pattern: try_from_slice($DATA)
+    message: Solana deserialization - verify account discriminator first
+    languages: [rust]
+    severity: WARNING
+
+  - id: anchor-missing-constraint
+    pattern: '#[account(mut)]'
+    message: Anchor account - consider adding has_one or constraint checks
+    languages: [rust]
+    severity: INFO
+
+  - id: anchor-unchecked-account
+    pattern: 'UncheckedAccount'
+    message: Anchor UncheckedAccount - ensure manual validation is performed
+    languages: [rust]
+    severity: WARNING
+
+  - id: anchor-init-if-needed
+    pattern: '#[account(init_if_needed, ...)]'
+    message: Anchor init_if_needed - vulnerable to reinitialization attacks
+    languages: [rust]
+    severity: ERROR
+
+  - id: anchor-close-account
+    pattern: '#[account(close = $TARGET)]'
+    message: Anchor close - ensure account cannot be reopened in same tx
+    languages: [rust]
+    severity: WARNING
+
+  # ============================================
+  # Solana/Anchor - Paradigm CTF 2022 Patterns
+  # ============================================
+
+  # Challenge 1: Account Substitution / Missing PDA Validation
+  - id: anchor-mint-authority-only-check
+    message: "Mint authority check without address validation - attacker can substitute mints with same authority"
+    languages: [rust]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-287: Improper Authentication"
+      ctf: "Paradigm CTF 2022 - Hana Challenge 1"
+    pattern-regex: 'constraint\s*=\s*\w+\.mint_authority\s*==\s*COption::Some\([^)]+\)(?![^]]*seeds)'
+
+  - id: anchor-missing-address-constraint
+    message: "Mutable account without address or seeds constraint - account substitution vulnerability"
+    languages: [rust]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-287: Improper Authentication"
+      ctf: "Paradigm CTF 2022 - Hana Challenge 1"
+    pattern-regex: '#\[account\(\s*mut\s*(?:,[^)]*)?(?<!address\s*=\s*\w+)(?<!seeds\s*=)\)\]'
+
+  - id: anchor-voucher-mint-no-seeds
+    message: "Voucher/LP mint without PDA seed derivation - can be substituted with attacker-controlled mint"
+    languages: [rust]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-287: Improper Authentication"
+      ctf: "Paradigm CTF 2022 - Hana Challenge 1"
+    pattern-regex: 'pub\s+voucher_mint:\s*(?:Box<)?Account<[^>]+,\s*Mint>(?:[^}]*?)(?!seeds\s*=)'
+
+  # Challenge 2: Account Confusion / Decimal Mismatch
+  - id: anchor-user-controlled-seed
+    message: "PDA seeds derived from user-provided account - account confusion vulnerability"
+    languages: [rust]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-639: Authorization Bypass Through User-Controlled Key"
+      ctf: "Paradigm CTF 2022 - Hana Challenge 2"
+    pattern-regex: 'seeds\s*=\s*\[[^\]]*deposit_mint\.key\(\)[^\]]*\]'
+
+  - id: anchor-pool-no-mint-validation
+    message: "Pool account constraint doesn't validate deposit_mint relationship - decimal mismatch attack"
+    languages: [rust]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-681: Incorrect Conversion between Numeric Types"
+      ctf: "Paradigm CTF 2022 - Hana Challenge 2"
+    pattern-regex: 'constraint\s*=\s*state\.pools\.contains\(&pool\.key\(\)\)(?![^}]*deposit_mint)'
+
+  - id: solana-no-decimal-check
+    message: "Token transfer without decimal validation - vulnerable to decimal mismatch attacks"
+    languages: [rust]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-681: Incorrect Conversion between Numeric Types"
+      ctf: "Paradigm CTF 2022 - Hana Challenge 2"
+    pattern-regex: 'token::transfer\s*\([^)]*\)\s*\?(?![^}]*decimals)'
+
+  # Challenge 3: Instruction Introspection Bypass
+  - id: solana-instruction-introspection
+    message: "Instruction introspection without execution verification - can be bypassed via CPI"
+    languages: [rust]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-367: Time-of-check Time-of-use (TOCTOU) Race Condition"
+      ctf: "Paradigm CTF 2022 - Hana Challenge 3"
+    pattern-regex: 'load_instruction_at_checked\s*\(\s*\w+\s*,\s*&?\w+\s*\)'
+
+  - id: solana-sysvar-instructions
+    message: "Using Instructions sysvar - vulnerable to CPI-based bypass attacks"
+    languages: [rust]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-367: Time-of-check Time-of-use (TOCTOU) Race Condition"
+      ctf: "Paradigm CTF 2022 - Hana Challenge 3"
+    pattern-regex: 'solana_program::sysvar::instructions'
+
+  - id: solana-flash-loan-no-atomicity
+    message: "Flash loan borrowing flag set after validation - atomicity vulnerability"
+    languages: [rust]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-362: Concurrent Execution using Shared Resource"
+      ctf: "Paradigm CTF 2022 - Hana Challenge 3"
+    pattern-regex: '\.borrowing\s*=\s*true\s*;\s*Ok\(\(\)\)'
+
+  - id: anchor-repay-missing-signer-check
+    message: "Token repayment without verifying signer owns the source account"
+    languages: [rust]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-287: Improper Authentication"
+      ctf: "Paradigm CTF 2022 - Hana Challenge 3"
+    pattern-regex: 'pub\s+fn\s+repay\s*\([^)]*\)[^{]*\{[^}]*Transfer\s*\{[^}]*authority:\s*ctx\.accounts\.\w+(?!.*constraint.*owner)'
+
+  # ============================================
+  # Solana/Anchor - Common Vulnerability Patterns
+  # ============================================
+
+  # Missing Signer Checks
+  - id: anchor-account-info-no-signer
+    message: "AccountInfo without Signer wrapper - missing signer verification"
+    languages: [rust]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-287: Improper Authentication"
+    pattern-regex: 'pub\s+(?:user|authority|admin|owner|payer):\s*AccountInfo<[^>]+>'
+
+  - id: anchor-check-comment-unchecked
+    message: "Anchor CHECK comment without proper validation logic"
+    languages: [rust]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-287: Improper Authentication"
+    pattern-regex: '///\s*CHECK:\s*(?:safe|ok|trusted|skip|none|todo|fixme)'
+
+  # Missing Owner Checks
+  - id: anchor-token-account-no-owner
+    message: "TokenAccount without owner constraint - can receive from wrong user"
+    languages: [rust]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-639: Authorization Bypass Through User-Controlled Key"
+    pattern-regex: 'Account<[^>]*,\s*TokenAccount>(?![^}]*constraint[^}]*owner)'
+
+  - id: solana-no-owner-check
+    message: "Account used without owner verification - type confusion vulnerability"
+    languages: [rust]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-843: Access of Resource Using Incompatible Type"
+    pattern-regex: 'let\s+\w+\s*=\s*\*\*?\w+\.try_borrow_data\(\)\?(?![^;]*owner)'
+
+  # PDA Validation Issues
+  - id: anchor-pda-no-bump
+    message: "PDA seeds without bump constraint - address not fully validated"
+    languages: [rust]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-287: Improper Authentication"
+    pattern-regex: 'seeds\s*=\s*\[[^\]]+\](?![^)]*bump)'
+
+  - id: solana-pda-bump-not-stored
+    message: "PDA bump calculated but not stored - inefficient and potential mismatch"
+    languages: [rust]
+    severity: INFO
+    metadata:
+      category: security
+      cwe: "CWE-330: Use of Insufficiently Random Values"
+    pattern-regex: 'find_program_address\s*\([^)]+\)[^;]*;(?![^;]*bump\s*=)'
+
+  # CPI Vulnerabilities
+  - id: solana-invoke-unchecked-program
+    message: "CPI invoke without program_id validation - arbitrary program invocation"
+    languages: [rust]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-829: Inclusion of Functionality from Untrusted Control Sphere"
+    pattern-regex: 'invoke\s*\(\s*&[^,]+,\s*&\[[^\]]+\]\s*\)(?![^;]*program_id)'
+
+  - id: anchor-cpi-context-new
+    message: "CpiContext::new without signer seeds - ensure proper authorization"
+    languages: [rust]
+    severity: INFO
+    metadata:
+      category: security
+      cwe: "CWE-287: Improper Authentication"
+    pattern-regex: 'CpiContext::new\s*\([^)]+\)(?!.*with_signer)'
+
+  # Integer Overflow in Token Math
+  - id: solana-unchecked-mul
+    message: "Unchecked multiplication in token math - overflow vulnerability"
+    languages: [rust]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-190: Integer Overflow or Wraparound"
+    pattern-regex: 'amount\s*\*\s*(?:total_supply|balance|shares|rate)(?!.*checked)'
+
+  - id: solana-unchecked-div
+    message: "Unchecked division in token math - potential division by zero"
+    languages: [rust]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-369: Divide By Zero"
+    pattern-regex: 'amount\s*/\s*(?:total_supply|balance|shares|rate)(?!.*checked)'
+
+  - id: solana-share-calculation
+    message: "Share/LP token calculation - verify against first depositor attack"
+    languages: [rust]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-682: Incorrect Calculation"
+    pattern-regex: 'shares\s*=\s*(?:amount|deposit)\s*\*\s*total_supply\s*/\s*balance'
+
+  # Reinitialization Attacks
+  - id: anchor-init-without-space
+    message: "Anchor init without explicit space - may cause reallocation issues"
+    languages: [rust]
+    severity: INFO
+    metadata:
+      category: security
+      cwe: "CWE-665: Improper Initialization"
+    pattern-regex: '#\[account\(\s*init\s*(?:,[^)]*)?(?<!space\s*=)\)\]'
+
+  - id: solana-no-initialized-check
+    message: "Account deserialization without is_initialized check - reinitialization risk"
+    languages: [rust]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-665: Improper Initialization"
+    pattern-regex: 'try_from_slice\s*\([^)]+\)\?(?![^;]*is_initialized)'
+
+  # Rent Exemption
+  - id: solana-no-rent-check
+    message: "Account creation without rent exemption check - account may be garbage collected"
+    languages: [rust]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-404: Improper Resource Shutdown or Release"
+    pattern-regex: 'create_account\s*\([^)]*\)(?![^;]*rent|Rent)'
+
+  # Account Closing Vulnerabilities
+  - id: solana-close-account-revival
+    message: "Account closed but data not zeroed - revival attack possible"
+    languages: [rust]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-672: Operation on a Resource after Expiration or Release"
+    pattern-regex: '\*\*\w+\.lamports\.borrow_mut\(\)\s*=\s*0(?![^;]*data.*=.*0|realloc)'
+
+  - id: anchor-close-same-tx
+    message: "Account closure may allow reopening in same transaction"
+    languages: [rust]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-672: Operation on a Resource after Expiration or Release"
+    pattern-regex: '#\[account\([^)]*close[^)]*\)\](?![^}]*\n[^}]*#\[account\([^)]*init)'
+
+  # Token Program Vulnerabilities
+  - id: solana-token-approve-no-revoke
+    message: "Token approval without subsequent revoke - lingering approval risk"
+    languages: [rust]
+    severity: INFO
+    metadata:
+      category: security
+      cwe: "CWE-732: Incorrect Permission Assignment for Critical Resource"
+    pattern-regex: 'token::approve\s*\([^)]+\)\?(?![^}]*revoke)'
+
+  - id: solana-mint-no-authority-check
+    message: "Token minting without verifying mint authority"
+    languages: [rust]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-287: Improper Authentication"
+    pattern-regex: 'token::mint_to\s*\([^)]+\)\?(?![^}]*mint_authority)'
+
+  # Signature Verification
+  - id: solana-ed25519-no-verify
+    message: "Ed25519 signature created but verification not guaranteed"
+    languages: [rust]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-347: Improper Verification of Cryptographic Signature"
+    pattern-regex: 'ed25519_program::id\(\)(?![^}]*verify)'
+
+  # Arbitrary External Calls
+  - id: solana-arbitrary-program-call
+    message: "Program ID from account data - arbitrary program invocation risk"
+    languages: [rust]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: "CWE-829: Inclusion of Functionality from Untrusted Control Sphere"
+    pattern-regex: 'invoke\s*\([^)]*program_id:\s*\*?\w+\.(?:program|target|destination)'
+
+  # SPL Token Specific
+  - id: spl-token-freeze-authority
+    message: "Token with freeze authority - centralization risk"
+    languages: [rust]
+    severity: INFO
+    metadata:
+      category: security
+      cwe: "CWE-732: Incorrect Permission Assignment for Critical Resource"
+    pattern-regex: 'freeze_authority\s*:\s*COption::Some'
+
+  - id: spl-associated-token-create
+    message: "Creating associated token account - verify owner is intended recipient"
+    languages: [rust]
+    severity: INFO
+    metadata:
+      category: security
+      cwe: "CWE-639: Authorization Bypass Through User-Controlled Key"
+    pattern-regex: 'create_associated_token_account\s*\('
+
+  # Cross-Program Invocation Safety
+  - id: solana-cpi-return-unchecked
+    message: "CPI return value not checked - silent failure possible"
+    languages: [rust]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-252: Unchecked Return Value"
+    pattern-regex: 'invoke(?:_signed)?\s*\([^)]+\);(?!\s*\?)'
+
+  # Metaplex/NFT Specific
+  - id: metaplex-creator-not-verified
+    message: "NFT creator verification - ensure creator.verified is checked"
+    languages: [rust]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-287: Improper Authentication"
+    pattern-regex: 'creator\.address\s*==(?![^;]*verified)'
+
+  - id: metaplex-collection-not-verified
+    message: "NFT collection membership - verify collection.verified flag"
+    languages: [rust]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-287: Improper Authentication"
+    pattern-regex: 'collection\.key\s*==(?![^;]*verified)'
+

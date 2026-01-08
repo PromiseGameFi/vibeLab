@@ -1,0 +1,1202 @@
+# C# Security Rules
+rules:
+  # ============================================
+  # SQL Injection
+  # ============================================
+
+  - id: csharp-sql-concat
+    pattern: $CMD.CommandText = $Q + $INPUT
+    message: C# SQL injection via concatenation - use parameterized queries
+    languages: [csharp]
+    severity: ERROR
+
+  - id: csharp-sql-string-format
+    pattern: $CMD.CommandText = string.Format($Q, ...)
+    message: C# SQL injection via string.Format - use parameterized queries
+    languages: [csharp]
+    severity: ERROR
+
+  - id: csharp-sql-interpolation
+    pattern: $CMD.CommandText = $"..."
+    message: C# SQL injection via string interpolation - use parameterized queries
+    languages: [csharp]
+    severity: ERROR
+
+  - id: csharp-sqlcommand-text
+    pattern: new SqlCommand($QUERY, ...)
+    message: C# SqlCommand - ensure parameterized queries
+    languages: [csharp]
+    severity: WARNING
+
+  - id: csharp-ef-rawsql
+    pattern: $DB.Database.ExecuteSqlRaw($QUERY, ...)
+    message: C# EF Core raw SQL - ensure parameterized
+    languages: [csharp]
+    severity: WARNING
+
+  - id: csharp-ef-fromsqlraw
+    pattern: $DB.FromSqlRaw($QUERY)
+    message: C# EF Core FromSqlRaw - ensure parameterized
+    languages: [csharp]
+    severity: WARNING
+
+  # ============================================
+  # Command Injection
+  # ============================================
+
+  - id: csharp-process-start
+    pattern: Process.Start($CMD)
+    message: C# command execution - injection risk
+    languages: [csharp]
+    severity: WARNING
+
+  - id: csharp-process-start-info
+    pattern: new ProcessStartInfo($CMD)
+    message: C# ProcessStartInfo - command injection risk
+    languages: [csharp]
+    severity: WARNING
+
+  - id: csharp-process-filename
+    pattern: $PSI.FileName = $CMD
+    message: C# process filename from variable - injection risk
+    languages: [csharp]
+    severity: WARNING
+
+  - id: csharp-process-arguments
+    pattern: $PSI.Arguments = $ARGS
+    message: C# process arguments from variable - injection risk
+    languages: [csharp]
+    severity: WARNING
+
+  # ============================================
+  # Insecure Deserialization
+  # ============================================
+
+  - id: csharp-binaryformatter
+    pattern: BinaryFormatter().Deserialize($STREAM)
+    message: C# BinaryFormatter deserialization is insecure
+    languages: [csharp]
+    severity: ERROR
+
+  - id: csharp-binaryformatter-new
+    pattern: new BinaryFormatter()
+    message: C# BinaryFormatter is insecure - do not use
+    languages: [csharp]
+    severity: ERROR
+
+  - id: csharp-javascriptserializer
+    pattern: new JavaScriptSerializer().Deserialize($DATA)
+    message: C# JavaScriptSerializer - use System.Text.Json instead
+    languages: [csharp]
+    severity: WARNING
+
+  - id: csharp-netdatacontract
+    pattern: new NetDataContractSerializer()
+    message: C# NetDataContractSerializer is insecure
+    languages: [csharp]
+    severity: ERROR
+
+  - id: csharp-losformatter
+    pattern: new LosFormatter()
+    message: C# LosFormatter is insecure
+    languages: [csharp]
+    severity: ERROR
+
+  - id: csharp-objectstateformatter
+    pattern: new ObjectStateFormatter()
+    message: C# ObjectStateFormatter is insecure
+    languages: [csharp]
+    severity: ERROR
+
+  - id: csharp-soapformatter
+    pattern: new SoapFormatter()
+    message: C# SoapFormatter is insecure
+    languages: [csharp]
+    severity: ERROR
+
+  # ============================================
+  # XXE (XML External Entity)
+  # ============================================
+
+  - id: csharp-xxe-xmlreader
+    pattern: XmlReader.Create($INPUT)
+    message: C# XXE risk - configure XmlReaderSettings
+    languages: [csharp]
+    severity: WARNING
+
+  - id: csharp-xxe-xmldocument
+    pattern: new XmlDocument()
+    message: C# XmlDocument - ensure DTD processing is disabled
+    languages: [csharp]
+    severity: WARNING
+
+  - id: csharp-xxe-xmltextreader
+    pattern: new XmlTextReader($INPUT)
+    message: C# XmlTextReader - XXE risk, use XmlReader with secure settings
+    languages: [csharp]
+    severity: WARNING
+
+  - id: csharp-xxe-dtd-processing
+    pattern: 'DtdProcessing = DtdProcessing.Parse'
+    message: C# DTD processing enabled - XXE vulnerability
+    languages: [csharp]
+    severity: ERROR
+
+  - id: csharp-xxe-prohibit-dtd
+    pattern: 'ProhibitDtd = false'
+    message: C# DTD not prohibited - XXE vulnerability
+    languages: [csharp]
+    severity: ERROR
+
+  # ============================================
+  # Path Traversal
+  # ============================================
+
+  - id: csharp-path-combine-user
+    pattern: Path.Combine($BASE, $USER_INPUT)
+    message: C# Path.Combine with user input - path traversal risk
+    languages: [csharp]
+    severity: WARNING
+
+  - id: csharp-file-read-user
+    pattern: File.ReadAllText($USER_INPUT)
+    message: C# file read with user input - path traversal risk
+    languages: [csharp]
+    severity: ERROR
+
+  - id: csharp-file-write-user
+    pattern: File.WriteAllText($USER_INPUT, ...)
+    message: C# file write with user input - path traversal risk
+    languages: [csharp]
+    severity: ERROR
+
+  - id: csharp-filestream-user
+    pattern: new FileStream($USER_INPUT, ...)
+    message: C# FileStream with user input - path traversal risk
+    languages: [csharp]
+    severity: ERROR
+
+  # ============================================
+  # ReDoS
+  # ============================================
+
+  - id: csharp-regex-timeout
+    pattern: new Regex($PATTERN)
+    message: C# Regex without timeout - ReDoS risk
+    languages: [csharp]
+    severity: WARNING
+
+  - id: csharp-regex-match-timeout
+    pattern: Regex.Match($INPUT, $PATTERN)
+    message: C# Regex.Match - consider using timeout parameter
+    languages: [csharp]
+    severity: INFO
+
+  # ============================================
+  # Weak Cryptography
+  # ============================================
+
+  - id: csharp-md5-create
+    pattern: MD5.Create()
+    message: C# MD5 is weak - use SHA-256 or better
+    languages: [csharp]
+    severity: WARNING
+
+  - id: csharp-sha1-create
+    pattern: SHA1.Create()
+    message: C# SHA1 is weak - use SHA-256 or better
+    languages: [csharp]
+    severity: WARNING
+
+  - id: csharp-des-create
+    pattern: DES.Create()
+    message: C# DES is weak - use AES
+    languages: [csharp]
+    severity: ERROR
+
+  - id: csharp-3des-create
+    pattern: TripleDES.Create()
+    message: C# 3DES is deprecated - use AES
+    languages: [csharp]
+    severity: WARNING
+
+  - id: csharp-random
+    pattern: new Random()
+    message: C# Random is not cryptographically secure - use RandomNumberGenerator
+    languages: [csharp]
+    severity: WARNING
+
+  - id: csharp-aes-ecb
+    pattern: 'CipherMode.ECB'
+    message: C# ECB mode is insecure - use CBC or GCM
+    languages: [csharp]
+    severity: ERROR
+
+  # ============================================
+  # SSL/TLS Issues
+  # ============================================
+
+  - id: csharp-ssl-callback-true
+    pattern: 'ServerCertificateValidationCallback = (...) => true'
+    message: C# SSL certificate validation disabled
+    languages: [csharp]
+    severity: ERROR
+
+  - id: csharp-ssl-protocols-old
+    pattern: 'SecurityProtocolType.Ssl3'
+    message: C# SSL3 is insecure - use TLS 1.2+
+    languages: [csharp]
+    severity: ERROR
+
+  - id: csharp-ssl-protocols-tls10
+    pattern: 'SecurityProtocolType.Tls'
+    message: C# TLS 1.0 is deprecated - use TLS 1.2+
+    languages: [csharp]
+    severity: WARNING
+
+  - id: csharp-ssl-protocols-tls11
+    pattern: 'SecurityProtocolType.Tls11'
+    message: C# TLS 1.1 is deprecated - use TLS 1.2+
+    languages: [csharp]
+    severity: WARNING
+
+  # ============================================
+  # LDAP Injection
+  # ============================================
+
+  - id: csharp-ldap-filter
+    pattern: $SEARCHER.Filter = $FILTER
+    message: C# LDAP filter - potential LDAP injection
+    languages: [csharp]
+    severity: WARNING
+
+  - id: csharp-ldap-path
+    pattern: new DirectoryEntry($PATH)
+    message: C# DirectoryEntry - validate path for LDAP injection
+    languages: [csharp]
+    severity: WARNING
+
+  # ============================================
+  # XSS
+  # ============================================
+
+  - id: csharp-razor-raw
+    pattern: Html.Raw($INPUT)
+    message: C# Html.Raw bypasses encoding - XSS risk
+    languages: [csharp]
+    severity: WARNING
+
+  - id: csharp-response-write
+    pattern: Response.Write($INPUT)
+    message: C# Response.Write - ensure output is encoded
+    languages: [csharp]
+    severity: WARNING
+
+  # ============================================
+  # Open Redirect
+  # ============================================
+
+  - id: csharp-redirect-user
+    pattern: Response.Redirect($URL)
+    message: C# redirect - validate URL to prevent open redirect
+    languages: [csharp]
+    severity: WARNING
+
+  - id: csharp-redirect-action
+    pattern: Redirect($URL)
+    message: C# MVC Redirect - validate URL to prevent open redirect
+    languages: [csharp]
+    severity: WARNING
+
+  # ============================================
+  # Hardcoded Credentials
+  # ============================================
+
+  - id: csharp-hardcoded-password
+    pattern: 'password = "..."'
+    message: C# hardcoded password detected
+    languages: [csharp]
+    severity: ERROR
+
+  - id: csharp-hardcoded-connectionstring
+    pattern: 'connectionString = "..."'
+    message: C# hardcoded connection string - use configuration
+    languages: [csharp]
+    severity: ERROR
+
+  - id: csharp-sqlconnection-literal
+    pattern: new SqlConnection("...")
+    message: C# hardcoded connection string in SqlConnection
+    languages: [csharp]
+    severity: ERROR
+
+  # ============================================
+  # CSRF
+  # ============================================
+
+  - id: csharp-validateantiforgerytoken-missing
+    pattern: |
+      [HttpPost]
+      public $RETURN $METHOD(...)
+    message: C# HttpPost without ValidateAntiForgeryToken - CSRF risk
+    languages: [csharp]
+    severity: WARNING
+
+  # ============================================
+  # Session Security
+  # ============================================
+
+  - id: csharp-session-httponly-false
+    pattern: 'HttpOnly = false'
+    message: C# session cookie HttpOnly disabled
+    languages: [csharp]
+    severity: WARNING
+
+  - id: csharp-session-secure-false
+    pattern: 'Secure = false'
+    message: C# session cookie Secure flag disabled
+    languages: [csharp]
+    severity: WARNING
+
+  # ============================================
+  # SSRF (Server-Side Request Forgery)
+  # ============================================
+
+  - id: csharp-ssrf-httpclient-getasync
+    pattern: $CLIENT.GetAsync($URL)
+    message: "C# HttpClient.GetAsync with variable URL - potential SSRF vulnerability (CWE-918)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-918"
+      tags: [ssrf]
+
+  - id: csharp-ssrf-httpclient-postasync
+    pattern: $CLIENT.PostAsync($URL, ...)
+    message: "C# HttpClient.PostAsync with variable URL - potential SSRF vulnerability (CWE-918)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-918"
+      tags: [ssrf]
+
+  - id: csharp-ssrf-httpclient-sendasync
+    pattern: $CLIENT.SendAsync($REQUEST)
+    message: "C# HttpClient.SendAsync - verify request URL is validated (CWE-918)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-918"
+      tags: [ssrf]
+
+  - id: csharp-ssrf-webclient-download
+    pattern: $CLIENT.DownloadString($URL)
+    message: "C# WebClient.DownloadString with variable URL - potential SSRF (CWE-918)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-918"
+      tags: [ssrf]
+
+  - id: csharp-ssrf-webclient-downloaddata
+    pattern: $CLIENT.DownloadData($URL)
+    message: "C# WebClient.DownloadData with variable URL - potential SSRF (CWE-918)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-918"
+      tags: [ssrf]
+
+  - id: csharp-ssrf-webrequest-create
+    pattern: WebRequest.Create($URL)
+    message: "C# WebRequest.Create with variable URL - potential SSRF (CWE-918)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-918"
+      tags: [ssrf]
+
+  - id: csharp-ssrf-httpwebrequest-create
+    pattern: HttpWebRequest.Create($URL)
+    message: "C# HttpWebRequest.Create with variable URL - potential SSRF (CWE-918)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-918"
+      tags: [ssrf]
+
+  - id: csharp-ssrf-uri-user
+    pattern: new Uri($USER_INPUT)
+    message: "C# Uri from user input - validate to prevent SSRF (CWE-918)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-918"
+      tags: [ssrf]
+
+  - id: csharp-ssrf-restclient
+    pattern: new RestClient($URL)
+    message: "C# RestSharp RestClient with variable URL - potential SSRF (CWE-918)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-918"
+      tags: [ssrf]
+
+  - id: csharp-ssrf-flurl
+    pattern: $URL.GetAsync()
+    message: "C# Flurl request with variable URL - potential SSRF (CWE-918)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-918"
+      tags: [ssrf]
+
+  # ============================================
+  # Insecure Logging (DVTA Gap)
+  # ============================================
+
+  - id: csharp-log-password
+    patterns:
+      - pattern: Console.WriteLine($FMT, ..., $PASSWORD, ...)
+      - pattern: Debug.WriteLine($FMT, ..., $PASSWORD, ...)
+      - pattern: Trace.WriteLine($MSG)
+      - pattern: '$LOGGER.Log(..., $MSG, ...)'
+    message: "C# logging may expose sensitive data - ensure passwords/secrets are not logged (CWE-532)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-532"
+      tags: [logging]
+
+  - id: csharp-console-write-sensitive
+    pattern-either:
+      - pattern: 'Console.WriteLine($"...password...")'
+      - pattern: 'Console.WriteLine($"...secret...")'
+      - pattern: 'Console.WriteLine($"...token...")'
+      - pattern: 'Console.WriteLine($"...credential...")'
+    message: "C# Console.WriteLine may log sensitive data (CWE-532)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-532"
+      tags: [logging]
+
+  - id: csharp-debug-write-sensitive
+    pattern-either:
+      - pattern: 'Debug.WriteLine($"...password...")'
+      - pattern: 'Debug.WriteLine($"...secret...")'
+      - pattern: 'Debug.WriteLine($"...token...")'
+    message: "C# Debug.WriteLine may log sensitive data (CWE-532)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-532"
+      tags: [logging]
+
+  # ============================================
+  # CSV Injection (DVTA Gap)
+  # ============================================
+
+  - id: csharp-csv-injection
+    patterns:
+      - pattern: $WRITER.WriteLine($DATA)
+      - pattern: File.WriteAllText($PATH, $CSV)
+      - pattern: File.AppendAllText($PATH, $CSV)
+    message: "C# CSV output - sanitize data to prevent formula injection (CWE-1236)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-1236"
+      tags: [csv-injection]
+
+  - id: csharp-csv-formula-chars
+    pattern-regex: "[\"=+\\-@\\|].*\\.csv"
+    message: "C# CSV with formula characters - potential CSV injection (CWE-1236)"
+    languages: [csharp]
+    severity: INFO
+    metadata:
+      cwe: "CWE-1236"
+      tags: [csv-injection]
+
+  # ============================================
+  # DLL Hijacking (DVTA Gap)
+  # ============================================
+
+  - id: csharp-dllimport-no-path
+    pattern: '[DllImport("$DLL")]'
+    message: "C# DllImport without full path - DLL hijacking risk (CWE-427)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-427"
+      tags: [dll-hijacking]
+
+  - id: csharp-loadlibrary
+    pattern: LoadLibrary($DLL)
+    message: "C# LoadLibrary - potential DLL hijacking if path not validated (CWE-427)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-427"
+      tags: [dll-hijacking]
+
+  - id: csharp-assembly-loadfrom
+    pattern: Assembly.LoadFrom($PATH)
+    message: "C# Assembly.LoadFrom - DLL hijacking risk, use LoadFile with full path (CWE-427)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-427"
+      tags: [dll-hijacking]
+
+  - id: csharp-assembly-load
+    pattern: Assembly.Load($NAME)
+    message: "C# Assembly.Load - verify assembly binding to prevent hijacking (CWE-427)"
+    languages: [csharp]
+    severity: INFO
+    metadata:
+      cwe: "CWE-427"
+      tags: [dll-hijacking]
+
+  # ============================================
+  # Cleartext Communication (DVTA Gap)
+  # ============================================
+
+  - id: csharp-http-url
+    pattern-regex: '"http://[^"]*"'
+    message: "C# HTTP URL detected - use HTTPS for secure communication (CWE-319)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-319"
+      tags: [cleartext]
+
+  - id: csharp-ftp-client
+    pattern: new FtpClient($HOST)
+    message: "C# FTP client - use SFTP/FTPS for secure file transfer (CWE-319)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-319"
+      tags: [cleartext]
+
+  - id: csharp-tcp-client-nossl
+    pattern: new TcpClient($HOST, $PORT)
+    message: "C# TcpClient - ensure SSL/TLS is used for sensitive data (CWE-319)"
+    languages: [csharp]
+    severity: INFO
+    metadata:
+      cwe: "CWE-319"
+      tags: [cleartext]
+
+  # ============================================
+  # Insecure Storage (DVTA Gap)
+  # ============================================
+
+  - id: csharp-registry-password
+    patterns:
+      - pattern: 'Registry.SetValue($KEY, "password", $VALUE)'
+      - pattern: 'Registry.SetValue($KEY, "secret", $VALUE)'
+      - pattern: '$REG.SetValue("password", $VALUE)'
+    message: "C# storing credentials in registry - use DPAPI or secure credential store (CWE-312)"
+    languages: [csharp]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-312"
+      tags: [insecure-storage]
+
+  - id: csharp-file-write-credentials
+    patterns:
+      - pattern: File.WriteAllText($PATH, $PASSWORD)
+      - pattern: '$WRITER.Write($PASSWORD)'
+    message: "C# writing credentials to file - encrypt sensitive data (CWE-312)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-312"
+      tags: [insecure-storage]
+
+  - id: csharp-settings-password
+    pattern: 'Properties.Settings.Default.$SETTING = $PASSWORD'
+    message: "C# storing sensitive data in Settings - use secure storage (CWE-312)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-312"
+      tags: [insecure-storage]
+
+  # =============================================================================
+  # CSV Injection / Formula Injection - CWE-1236
+  # =============================================================================
+
+  # Direct CSV writing without sanitization
+  - id: csharp-csv-injection-streamwriter
+    patterns:
+      - pattern: '$WRITER.WriteLine($DATA + ",")'
+      - pattern: '$WRITER.Write($DATA + ",")'
+      - pattern: 'File.WriteAllText($PATH, $DATA)'
+      - pattern: 'File.AppendAllText($PATH, $DATA)'
+    message: "CSV export without sanitization - prefix cells starting with =, +, -, @ with quote to prevent formula injection (CWE-1236)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-1236"
+      owasp: "A03:2021"
+      tags: [csv-injection, dvta]
+
+  # String.Format for CSV without escaping
+  - id: csharp-csv-injection-format
+    pattern-regex: 'String\\.Format\\([^)]*\\{[0-9]+\\}[^)]*,\\s*[^)]*\\)'
+    message: "CSV data formatting - sanitize user input by escaping quotes and prefixing formula characters (CWE-1236)"
+    languages: [csharp]
+    severity: INFO
+    metadata:
+      cwe: "CWE-1236"
+      tags: [csv-injection]
+
+  # CsvHelper without sanitization options
+  - id: csharp-csv-injection-csvhelper
+    patterns:
+      - pattern: 'new CsvWriter($WRITER)'
+      - pattern: 'csv.WriteRecord($RECORD)'
+      - pattern: 'csv.WriteRecords($RECORDS)'
+    message: "CsvHelper export - enable SanitizeForInjection option to prevent formula injection (CWE-1236)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-1236"
+      tags: [csv-injection, dvta]
+
+  # StringBuilder for CSV construction
+  - id: csharp-csv-injection-stringbuilder
+    patterns:
+      - pattern: '$SB.Append($DATA + ",")'
+      - pattern: '$SB.AppendLine($DATA + ",")'
+      - pattern: |
+          $SB.Append($DATA)
+          ...
+          $SB.Append(",")
+    message: "Building CSV with StringBuilder - sanitize cells starting with formula characters (=, +, -, @, tab, CR, LF) (CWE-1236)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-1236"
+      tags: [csv-injection]
+
+  # Excel export without sanitization
+  - id: csharp-excel-formula-injection
+    patterns:
+      - pattern: '$CELL.Value = $DATA'
+      - pattern: '$WORKSHEET.Cells[$ROW, $COL] = $DATA'
+      - pattern: 'workSheet.Cells[$RANGE].Value = $DATA'
+    message: "Excel cell assignment - sanitize user data to prevent formula injection (=cmd|, =DDE(), etc.) (CWE-1236)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-1236"
+      tags: [csv-injection, excel, dvta]
+
+  # DataTable to CSV export
+  - id: csharp-datatable-csv-export
+    patterns:
+      - pattern: 'DataTable.$METHOD(...).ToCsv(...)'
+      - pattern: 'ToCSV($DATATABLE)'
+    message: "DataTable CSV export - ensure formula injection sanitization is applied (CWE-1236)"
+    languages: [csharp]
+    severity: INFO
+    metadata:
+      cwe: "CWE-1236"
+      tags: [csv-injection]
+
+  # =============================================================================
+  # Security Misconfiguration - CWE-16
+  # =============================================================================
+
+  # Debug mode enabled in web.config
+  - id: csharp-debug-enabled
+    pattern-regex: "<compilation[^>]*debug\\s*=\\s*[\"']true[\"']>"
+    message: "Debug mode enabled in production - disable for security and performance (CWE-16)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-16"
+      owasp: "A05:2021"
+      tags: [misconfiguration, dvta]
+
+  # Verbose error messages exposed
+  - id: csharp-verbose-errors
+    pattern-regex: "<customErrors[^>]*mode\\s*=\\s*[\"']Off[\"']>"
+    message: "Custom errors disabled - stack traces will be exposed to users (CWE-209)"
+    languages: [csharp]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-209"
+      owasp: "A05:2021"
+      tags: [misconfiguration, information-disclosure]
+
+  # Trace enabled
+  - id: csharp-trace-enabled
+    pattern-regex: "<trace[^>]*enabled\\s*=\\s*[\"']true[\"']>"
+    message: "Trace enabled - sensitive debugging information may be exposed (CWE-16)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-16"
+      tags: [misconfiguration]
+
+  # =============================================================================
+  # DVTA-Specific SQL Injection Patterns - CWE-89
+  # =============================================================================
+
+  # SQLite SQL Injection
+  - id: csharp-sqlite-sqli-command
+    patterns:
+      - pattern: 'new SQLiteCommand($QUERY, ...)'
+      - pattern: 'new SQLiteCommand($QUERY)'
+      - pattern: '$CMD = new SQLiteCommand(...); ... $CMD.CommandText = $QUERY + ...'
+    message: "SQLite command with dynamic query - use parameterized queries to prevent SQL injection (CWE-89)"
+    languages: [csharp]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+      owasp: "A03:2021"
+      tags: [sql-injection, sqlite, dvta]
+
+  # SQLite ExecuteScalar with string concat
+  - id: csharp-sqlite-executescalar
+    patterns:
+      - pattern: '$CMD.ExecuteScalar($QUERY + ...)'
+      - pattern: |
+          $CMD.CommandText = $QUERY + ...;
+          ...
+          $CMD.ExecuteScalar()
+    message: "SQLite ExecuteScalar with dynamic query - vulnerable to SQL injection (CWE-89)"
+    languages: [csharp]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+      owasp: "A03:2021"
+      tags: [sql-injection, sqlite, dvta]
+
+  # OLEDB SQL Injection
+  - id: csharp-oledb-sqli
+    patterns:
+      - pattern: 'new OleDbCommand($QUERY + ..., ...)'
+      - pattern: 'new OleDbCommand($QUERY, ...) where $QUERY : (string)'
+      - pattern: '$CMD.CommandText = "..." + $INPUT + "..."'
+    message: "OleDb command with dynamic query - use parameterized queries to prevent SQL injection (CWE-89)"
+    languages: [csharp]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+      owasp: "A03:2021"
+      tags: [sql-injection, oledb, dvta]
+
+  # DataReader with dynamic query
+  - id: csharp-datareader-sqli
+    patterns:
+      - pattern: '$CMD.ExecuteReader() where $CMD.CommandText : (... + ...)'
+      - pattern: |
+          $CMD.CommandText = $Q + ...;
+          ...
+          $READER = $CMD.ExecuteReader()
+    message: "DataReader with dynamic query - SQL injection vulnerability (CWE-89)"
+    languages: [csharp]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+      owasp: "A03:2021"
+      tags: [sql-injection, datareader, dvta]
+
+  # Generic ADO.NET SQL concatenation
+  - id: csharp-adonet-string-concat
+    patterns:
+      - pattern: '"SELECT " + ... + " FROM " + ...'
+      - pattern: '"INSERT INTO " + ... + " VALUES(" + ...'
+      - pattern: '"UPDATE " + ... + " SET " + ... + " WHERE " + ...'
+      - pattern: '"DELETE FROM " + ... + " WHERE " + ...'
+    message: "SQL query built with string concatenation - use parameterized queries (CWE-89)"
+    languages: [csharp]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+      owasp: "A03:2021"
+      tags: [sql-injection, adonet, dvta]
+
+  # SqlDataAdapter with dynamic query
+  - id: csharp-sqldataadapter-sqli
+    patterns:
+      - pattern: 'new SqlDataAdapter($QUERY + ..., ...)'
+      - pattern: 'new SqlDataAdapter($"...", ...)'
+      - pattern: 'new OleDbDataAdapter($QUERY + ..., ...)'
+      - pattern: 'new SQLiteDataAdapter($QUERY + ..., ...)'
+    message: "DataAdapter with dynamic query - SQL injection vulnerability (CWE-89)"
+    languages: [csharp]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+      owasp: "A03:2021"
+      tags: [sql-injection, dataadapter, dvta]
+
+  # =============================================================================
+  # DVTA-Specific Insecure Deserialization - CWE-502
+  # =============================================================================
+
+  # Newtonsoft.Json TypeNameHandling.All
+  - id: csharp-json-typenamehandling-all
+    patterns:
+      - pattern: 'TypeNameHandling.All'
+      - pattern: 'TypeNameHandling = TypeNameHandling.All'
+      - pattern: 'new JsonSerializerSettings { ..., TypeNameHandling = TypeNameHandling.All, ... }'
+    message: "TypeNameHandling.All enables arbitrary type instantiation - remote code execution via deserialization (CWE-502)"
+    languages: [csharp]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-502"
+      owasp: "A08:2021"
+      tags: [deserialization, json, rce, dvta]
+
+  # Newtonsoft.Json TypeNameHandling.Auto
+  - id: csharp-json-typenamehandling-auto
+    patterns:
+      - pattern: 'TypeNameHandling.Auto'
+      - pattern: 'TypeNameHandling = TypeNameHandling.Auto'
+    message: "TypeNameHandling.Auto can enable type instantiation attacks - potential RCE (CWE-502)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-502"
+      owasp: "A08:2021"
+      tags: [deserialization, json, dvta]
+
+  # Newtonsoft.Json TypeNameHandling.Objects
+  - id: csharp-json-typenamehandling-objects
+    patterns:
+      - pattern: 'TypeNameHandling.Objects'
+      - pattern: 'TypeNameHandling = TypeNameHandling.Objects'
+    message: "TypeNameHandling.Objects enables type instantiation - potential RCE via deserialization (CWE-502)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-502"
+      owasp: "A08:2021"
+      tags: [deserialization, json, dvta]
+
+  # YamlDotNet deserialization
+  - id: csharp-yaml-deserialize
+    patterns:
+      - pattern: 'new Deserializer().Deserialize<$TYPE>($INPUT)'
+      - pattern: 'new DeserializerBuilder().Build().Deserialize($INPUT)'
+      - pattern: '$DESERIALIZER.Deserialize($INPUT)'
+      - pattern: 'YamlStream.Load($INPUT)'
+    message: "YAML deserialization of untrusted data - can lead to arbitrary code execution (CWE-502)"
+    languages: [csharp]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-502"
+      owasp: "A08:2021"
+      tags: [deserialization, yaml, dvta]
+
+  # DataContractJsonSerializer with untrusted type
+  - id: csharp-datacontractjson-type
+    patterns:
+      - pattern: 'new DataContractJsonSerializer(Type.GetType($INPUT))'
+      - pattern: 'new DataContractJsonSerializer($TYPE).ReadObject($STREAM)'
+    message: "DataContractJsonSerializer with dynamic type - potential deserialization attack (CWE-502)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-502"
+      owasp: "A08:2021"
+      tags: [deserialization, json, dvta]
+
+  # =============================================================================
+  # DVTA-Specific Weak Cryptography - CWE-327, CWE-328
+  # =============================================================================
+
+  # Hardcoded encryption key
+  - id: csharp-hardcoded-crypto-key
+    patterns:
+      - pattern: '$ALGO.Key = new byte[] { ... }'
+      - pattern: '$ALGO.Key = Encoding.$ENC.GetBytes("...")'
+      - pattern: 'PasswordDeriveBytes("...", ...)'
+      - pattern: 'Rfc2898DeriveBytes("...", ...)'
+    message: "Hardcoded cryptographic key - keys should be stored securely and rotated (CWE-321)"
+    languages: [csharp]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-321"
+      owasp: "A02:2021"
+      tags: [crypto, hardcoded-key, dvta]
+
+  # Hardcoded IV
+  - id: csharp-hardcoded-iv
+    patterns:
+      - pattern: '$ALGO.IV = new byte[] { ... }'
+      - pattern: '$ALGO.IV = Encoding.$ENC.GetBytes("...")'
+    message: "Hardcoded initialization vector - IVs should be randomly generated (CWE-329)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-329"
+      owasp: "A02:2021"
+      tags: [crypto, hardcoded-iv, dvta]
+
+  # ECB mode
+  - id: csharp-ecb-mode
+    patterns:
+      - pattern: 'CipherMode.ECB'
+      - pattern: '$ALGO.Mode = CipherMode.ECB'
+    message: "ECB cipher mode is insecure - use CBC or GCM mode instead (CWE-327)"
+    languages: [csharp]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-327"
+      owasp: "A02:2021"
+      tags: [crypto, weak-cipher, dvta]
+
+  # =============================================================================
+  # DVTA-Specific Insecure File Operations - CWE-22, CWE-73
+  # =============================================================================
+
+  # File.ReadAllText with user input
+  - id: csharp-file-read-user-input
+    patterns:
+      - pattern: 'File.ReadAllText($PATH + ...)'
+      - pattern: 'File.ReadAllText($"...{$INPUT}...")'
+      - pattern: 'File.ReadAllBytes($PATH + ...)'
+      - pattern: 'StreamReader($PATH + ...)'
+    message: "File read with user-controlled path - path traversal vulnerability (CWE-22)"
+    languages: [csharp]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-22"
+      owasp: "A01:2021"
+      tags: [path-traversal, file-read, dvta]
+
+  # File.WriteAllText with user input
+  - id: csharp-file-write-user-input
+    patterns:
+      - pattern: 'File.WriteAllText($PATH + ..., ...)'
+      - pattern: 'File.WriteAllText($"...{$INPUT}...", ...)'
+      - pattern: 'File.WriteAllBytes($PATH + ..., ...)'
+      - pattern: 'StreamWriter($PATH + ...)'
+    message: "File write with user-controlled path - arbitrary file write vulnerability (CWE-73)"
+    languages: [csharp]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-73"
+      owasp: "A01:2021"
+      tags: [path-traversal, file-write, dvta]
+
+  # =============================================================================
+  # DVTA-Specific Authentication Issues - CWE-287, CWE-798
+  # =============================================================================
+
+  # Hardcoded credentials in connection string
+  - id: csharp-hardcoded-connstring-password
+    patterns:
+      - pattern-regex: "Password\\s*=\\s*[\"'][^\"']+[\"']"
+      - pattern-regex: "Pwd\\s*=\\s*[\"'][^\"']+[\"']"
+      - pattern-regex: "User\\s*ID\\s*=\\s*[\"'][^\"']+[\"'].*Password\\s*=\\s*[\"'][^\"']+[\"']"
+    message: "Hardcoded password in connection string - use secure credential storage (CWE-798)"
+    languages: [csharp]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-798"
+      owasp: "A07:2021"
+      tags: [hardcoded-credentials, connection-string, dvta]
+
+  # Plaintext password comparison
+  - id: csharp-plaintext-password-compare
+    patterns:
+      - pattern: 'if ($PASSWORD == "...")'
+      - pattern: 'if ($INPUT == $PASSWORD)'
+      - pattern: '$PASSWORD.Equals("...")'
+    message: "Plaintext password comparison - use secure password hashing (CWE-256)"
+    languages: [csharp]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-256"
+      owasp: "A02:2021"
+      tags: [authentication, plaintext-password, dvta]
+
+  # =============================================================================
+  # DVTA-Specific Logging Issues - CWE-117, CWE-532
+  # =============================================================================
+
+  # Sensitive data in logs
+  - id: csharp-sensitive-data-logging
+    patterns:
+      - pattern: 'Console.WriteLine(..., $PASSWORD, ...)'
+      - pattern: 'Debug.WriteLine(..., $PASSWORD, ...)'
+      - pattern: 'Trace.WriteLine(..., $PASSWORD, ...)'
+      - pattern: '$LOGGER.Log(..., $PASSWORD, ...)'
+      - pattern: 'Console.WriteLine("..." + $PASSWORD + "...")'
+    message: "Sensitive data written to logs - mask or remove passwords from log output (CWE-532)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-532"
+      owasp: "A09:2021"
+      tags: [logging, sensitive-data, dvta]
+
+  # Log injection
+  - id: csharp-log-injection
+    patterns:
+      - pattern: 'Console.WriteLine($USERINPUT)'
+      - pattern: '$LOGGER.Info($USERINPUT)'
+      - pattern: '$LOGGER.Debug($USERINPUT)'
+      - pattern: '$LOGGER.Error($USERINPUT)'
+    message: "Log message contains unsanitized user input - log injection vulnerability (CWE-117)"
+    languages: [csharp]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-117"
+      owasp: "A09:2021"
+      tags: [logging, log-injection, dvta]
+
+  # =============================================================================
+  # DVTA-Specific Regex Rules - Exact Pattern Matching
+  # =============================================================================
+
+  # SQL string concatenation with SELECT (DVTA pattern)
+  - id: csharp-sql-select-concat-regex
+    pattern-regex: '"SELECT\s+[^"]*''\s*"\s*\+'
+    message: "SQL SELECT query built with string concatenation - SQL injection vulnerability (CWE-89)"
+    languages: [generic]
+    paths:
+      include:
+        - "*.cs"
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+      owasp: "A03:2021"
+      tags: [sql-injection, dvta]
+
+  # SQL string concatenation with INSERT (DVTA pattern)
+  - id: csharp-sql-insert-concat-regex
+    pattern-regex: '"insert\s+into\s+[^"]*values\s*\([^"]*''\s*"\s*\+'
+    message: "SQL INSERT query built with string concatenation - SQL injection vulnerability (CWE-89)"
+    languages: [generic]
+    paths:
+      include:
+        - "*.cs"
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+      owasp: "A03:2021"
+      tags: [sql-injection, dvta]
+
+  # SQL string concatenation with DELETE (DVTA pattern)
+  - id: csharp-sql-delete-concat-regex
+    pattern-regex: '"DELETE\s+FROM\s+[^"]*where\s+[^"]*''\s*"\s*\+'
+    message: "SQL DELETE query built with string concatenation - SQL injection vulnerability (CWE-89)"
+    languages: [generic]
+    paths:
+      include:
+        - "*.cs"
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+      owasp: "A03:2021"
+      tags: [sql-injection, dvta]
+
+  # SQL string concatenation with WHERE clause
+  - id: csharp-sql-where-concat-regex
+    pattern-regex: 'where\s+\w+\s*=\s*''\s*"\s*\+\s*\w+'
+    message: "SQL WHERE clause built with string concatenation - SQL injection vulnerability (CWE-89)"
+    languages: [generic]
+    paths:
+      include:
+        - "*.cs"
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+      owasp: "A03:2021"
+      tags: [sql-injection, dvta]
+
+  # Generic SQL + string concatenation pattern
+  - id: csharp-sql-generic-concat
+    pattern-regex: '=\s*"(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|TRUNCATE)[^"]*"\s*\+'
+    message: "SQL query constructed with string concatenation - use parameterized queries (CWE-89)"
+    languages: [generic]
+    paths:
+      include:
+        - "*.cs"
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+      owasp: "A03:2021"
+      tags: [sql-injection]
+
+  # Registry credential storage (DVTA Login.cs pattern)
+  - id: csharp-registry-password-storage
+    pattern-regex: 'SetValue\s*\(\s*"(password|Password|pwd|Pwd|secret|Secret|key|Key|credential)"'
+    message: "Storing sensitive data in Windows Registry - use secure credential storage (CWE-522)"
+    languages: [generic]
+    paths:
+      include:
+        - "*.cs"
+    severity: ERROR
+    metadata:
+      cwe: "CWE-522"
+      owasp: "A02:2021"
+      tags: [credential-storage, dvta]
+
+  # Hardcoded FTP credentials (DVTA Admin.cs pattern)
+  - id: csharp-ftp-hardcoded-password
+    pattern-regex: 'new\s+NetworkCredential\s*\(\s*"[^"]+"\s*,\s*"[^"]+"'
+    message: "Hardcoded network credentials - use secure credential storage (CWE-798)"
+    languages: [generic]
+    paths:
+      include:
+        - "*.cs"
+    severity: ERROR
+    metadata:
+      cwe: "CWE-798"
+      owasp: "A07:2021"
+      tags: [hardcoded-credentials, ftp, dvta]
+
+  # Plaintext password in variable assignment
+  - id: csharp-plaintext-password-var
+    pattern-regex: '(password|Password|pwd|Pwd)\s*=\s*"[^"]+"'
+    message: "Hardcoded password in code - use secure credential storage (CWE-798)"
+    languages: [generic]
+    paths:
+      include:
+        - "*.cs"
+    severity: ERROR
+    metadata:
+      cwe: "CWE-798"
+      owasp: "A07:2021"
+      tags: [hardcoded-credentials, dvta]
+
+  # SqlCommand with dynamic query string
+  - id: csharp-sqlcommand-dynamic
+    pattern-regex: 'new\s+SqlCommand\s*\(\s*\w+\s*,'
+    message: "SqlCommand with variable query - ensure parameterized queries are used (CWE-89)"
+    languages: [generic]
+    paths:
+      include:
+        - "*.cs"
+    severity: WARNING
+    metadata:
+      cwe: "CWE-89"
+      owasp: "A03:2021"
+      tags: [sql-injection, dvta]
+
+  # Console output of decrypted data
+  - id: csharp-console-decrypt-output
+    pattern-regex: 'Console\.(Write|WriteLine)\s*\([^)]*[Dd]ecrypt'
+    message: "Console output of decrypted data - sensitive information exposure (CWE-532)"
+    languages: [generic]
+    paths:
+      include:
+        - "*.cs"
+    severity: WARNING
+    metadata:
+      cwe: "CWE-532"
+      owasp: "A09:2021"
+      tags: [sensitive-data, dvta]

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
     Shield, Search, AlertTriangle, CheckCircle, Copy, Check,
     Download, ExternalLink, Filter, Loader2, Github, ChevronDown,
-    ChevronRight, FileCode, Lock, Package, Clock, DollarSign
+    ChevronRight, FileCode, Lock, Package, Clock, DollarSign,
+    History, Trash2, X
 } from "lucide-react";
 import {
     ScanResult, ScanSummary, severityConfig, scannerInfo,
@@ -14,6 +15,17 @@ import {
 
 type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 type Scanner = 'semgrep' | 'trivy' | 'gitleaks' | 'npm-audit';
+
+interface ScanHistoryItem {
+    id: string;
+    repoUrl: string;
+    scannedAt: string;
+    summary: ScanSummary;
+    results: ScanResult[];
+}
+
+const STORAGE_KEY = 'vibelab-scan-history';
+const MAX_HISTORY = 10;
 
 export default function ScanPage() {
     const [repoUrl, setRepoUrl] = useState("");
@@ -26,6 +38,58 @@ export default function ScanPage() {
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [severityFilter, setSeverityFilter] = useState<Severity | 'all'>('all');
     const [scannerFilter, setScannerFilter] = useState<Scanner | 'all'>('all');
+
+    // History state
+    const [history, setHistory] = useState<ScanHistoryItem[]>([]);
+    const [showHistory, setShowHistory] = useState(false);
+
+    // Load history from localStorage on mount
+    useEffect(() => {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+            try {
+                setHistory(JSON.parse(stored));
+            } catch { }
+        }
+    }, []);
+
+    // Save history to localStorage
+    const saveHistory = (newHistory: ScanHistoryItem[]) => {
+        setHistory(newHistory);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newHistory));
+    };
+
+    const addToHistory = (url: string, scanSummary: ScanSummary, scanResults: ScanResult[]) => {
+        const newItem: ScanHistoryItem = {
+            id: Date.now().toString(),
+            repoUrl: url,
+            scannedAt: new Date().toISOString(),
+            summary: scanSummary,
+            results: scanResults,
+        };
+
+        // Remove oldest if at limit, and avoid duplicates
+        const filtered = history.filter(h => h.repoUrl !== url);
+        const updated = [newItem, ...filtered].slice(0, MAX_HISTORY);
+        saveHistory(updated);
+    };
+
+    const loadFromHistory = (item: ScanHistoryItem) => {
+        setRepoUrl(item.repoUrl);
+        setResults(item.results);
+        setSummary(item.summary);
+        setShowHistory(false);
+    };
+
+    const deleteFromHistory = (id: string) => {
+        const updated = history.filter(h => h.id !== id);
+        saveHistory(updated);
+    };
+
+    const clearHistory = () => {
+        saveHistory([]);
+        setShowHistory(false);
+    };
 
     const runScan = async () => {
         if (!repoUrl.trim()) {
@@ -40,6 +104,8 @@ export default function ScanPage() {
         setScanStatus("Cloning repository...");
 
         try {
+            setScanStatus("Running security scanners (2200+ rules)...");
+
             const response = await fetch("/api/scan", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -55,6 +121,9 @@ export default function ScanPage() {
             setResults(data.results);
             setSummary(data.summary);
             setScanStatus("");
+
+            // Save to history
+            addToHistory(repoUrl, data.summary, data.results);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Scan failed");
             setScanStatus("");
@@ -97,6 +166,11 @@ export default function ScanPage() {
 
     const fixEstimate = results.length > 0 ? estimateFixCost(results) : null;
 
+    const formatDate = (iso: string) => {
+        const date = new Date(iso);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
     return (
         <div className="max-w-6xl mx-auto px-6 pb-24">
             {/* Header */}
@@ -105,24 +179,96 @@ export default function ScanPage() {
                     ← Back to Home
                 </Link>
 
-                <div className="flex items-center gap-4 mb-4">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
-                        <Shield className="w-7 h-7 text-white" />
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
+                            <Shield className="w-7 h-7 text-white" />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-bold text-white">Security Scanner</h1>
+                            <p className="text-[var(--foreground-secondary)]">
+                                2200+ security rules • 4 scanners • AI fix prompts
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-3xl font-bold text-white">Security Scanner</h1>
-                        <p className="text-[var(--foreground-secondary)]">
-                            Analyze repositories for vulnerabilities with AI-ready fix prompts
-                        </p>
-                    </div>
+
+                    {history.length > 0 && (
+                        <button
+                            onClick={() => setShowHistory(!showHistory)}
+                            className="btn-secondary"
+                        >
+                            <History className="w-4 h-4" />
+                            History ({history.length})
+                        </button>
+                    )}
                 </div>
             </div>
+
+            {/* History Panel */}
+            {showHistory && (
+                <div className="card p-6 mb-8 border-2 border-[var(--accent)]/30">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="font-semibold text-white flex items-center gap-2">
+                            <History className="w-5 h-5" />
+                            Scan History
+                        </h2>
+                        <div className="flex gap-2">
+                            <button onClick={clearHistory} className="btn-ghost text-sm text-red-400">
+                                <Trash2 className="w-4 h-4" />
+                                Clear All
+                            </button>
+                            <button onClick={() => setShowHistory(false)} className="btn-ghost text-sm">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        {history.map(item => (
+                            <div
+                                key={item.id}
+                                className="p-4 rounded-xl bg-[var(--background-card)] border border-[var(--border)] flex items-center justify-between"
+                            >
+                                <button
+                                    onClick={() => loadFromHistory(item)}
+                                    className="flex-1 text-left"
+                                >
+                                    <p className="font-medium text-white text-sm truncate">
+                                        {item.repoUrl.replace('https://github.com/', '')}
+                                    </p>
+                                    <div className="flex items-center gap-3 mt-1">
+                                        <span className="text-xs text-[var(--foreground-muted)]">
+                                            {formatDate(item.scannedAt)}
+                                        </span>
+                                        <span className="text-xs text-red-500">
+                                            {item.summary.critical} critical
+                                        </span>
+                                        <span className="text-xs text-orange-500">
+                                            {item.summary.high} high
+                                        </span>
+                                        <span className="text-xs text-[var(--foreground-muted)]">
+                                            {item.summary.total} total
+                                        </span>
+                                    </div>
+                                </button>
+                                <button
+                                    onClick={() => deleteFromHistory(item.id)}
+                                    className="p-2 text-[var(--foreground-muted)] hover:text-red-400"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Scanner Input */}
             <div className="card p-6 mb-8">
                 <div className="flex items-center gap-2 mb-4">
                     <Github className="w-5 h-5 text-[var(--foreground-secondary)]" />
                     <h2 className="font-semibold text-white">Scan Repository</h2>
+                    <span className="badge text-xs ml-2">2200+ Rules</span>
                 </div>
 
                 <div className="flex gap-3">
@@ -401,13 +547,22 @@ export default function ScanPage() {
                         Scan a GitHub Repository
                     </h2>
                     <p className="text-[var(--foreground-secondary)] max-w-md mx-auto mb-6">
-                        Enter a public GitHub repository URL to analyze it for security vulnerabilities.
-                        Get AI-ready fix prompts for every issue found.
+                        Analyze repositories with 2200+ security rules.
+                        Get AI-ready fix prompts for every vulnerability found.
                     </p>
-                    <div className="flex flex-wrap justify-center gap-3">
-                        {['Semgrep SAST', 'Trivy Deps', 'Gitleaks Secrets', 'npm audit'].map(s => (
+                    <div className="flex flex-wrap justify-center gap-3 mb-6">
+                        {['OWASP Top 10', 'CWE Top 25', 'Secret Detection', '15+ Languages'].map(s => (
                             <span key={s} className="badge">{s}</span>
                         ))}
+                    </div>
+                    <div className="flex flex-wrap justify-center gap-2 text-xs text-[var(--foreground-muted)]">
+                        <span>Semgrep SAST</span>
+                        <span>•</span>
+                        <span>Trivy Deps</span>
+                        <span>•</span>
+                        <span>Gitleaks Secrets</span>
+                        <span>•</span>
+                        <span>npm audit</span>
                     </div>
                 </div>
             )}

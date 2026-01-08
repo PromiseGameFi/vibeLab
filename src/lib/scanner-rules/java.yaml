@@ -1,0 +1,1327 @@
+# Java Security Rules (Streamlined ~70 rules)
+rules:
+  # ============================================
+  # Command Injection
+  # ============================================
+
+  - id: java-runtime-exec
+    pattern: Runtime.getRuntime().exec($CMD)
+    message: Java command execution - injection risk
+    languages: [java]
+    severity: ERROR
+
+  - id: java-processbuilder
+    pattern: new ProcessBuilder($CMD)
+    message: Java ProcessBuilder - command injection risk
+    languages: [java]
+    severity: WARNING
+
+  - id: java-processbuilder-array-concat
+    pattern-regex: 'new\s+ProcessBuilder\s*\(\s*new\s+String\s*\[\s*\]\s*\{[^}]*\+\s*[a-zA-Z_]\w*'
+    message: ProcessBuilder with string concatenation in command array - command injection vulnerability (CWE-78)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-78"
+      tags: [command-injection, rce]
+
+  - id: java-processbuilder-shell-exec
+    pattern-regex: 'ProcessBuilder\s*\([^)]*"(sh|bash|cmd)"\s*,\s*"-c"[^)]*\+\s*[a-zA-Z_]\w*'
+    message: ProcessBuilder executing shell command with user input - command injection vulnerability (CWE-78)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-78"
+      tags: [command-injection, rce]
+
+  - id: java-runtime-exec-concat
+    pattern-regex: 'Runtime\.getRuntime\(\)\.exec\s*\([^)]*\+\s*[a-zA-Z_]\w*'
+    message: Runtime.exec with string concatenation - command injection vulnerability (CWE-78)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-78"
+      tags: [command-injection, rce]
+
+  # ============================================
+  # SQL Injection
+  # ============================================
+
+  - id: java-statement-execute
+    pattern: $STMT.execute($QUERY)
+    message: Java SQL - use PreparedStatement instead
+    languages: [java]
+    severity: WARNING
+
+  - id: java-statement-executequery
+    pattern: $STMT.executeQuery($QUERY)
+    message: Java SQL - use PreparedStatement instead
+    languages: [java]
+    severity: WARNING
+
+  - id: java-sql-concat
+    pattern: '"SELECT " + $VAR'
+    message: Java SQL concatenation - SQL injection risk
+    languages: [java]
+    severity: ERROR
+
+  - id: java-sql-concat-where
+    pattern: '"... WHERE " + $VAR'
+    message: Java SQL WHERE concatenation - SQL injection risk (CWE-89)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+
+  - id: java-sql-string-format
+    pattern: String.format("SELECT $...", $VAR)
+    message: Java SQL string format - SQL injection risk (CWE-89)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+
+  - id: java-createquery-concat
+    pattern: $EM.createQuery("..." + $VAR)
+    message: Java JPA createQuery with concatenation - SQL injection risk (CWE-89)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+
+  - id: java-nativequery-concat
+    pattern: $EM.createNativeQuery("..." + $VAR)
+    message: Java JPA native query with concatenation - SQL injection risk (CWE-89)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+
+  - id: java-jdbctemplate-query-concat
+    pattern: $JDBC.query("..." + $VAR, ...)
+    message: Spring JdbcTemplate query with concatenation - SQL injection risk (CWE-89)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+
+  - id: java-jdbctemplate-update-concat
+    pattern: $JDBC.update("..." + $VAR)
+    message: Spring JdbcTemplate update with concatenation - SQL injection risk (CWE-89)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+
+  - id: java-hibernate-createquery-concat
+    pattern: $SESSION.createQuery("..." + $VAR)
+    message: Hibernate createQuery with concatenation - SQL injection risk (CWE-89)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+
+  - id: java-sql-injectable-query
+    pattern-regex: '(createQuery|createNativeQuery|executeQuery)\s*\(\s*[^")]*\+\s*'
+    message: Java dynamic SQL query - SQL injection risk (CWE-89)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+
+  # VulnerableApp-style SQL injection patterns (lowercase SQL)
+  - id: java-sql-select-concat-lowercase
+    pattern-regex: '"select\s+\*?\s*from\s+\w+\s+where\s+\w+\s*=\s*"\s*\+\s*\w+'
+    message: SQL query string concatenation - SQL injection vulnerability (CWE-89)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+      tags: [sqli, injection]
+
+  - id: java-sql-select-concat-quoted
+    pattern-regex: '"select\s+[^"]*where\s+\w+\s*=\s*''"\s*\+\s*\w+\s*\+\s*"''"'
+    message: SQL query with quoted string concatenation - SQL injection vulnerability (CWE-89)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+      tags: [sqli, injection]
+
+  - id: java-sql-generic-concat
+    pattern-regex: '"\s*(SELECT|INSERT|UPDATE|DELETE|select|insert|update|delete)\s+[^"]*"\s*\+\s*[a-zA-Z_]\w*'
+    message: Dynamic SQL query with variable concatenation - SQL injection risk (CWE-89)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+      tags: [sqli, injection]
+
+  - id: java-preparedstatement-concat
+    pattern-regex: 'prepareStatement\s*\(\s*"[^"]*"\s*\+\s*[a-zA-Z_]\w*'
+    message: PreparedStatement with string concatenation - misuse negates SQL injection protection (CWE-89)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+      tags: [sqli, injection]
+
+  # ============================================
+  # XPath Injection
+  # ============================================
+
+  - id: java-xpath-evaluate
+    pattern: $XPATH.evaluate($EXPR, ...)
+    message: Java XPath - injection risk if expression is user input
+    languages: [java]
+    severity: WARNING
+
+  # ============================================
+  # Insecure Deserialization
+  # ============================================
+
+  - id: java-objectinputstream
+    pattern: new ObjectInputStream($STREAM).readObject()
+    message: Java insecure deserialization
+    languages: [java]
+    severity: ERROR
+
+  - id: java-objectinputstream-new
+    pattern: new ObjectInputStream(...)
+    message: Java ObjectInputStream - insecure deserialization vulnerability
+    languages: [java]
+    severity: ERROR
+
+  - id: java-xmldecoder
+    pattern: new XMLDecoder(...)
+    message: Java XMLDecoder - insecure deserialization vulnerability
+    languages: [java]
+    severity: ERROR
+
+  - id: java-xstream
+    pattern: new XStream()
+    message: Java XStream without security configuration - insecure deserialization
+    languages: [java]
+    severity: ERROR
+
+  - id: java-snakeyaml
+    pattern: new Yaml()
+    message: Java SnakeYAML without safe constructor - insecure deserialization
+    languages: [java]
+    severity: WARNING
+
+  # ============================================
+  # Weak Cryptography
+  # ============================================
+
+  - id: java-crypto-ecb
+    pattern: 'Cipher.getInstance("AES/ECB/$PADDING")'
+    message: Java ECB mode is insecure - use GCM or CBC
+    languages: [java]
+    severity: ERROR
+
+  - id: java-crypto-des
+    pattern: 'Cipher.getInstance("DES")'
+    message: Java DES is weak - use AES
+    languages: [java]
+    severity: ERROR
+
+  - id: java-random-security
+    pattern: new Random()
+    message: Java Random not secure - use SecureRandom
+    languages: [java]
+    severity: WARNING
+
+  - id: java-md5-hash
+    pattern: 'MessageDigest.getInstance("MD5")'
+    message: Java MD5 is weak for security purposes
+    languages: [java]
+    severity: WARNING
+
+  - id: java-sha1-hash
+    pattern: 'MessageDigest.getInstance("SHA-1")'
+    message: Java SHA-1 is deprecated for security
+    languages: [java]
+    severity: WARNING
+
+  - id: java-crypto-rc4
+    pattern: 'Cipher.getInstance("RC4")'
+    message: Java RC4 is broken - use AES
+    languages: [java]
+    severity: ERROR
+
+  - id: java-weak-rsa-keygen
+    pattern: $KPG.initialize(1024)
+    message: Java RSA key size too small - use at least 2048 bits
+    languages: [java]
+    severity: ERROR
+
+  - id: java-static-iv
+    pattern: 'new IvParameterSpec("...".getBytes())'
+    message: Java static IV in encryption - IV should be random
+    languages: [java]
+    severity: ERROR
+
+  # ============================================
+  # XXE (XML External Entity)
+  # ============================================
+
+  - id: java-xxe-documentbuilder
+    pattern: DocumentBuilderFactory.newInstance()
+    message: Java XML parser may be vulnerable to XXE - disable external entities
+    languages: [java]
+    severity: WARNING
+
+  - id: java-xxe-saxparser
+    pattern: SAXParserFactory.newInstance()
+    message: Java SAX parser may be vulnerable to XXE - disable external entities
+    languages: [java]
+    severity: WARNING
+
+  - id: java-xxe-xmlinputfactory
+    pattern: XMLInputFactory.newInstance()
+    message: Java StAX parser may be vulnerable to XXE - disable external entities
+    languages: [java]
+    severity: WARNING
+
+  - id: java-xxe-external-entities-enabled
+    pattern: $FACTORY.setFeature("http://xml.org/sax/features/external-general-entities", true)
+    message: External entities enabled - XXE vulnerability
+    languages: [java]
+    severity: ERROR
+
+  # ============================================
+  # Path Traversal
+  # ============================================
+
+  - id: java-path-traversal-file-new
+    pattern: new File($REQUEST)
+    message: Java File creation with user input - potential path traversal
+    languages: [java]
+    severity: ERROR
+
+  - id: java-path-traversal-paths-get
+    pattern: Paths.get($REQUEST)
+    message: Java Paths.get() with user input - potential path traversal
+    languages: [java]
+    severity: ERROR
+
+  - id: java-path-traversal-fileinputstream
+    pattern: new FileInputStream($REQUEST)
+    message: Java FileInputStream with user input - potential path traversal
+    languages: [java]
+    severity: ERROR
+
+  # ============================================
+  # JWT Security
+  # ============================================
+
+  - id: java-jwt-none-algorithm
+    pattern-regex: '"alg"\s*:\s*"none"'
+    message: JWT none algorithm - authentication bypass vulnerability (CWE-287)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-287"
+
+  - id: java-jwt-algorithm-none
+    pattern: Algorithm.none()
+    message: Java JWT none algorithm - authentication bypass vulnerability
+    languages: [java]
+    severity: ERROR
+
+  # ============================================
+  # SSRF
+  # ============================================
+
+  - id: java-ssrf-url
+    pattern: new URL($USER_INPUT)
+    message: Java URL with user input - potential SSRF vulnerability
+    languages: [java]
+    severity: ERROR
+
+  - id: java-ssrf-httpurlconnection
+    pattern: $URL.openConnection()
+    message: Java HTTP connection - verify URL is validated against SSRF
+    languages: [java]
+    severity: WARNING
+
+  # ============================================
+  # LDAP Injection
+  # ============================================
+
+  - id: java-ldap-injection
+    pattern: $CTX.search($BASE, $FILTER, ...)
+    message: Java LDAP search - potential LDAP injection if filter contains user input
+    languages: [java]
+    severity: WARNING
+
+  # ============================================
+  # JNDI Injection (Log4Shell style)
+  # ============================================
+
+  - id: java-jndi-injection
+    pattern: $CTX.lookup($INPUT)
+    message: JNDI lookup - potential JNDI injection (Log4Shell style attack)
+    languages: [java]
+    severity: ERROR
+
+  - id: java-jndi-ldap-url
+    pattern: '"ldap://..."'
+    message: LDAP URL in code - potential JNDI injection vector
+    languages: [java]
+    severity: ERROR
+
+  - id: java-jndi-rmi-url
+    pattern: '"rmi://..."'
+    message: RMI URL in code - potential JNDI injection vector
+    languages: [java]
+    severity: ERROR
+
+  # ============================================
+  # Spring Security
+  # ============================================
+
+  - id: java-spring-csrf-disabled
+    pattern: http.csrf().disable()
+    message: Spring Security CSRF protection disabled
+    languages: [java]
+    severity: ERROR
+
+  - id: java-spring-csrf-disabled-lambda
+    pattern: csrf(csrf -> csrf.disable())
+    message: Spring Security CSRF protection disabled
+    languages: [java]
+    severity: ERROR
+
+  - id: java-spring-headers-disabled
+    pattern: $X.headers().disable()
+    message: Spring Security headers disabled - removes XSS and clickjacking protection
+    languages: [java]
+    severity: ERROR
+
+  - id: java-spring-frame-options-disabled
+    pattern: $X.frameOptions().disable()
+    message: Spring Security frame options disabled - clickjacking vulnerability
+    languages: [java]
+    severity: WARNING
+
+  # ============================================
+  # SSL/TLS Issues
+  # ============================================
+
+  - id: java-weak-ssl-context
+    pattern: 'SSLContext.getInstance("SSL")'
+    message: Java SSL context uses outdated protocol - use TLSv1.2 or higher
+    languages: [java]
+    severity: ERROR
+
+  - id: java-trust-all-certs
+    pattern: X509TrustManager
+    message: Java X509TrustManager - ensure certificates are properly validated
+    languages: [java]
+    severity: WARNING
+
+  # ============================================
+  # Hardcoded Credentials
+  # ============================================
+
+  - id: java-hardcoded-password-literal
+    pattern: DriverManager.getConnection($URL, $USER, "...")
+    message: Hardcoded password in database connection
+    languages: [java]
+    severity: ERROR
+
+  - id: java-hardcoded-password-properties
+    pattern: $PROPS.setProperty("password", "...")
+    message: Hardcoded password in Properties
+    languages: [java]
+    severity: ERROR
+
+  # ============================================
+  # Spring Boot / Hibernate ORM
+  # ============================================
+
+  - id: java-hibernate-native-query
+    pattern: $EM.createNativeQuery($QUERY)
+    message: Java Hibernate native query - SQL injection risk with user input
+    languages: [java]
+    severity: WARNING
+
+  - id: java-hibernate-hql-concat
+    pattern: $EM.createQuery("..." + $VAR)
+    message: Java HQL query concatenation - injection risk
+    languages: [java]
+    severity: ERROR
+
+  - id: java-spring-spel-injection
+    pattern: 'SpelExpressionParser().parseExpression($INPUT)'
+    message: Spring SpEL expression - injection risk with user input
+    languages: [java]
+    severity: ERROR
+
+  # ============================================
+  # Expression Language Injection
+  # ============================================
+
+  - id: java-el-injection
+    pattern: $EF.createValueExpression($CTX, $USER_INPUT, ...)
+    message: Java EL injection - user input in expression
+    languages: [java]
+    severity: ERROR
+
+  - id: java-ognl-injection
+    pattern: Ognl.getValue($EXPR, ...)
+    message: Java OGNL injection risk
+    languages: [java]
+    severity: ERROR
+
+  - id: java-mvel-injection
+    pattern: MVEL.eval($USER_INPUT)
+    message: Java MVEL expression injection
+    languages: [java]
+    severity: ERROR
+
+  # ============================================
+  # Server-Side Template Injection
+  # ============================================
+
+  - id: java-velocity-template-user
+    pattern: Velocity.evaluate($CTX, $WRITER, $TAG, $USER_INPUT)
+    message: Java Velocity template from user input - SSTI risk
+    languages: [java]
+    severity: ERROR
+
+  - id: java-freemarker-template-user
+    pattern: new Template($NAME, new StringReader($USER_INPUT), ...)
+    message: Java FreeMarker template from user input - SSTI risk
+    languages: [java]
+    severity: ERROR
+
+  - id: java-thymeleaf-ssti
+    pattern: $ENGINE.process($TEMPLATE, $CTX)
+    message: "Java Thymeleaf template processing - verify template is not user-controlled (CWE-94)"
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-94"
+      tags: [ssti, template]
+
+  - id: java-thymeleaf-fragment-ssti
+    pattern: 'return "... :: " + $VAR'
+    message: "Java Thymeleaf fragment expression with variable - SSTI risk (CWE-94)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-94"
+      tags: [ssti, template]
+
+  - id: java-pebble-ssti
+    pattern: $ENGINE.getTemplate($USER_INPUT)
+    message: "Java Pebble template from user input - SSTI vulnerability (CWE-94)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-94"
+      tags: [ssti, template]
+
+  - id: java-groovy-template-ssti
+    pattern: GroovyTemplateEngine().createTemplate($INPUT)
+    message: "Java Groovy template from input - SSTI vulnerability (CWE-94)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-94"
+      tags: [ssti, template]
+
+  - id: java-jmustache-ssti
+    pattern: Mustache.compiler().compile($USER_INPUT)
+    message: "Java JMustache template from user input - SSTI vulnerability (CWE-94)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-94"
+      tags: [ssti, template]
+
+  - id: java-jtwig-ssti
+    pattern: JtwigTemplate.classpathTemplate($USER_INPUT)
+    message: "Java JTwig template from user input - SSTI vulnerability (CWE-94)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-94"
+      tags: [ssti, template]
+
+  - id: java-handlebars-ssti
+    pattern: $HANDLEBARS.compileInline($USER_INPUT)
+    message: "Java Handlebars template from user input - SSTI vulnerability (CWE-94)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-94"
+      tags: [ssti, template]
+
+  - id: java-velocity-merge-user
+    pattern: VelocityEngine().getTemplate($USER_INPUT)
+    message: "Java Velocity template from user input - SSTI vulnerability (CWE-94)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-94"
+      tags: [ssti, template]
+
+  - id: java-freemarker-cfg-template
+    pattern: $CFG.getTemplate($USER_INPUT)
+    message: "Java FreeMarker configuration getTemplate with user input - SSTI (CWE-94)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-94"
+      tags: [ssti, template]
+
+  # ============================================
+  # Open Redirect
+  # ============================================
+
+  - id: java-servlet-redirect
+    pattern: $RESPONSE.sendRedirect($USER_INPUT)
+    message: Java servlet redirect with user input - open redirect risk (CWE-601)
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-601"
+
+  - id: java-spring-redirect
+    pattern: '"redirect:" + $USER_INPUT'
+    message: Spring redirect with user input - open redirect risk (CWE-601)
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-601"
+
+  - id: java-redirect-header
+    pattern: $RESPONSE.setHeader("Location", $URL)
+    message: Java Location header with variable - open redirect risk (CWE-601)
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-601"
+
+  - id: java-redirect-getparameter
+    pattern: $RESPONSE.sendRedirect($REQUEST.getParameter(...))
+    message: Java redirect from request parameter - open redirect vulnerability (CWE-601)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-601"
+
+  - id: java-spring-redirect-param
+    pattern: return "redirect:" + $REQUEST.getParameter(...)
+    message: Spring redirect from request parameter - open redirect vulnerability (CWE-601)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-601"
+
+  - id: java-redirect-url-pattern
+    pattern-regex: 'sendRedirect\s*\(\s*(url|redirectUrl|redirect|returnUrl|next|target|goto|redir)'
+    message: Java redirect with URL parameter - validate against whitelist (CWE-601)
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-601"
+
+  - id: java-spring-modelview-redirect
+    pattern: new ModelAndView("redirect:" + $URL)
+    message: Spring ModelAndView redirect with variable - open redirect risk (CWE-601)
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-601"
+
+  # Spring ResponseEntity open redirect patterns
+  - id: java-spring-responseentity-location-header
+    pattern-regex: 'ResponseEntity[^;]*\.header\s*\(\s*"?Location"?\s*,\s*[a-zA-Z_]\w*'
+    message: Spring ResponseEntity with Location header from variable - open redirect risk (CWE-601)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-601"
+      tags: [open-redirect, spring]
+
+  - id: java-spring-responseentity-302-location
+    pattern-regex: 'ResponseEntity[^;]*(FOUND|MOVED_PERMANENTLY|SEE_OTHER|TEMPORARY_REDIRECT)[^;]*header\s*\(\s*"?Location"?'
+    message: Spring ResponseEntity 3xx with Location header - validate redirect URL (CWE-601)
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-601"
+      tags: [open-redirect, spring]
+
+  - id: java-http-headers-location
+    pattern: $HEADERS.set("Location", $URL)
+    message: HTTP Location header with variable - open redirect risk (CWE-601)
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-601"
+      tags: [open-redirect]
+
+  - id: java-httpservlet-location
+    pattern: $RESPONSE.addHeader("Location", $URL)
+    message: HttpServletResponse Location header - open redirect risk (CWE-601)
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-601"
+      tags: [open-redirect]
+
+  # VulnerableApp-style Open Redirect patterns (HttpHeaders.put/add)
+  - id: java-httpheaders-put-location
+    pattern: $HEADERS.put("Location", ...)
+    message: HttpHeaders Location put - open redirect risk (CWE-601)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-601"
+      tags: [open-redirect]
+
+  - id: java-httpheaders-location-add
+    pattern: $HEADERS.get("Location").add($URL)
+    message: HttpHeaders Location header with user-controlled URL - open redirect vulnerability (CWE-601)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-601"
+      tags: [open-redirect]
+
+  - id: java-responseentity-found-redirect
+    pattern-regex: 'new\s+ResponseEntity<>\s*\([^,]+,\s*HttpStatus\.FOUND\s*\)'
+    message: ResponseEntity with HTTP 302 FOUND - check for open redirect (CWE-601)
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-601"
+      tags: [open-redirect]
+
+  - id: java-httpheaders-put-location-key
+    pattern-regex: '\.put\s*\(\s*LOCATION_HEADER_KEY'
+    message: Location header via constant - check for open redirect (CWE-601)
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-601"
+      tags: [open-redirect]
+
+  - id: java-httpheaders-get-location-key
+    pattern-regex: '\.get\s*\(\s*LOCATION_HEADER_KEY\s*\)\s*\.add\s*\('
+    message: Adding URL to Location header - open redirect vulnerability (CWE-601)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-601"
+      tags: [open-redirect]
+
+  # ============================================
+  # Logging Sensitive Data
+  # ============================================
+
+  - id: java-log4j-format-user
+    pattern: $LOG.info($USER_INPUT)
+    message: Java logging user input - potential Log4Shell if unpatched
+    languages: [java]
+    severity: WARNING
+
+  # ============================================
+  # File Upload
+  # ============================================
+
+  - id: java-multipart-filename
+    pattern: $FILE.getOriginalFilename()
+    message: Java file upload - validate/sanitize filename before use
+    languages: [java]
+    severity: WARNING
+
+  - id: java-file-transfer
+    pattern: $FILE.transferTo($DEST)
+    message: Java file upload - ensure destination path is validated
+    languages: [java]
+    severity: WARNING
+
+  # ============================================
+  # Cookie Security
+  # ============================================
+
+  - id: java-cookie-no-httponly
+    pattern: $COOKIE.setHttpOnly(false)
+    message: Java cookie HttpOnly disabled - XSS risk
+    languages: [java]
+    severity: ERROR
+
+  - id: java-cookie-no-secure
+    pattern: $COOKIE.setSecure(false)
+    message: Java cookie Secure flag disabled - MITM risk
+    languages: [java]
+    severity: WARNING
+
+  # ============================================
+  # Reflection Security
+  # ============================================
+
+  - id: java-class-forname-user
+    pattern: Class.forName($USER_INPUT)
+    message: Java Class.forName with user input - arbitrary class loading
+    languages: [java]
+    severity: ERROR
+
+  # ============================================
+  # Misconfiguration
+  # ============================================
+
+  - id: java-cors-allow-all
+    pattern-regex: '\.allowedOrigins\s*\(\s*"\*"\s*\)'
+    message: Java CORS allows all origins - restrict in production (CWE-942)
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-942"
+
+  - id: java-cors-credentials-wildcard
+    pattern-regex: '\.allowedOrigins\s*\(\s*"\*"\s*\)[^;]*\.allowCredentials\s*\(\s*true\s*\)'
+    message: Java CORS wildcard with credentials - security risk (CWE-942)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-942"
+
+  # ============================================
+  # Data Exposure (OWASP API3, crAPI challenges 4-5)
+  # ============================================
+
+  # Spring ResponseEntity returning entity directly
+  - id: java-responseentity-return-entity
+    pattern: ResponseEntity.ok($ENTITY)
+    message: "ResponseEntity returning entity directly - consider using DTO to filter sensitive fields (CWE-200)"
+    languages: [java]
+    severity: INFO
+    metadata:
+      cwe: "CWE-200"
+      owasp: "OWASP API Top 10 - Excessive Data Exposure"
+      tags: [spring, data-exposure, api]
+
+  # Returning User object directly
+  - id: java-return-user-entity
+    pattern-regex: 'return\s+(user|currentUser|userEntity|dbUser)\b'
+    message: "Returning User entity directly - ensure password and sensitive fields are excluded (CWE-200)"
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-200"
+      owasp: "OWASP API Top 10 - Excessive Data Exposure"
+      tags: [data-exposure, pii, api]
+
+  # JPA findAll without projection
+  - id: java-jpa-findall-no-projection
+    pattern: $REPO.findAll()
+    message: "JPA findAll returns all entity fields - consider using projections to limit data exposure (CWE-200)"
+    languages: [java]
+    severity: INFO
+    metadata:
+      cwe: "CWE-200"
+      owasp: "OWASP API Top 10 - Excessive Data Exposure"
+      tags: [jpa, data-exposure]
+
+  # Spring GetMapping returning entity
+  - id: java-getmapping-return-entity
+    pattern: |
+      @GetMapping(...)
+      public $TYPE $METHOD(...) {
+          ...
+          return $ENTITY;
+      }
+    message: "REST endpoint returning entity - use DTO pattern to prevent excessive data exposure (CWE-200)"
+    languages: [java]
+    severity: INFO
+    metadata:
+      cwe: "CWE-200"
+      owasp: "OWASP API Top 10 - Excessive Data Exposure"
+      tags: [spring, rest, data-exposure]
+
+  # Entity with sensitive field returned in response
+  - id: java-entity-sensitive-field-password
+    pattern-regex: '@(Entity|Document)[^}]*private\s+String\s+(password|passwordHash|secret|apiKey|token)'
+    message: "Entity with sensitive field - ensure field is excluded from JSON serialization (@JsonIgnore) (CWE-200)"
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-200"
+      owasp: "OWASP API Top 10 - Excessive Data Exposure"
+      tags: [entity, data-exposure, password]
+
+  # ============================================
+  # Android Security (DIVA vulnerabilities)
+  # ============================================
+
+  # Insecure Logging - Logging sensitive data
+  - id: java-android-log-sensitive-data
+    pattern-regex: 'Log\.(e|d|i|w|v)\s*\([^,]+,\s*[^)]*\+[^)]*\.getText\(\)'
+    message: Android logging user input - sensitive data exposure via logcat (CWE-532)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-532"
+      owasp: "OWASP Mobile Top 10 - M1 Improper Platform Usage"
+
+  - id: java-android-log-credit-card
+    pattern-regex: 'Log\.(e|d|i|w|v)\s*\([^)]*credit[^)]*\)'
+    message: Logging credit card data - PCI DSS violation (CWE-532)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-532"
+
+  - id: java-android-log-password
+    pattern-regex: 'Log\.(e|d|i|w|v)\s*\([^)]*password[^)]*\)'
+    message: Logging password data - sensitive data exposure (CWE-532)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-532"
+
+  # Hardcoded Credentials
+  - id: java-android-hardcoded-equals
+    pattern-regex: '\.equals\s*\(\s*"[a-zA-Z0-9_]{6,}"\s*\)'
+    message: Hardcoded string comparison - potential embedded credential (CWE-798)
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-798"
+      owasp: "OWASP Mobile Top 10 - M9 Reverse Engineering"
+
+  - id: java-android-hardcoded-secret-key
+    pattern-regex: '(secretkey|apikey|password|token|secret)\s*=\s*"[^"]{6,}"'
+    message: Hardcoded secret value - store in Android Keystore (CWE-798)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-798"
+
+  # Insecure Data Storage - SharedPreferences
+  - id: java-android-sharedprefs-putstring-password
+    pattern-regex: 'putString\s*\(\s*"(password|pwd|passwd|secret|token|key)"'
+    message: Storing sensitive data in SharedPreferences - use EncryptedSharedPreferences (CWE-312)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-312"
+      owasp: "OWASP Mobile Top 10 - M2 Insecure Data Storage"
+
+  - id: java-android-sharedprefs-gettext
+    pattern-regex: 'putString\s*\([^,]+,\s*[^)]*\.getText\(\)'
+    message: Storing user input in SharedPreferences without encryption (CWE-312)
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-312"
+
+  - id: java-android-sharedprefs-commit
+    pattern: $EDIT.commit()
+    message: SharedPreferences.commit() - consider apply() for async write or verify sensitive data handling
+    languages: [java]
+    severity: INFO
+    metadata:
+      cwe: "CWE-312"
+
+  # Insecure Data Storage - Files
+  - id: java-android-openfileoutput-world-readable
+    pattern-regex: 'openFileOutput\s*\([^,]+,\s*MODE_WORLD_READABLE'
+    message: World-readable file - anyone can read stored data (CWE-732)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-732"
+
+  - id: java-android-openfileoutput-world-writable
+    pattern-regex: 'openFileOutput\s*\([^,]+,\s*MODE_WORLD_WRITEABLE'
+    message: World-writable file - anyone can modify stored data (CWE-732)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-732"
+
+  # Insecure Data Storage - SQLite
+  - id: java-android-sqlite-rawquery-concat
+    pattern-regex: 'rawQuery\s*\(\s*"[^"]*"\s*\+\s*[^,)]+'
+    message: SQL injection via string concatenation in rawQuery (CWE-89)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+      owasp: "OWASP Mobile Top 10 - M7 Client Code Quality"
+
+  - id: java-android-sqlite-execsql-concat
+    pattern-regex: 'execSQL\s*\(\s*"[^"]*"\s*\+\s*[^)]+'
+    message: SQL injection via string concatenation in execSQL (CWE-89)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+
+  # Input Validation
+  - id: java-android-webview-loadurl-gettext
+    pattern-regex: 'loadUrl\s*\([^)]*\.getText\(\)'
+    message: WebView loading URL from user input - validate/sanitize (CWE-79)
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-79"
+
+  - id: java-android-webview-javascript-enabled
+    pattern: $SETTINGS.setJavaScriptEnabled(true)
+    message: WebView JavaScript enabled - XSS risk if loading untrusted content
+    languages: [java]
+    severity: WARNING
+
+  - id: java-android-webview-allow-file-access
+    pattern: $SETTINGS.setAllowFileAccess(true)
+    message: WebView file access enabled - local file access risk (CWE-200)
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-200"
+
+  # Access Control - Content Providers
+  - id: java-android-contentprovider-exported
+    pattern-regex: 'android:exported\s*=\s*"true"'
+    message: Content Provider exported - verify access control (CWE-926)
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-926"
+
+  - id: java-android-contentprovider-query-projection
+    pattern-regex: 'query\s*\([^)]*null\s*,\s*null'
+    message: Content Provider query with null projection/selection - data exposure risk
+    languages: [java]
+    severity: INFO
+
+  # Access Control - Intents
+  - id: java-android-intent-getextra-unchecked
+    pattern-regex: 'getIntent\(\)\.get\w*Extra\s*\('
+    message: Intent extra accessed without validation - verify caller (CWE-926)
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-926"
+
+  - id: java-android-sendbroadcast-unprotected
+    pattern: sendBroadcast($INTENT)
+    message: Unprotected broadcast - use LocalBroadcastManager or permissions (CWE-927)
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-927"
+
+  # JNI/Native Security
+  - id: java-android-jni-loadlibrary
+    pattern: System.loadLibrary($LIB)
+    message: Native library loaded - verify library integrity and source
+    languages: [java]
+    severity: INFO
+
+  - id: java-android-native-method
+    pattern-regex: 'private\s+native\s+\w+\s+\w+\s*\('
+    message: Native method declaration - review for hardcoded secrets in native code
+    languages: [java]
+    severity: INFO
+
+  # Debug/Development
+  - id: java-android-debug-buildconfig
+    pattern-regex: 'BuildConfig\.DEBUG'
+    message: Debug check in code - ensure debug features disabled in production
+    languages: [java]
+    severity: INFO
+
+  - id: java-android-strictmode-enabled
+    pattern-regex: 'StrictMode\.(setThreadPolicy|setVmPolicy)'
+    message: StrictMode enabled - remove or conditionally enable in debug only
+    languages: [java]
+    severity: INFO
+
+  # ============================================
+  # XSS - Response Writing (WebGoat patterns)
+  # ============================================
+
+  - id: java-xss-printwriter-print
+    pattern: $RESPONSE.getWriter().print($VAR)
+    message: "Printing to response without encoding - XSS vulnerability (CWE-79)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-79"
+      tags: [xss, webgoat]
+
+  - id: java-xss-printwriter-println
+    pattern: $RESPONSE.getWriter().println($VAR)
+    message: "Printing to response without encoding - XSS vulnerability (CWE-79)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-79"
+      tags: [xss, webgoat]
+
+  - id: java-xss-printwriter-write
+    pattern: $WRITER.write($VAR)
+    message: "Writing to PrintWriter - ensure HTML encoding to prevent XSS (CWE-79)"
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-79"
+      tags: [xss]
+
+  - id: java-xss-outputstream-write
+    pattern: $RESPONSE.getOutputStream().write($VAR)
+    message: "Writing to response OutputStream - verify content is encoded (CWE-79)"
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-79"
+      tags: [xss]
+
+  - id: java-xss-string-concat-html
+    pattern-regex: '"<[^>]+>"\s*\+\s*[a-zA-Z_]\w*\s*\+\s*"</'
+    message: "HTML string concatenation with variable - XSS vulnerability (CWE-79)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-79"
+      tags: [xss, webgoat]
+
+  - id: java-xss-html-builder
+    pattern-regex: '(StringBuilder|StringBuffer)[^;]*append\s*\(\s*"<[^"]*"\s*\)[^;]*append\s*\(\s*[a-zA-Z_]\w*\s*\)'
+    message: "Building HTML with user input - XSS risk (CWE-79)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-79"
+      tags: [xss]
+
+  # Request parameter to response (classic XSS)
+  - id: java-xss-request-to-response
+    pattern-regex: 'getParameter\s*\([^)]+\)[^;]*\.(print|println|write)\s*\('
+    message: "Request parameter written to response - reflected XSS (CWE-79)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-79"
+      tags: [xss, reflected]
+
+  - id: java-xss-getparameter-html
+    pattern: $OUT.print("<..." + $REQ.getParameter(...) + "...")
+    message: "Request parameter in HTML output - reflected XSS (CWE-79)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-79"
+      tags: [xss, reflected, webgoat]
+
+  # ============================================
+  # IDOR - Insecure Direct Object Reference
+  # ============================================
+
+  - id: java-idor-findbyid-param
+    pattern: $REPO.findById($REQUEST.getParameter(...))
+    message: "Direct object lookup by user parameter - IDOR vulnerability (CWE-639)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-639"
+      owasp: "OWASP Top 10 - Broken Access Control"
+      tags: [idor, webgoat]
+
+  - id: java-idor-getbyid-pathvar
+    pattern-regex: '@PathVariable[^)]*id[^)]*\)[^{]*\{[^}]*findById\s*\(\s*id\s*\)'
+    message: "Entity lookup by path ID without auth check - potential IDOR (CWE-639)"
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-639"
+      tags: [idor, spring]
+
+  - id: java-idor-delete-by-param
+    pattern: $REPO.deleteById($REQUEST.getParameter(...))
+    message: "Delete by user parameter without auth check - IDOR vulnerability (CWE-639)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-639"
+      tags: [idor]
+
+  - id: java-idor-userid-parameter
+    pattern-regex: 'getParameter\s*\(\s*"(user_?[Ii]d|userId|uid|user)"\s*\)'
+    message: "User ID from parameter - verify authorization before use (CWE-639)"
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-639"
+      tags: [idor, webgoat]
+
+  # ============================================
+  # Authentication Bypass (WebGoat patterns)
+  # ============================================
+
+  - id: java-auth-bypass-equals-password
+    pattern-regex: '\.equals\s*\(\s*password\s*\)'
+    message: "Direct password comparison - use secure comparison and hashing (CWE-287)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-287"
+      tags: [auth, webgoat]
+
+  - id: java-auth-bypass-string-equals
+    pattern: $INPUT.equals($PASSWORD)
+    message: "String password comparison - vulnerable to timing attacks (CWE-208)"
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-208"
+      tags: [auth, timing]
+
+  - id: java-auth-hardcoded-admin
+    pattern-regex: '(username|user)\.equals\s*\(\s*"admin"\s*\)'
+    message: "Hardcoded admin check - use proper role-based access control (CWE-798)"
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-798"
+      tags: [auth, hardcoded]
+
+  # ============================================
+  # Insecure Session Management
+  # ============================================
+
+  - id: java-session-fixation
+    pattern: $REQUEST.getSession(true)
+    message: "Session creation - ensure session ID regeneration after auth (CWE-384)"
+    languages: [java]
+    severity: INFO
+    metadata:
+      cwe: "CWE-384"
+      tags: [session]
+
+  - id: java-session-setattribute-user
+    pattern: $SESSION.setAttribute("user", $VAR)
+    message: "Setting user in session - verify authentication occurred (CWE-306)"
+    languages: [java]
+    severity: INFO
+    metadata:
+      cwe: "CWE-306"
+      tags: [session, auth]
+
+  # ============================================
+  # Missing Input Validation
+  # ============================================
+
+  - id: java-missing-validation-integer-parse
+    pattern: Integer.parseInt($REQUEST.getParameter(...))
+    message: "Parsing request parameter to int - add try-catch and validation (CWE-20)"
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-20"
+      tags: [validation]
+
+  - id: java-missing-validation-long-parse
+    pattern: Long.parseLong($REQUEST.getParameter(...))
+    message: "Parsing request parameter to long - add try-catch and validation (CWE-20)"
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-20"
+      tags: [validation]
+
+  # ============================================
+  # Cryptography Issues (WebGoat)
+  # ============================================
+
+  - id: java-crypto-hardcoded-key
+    pattern-regex: 'SecretKeySpec\s*\(\s*"[^"]+"\s*\.getBytes'
+    message: "Hardcoded secret key - use secure key management (CWE-321)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-321"
+      tags: [crypto, webgoat]
+
+  - id: java-crypto-insecure-cipher
+    pattern: 'Cipher.getInstance("AES")'
+    message: "AES without mode/padding specified - defaults may be insecure (CWE-327)"
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-327"
+      tags: [crypto]
+
+  - id: java-crypto-static-seed
+    pattern: $RANDOM.setSeed($LONG)
+    message: "Static seed for random - makes output predictable (CWE-330)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-330"
+      tags: [crypto, random]
+
+  # ============================================
+  # HTTP Response Splitting
+  # ============================================
+
+  - id: java-http-response-splitting
+    pattern: $RESPONSE.setHeader($NAME, $REQUEST.getParameter(...))
+    message: "User input in HTTP header - response splitting vulnerability (CWE-113)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-113"
+      tags: [injection]
+
+  - id: java-http-addheader-user
+    pattern: $RESPONSE.addHeader($NAME, $VAR)
+    message: "Variable in HTTP header - validate for CRLF injection (CWE-113)"
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-113"
+      tags: [injection]
+
+  # ============================================
+  # Information Disclosure
+  # ============================================
+
+  - id: java-stacktrace-print
+    pattern: $EX.printStackTrace()
+    message: "Stack trace printed - may expose sensitive info in logs (CWE-209)"
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-209"
+      tags: [info-disclosure]
+
+  - id: java-exception-message-response
+    pattern: $RESPONSE.getWriter().print($EX.getMessage())
+    message: "Exception message in response - information disclosure (CWE-209)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-209"
+      tags: [info-disclosure, webgoat]
+
+  - id: java-error-details-response
+    pattern-regex: '\.print(ln)?\s*\(\s*(e|ex|exception|error)\.(getMessage|toString|getStackTrace)'
+    message: "Error details sent to client - information disclosure (CWE-209)"
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-209"
+      tags: [info-disclosure]
+
