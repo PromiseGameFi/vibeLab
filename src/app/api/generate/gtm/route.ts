@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateWithGemini, GTM_SYSTEM_PROMPT, parseJsonResponse } from "@/lib/gemini";
+import { generateWithGroq, GTM_SYSTEM_PROMPT, parseJsonResponse } from "@/lib/groq";
 
 export async function POST(request: NextRequest) {
     try {
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
 Generate a comprehensive, actionable GTM strategy with specific tactics, realistic metrics, and a clear timeline.`;
 
-        const response = await generateWithGemini(prompt, GTM_SYSTEM_PROMPT);
+        const response = await generateWithGroq(prompt, GTM_SYSTEM_PROMPT);
         const parsed = parseJsonResponse(response);
 
         return NextResponse.json({ success: true, data: parsed });

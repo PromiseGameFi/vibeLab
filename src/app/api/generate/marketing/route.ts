@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateWithGemini, MARKETING_BUILDER_SYSTEM_PROMPT } from "@/lib/gemini";
+import { generateWithGroq, MARKETING_BUILDER_SYSTEM_PROMPT } from "@/lib/groq";
 
 export async function POST(request: NextRequest) {
     try {
@@ -38,7 +38,7 @@ Generate a comprehensive, actionable marketing strategy in markdown format. Incl
 
 Make it practical and immediately actionable. Use the brand sentiment consistently throughout.`;
 
-        const response = await generateWithGemini(prompt, MARKETING_BUILDER_SYSTEM_PROMPT);
+        const response = await generateWithGroq(prompt, MARKETING_BUILDER_SYSTEM_PROMPT);
 
         return NextResponse.json({ success: true, data: response });
     } catch (error) {

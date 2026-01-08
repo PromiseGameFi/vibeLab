@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateWithGemini, SKILL_SYSTEM_PROMPT, parseJsonResponse } from "@/lib/gemini";
+import { generateWithGroq, SKILL_SYSTEM_PROMPT, parseJsonResponse } from "@/lib/groq";
 
 export async function POST(request: NextRequest) {
     try {
@@ -19,7 +19,7 @@ Category: ${category || "General"}
 
 Generate a skill that will help AI coding agents write better code following best practices.`;
 
-        const response = await generateWithGemini(fullPrompt, SKILL_SYSTEM_PROMPT);
+        const response = await generateWithGroq(fullPrompt, SKILL_SYSTEM_PROMPT);
         const parsed = parseJsonResponse(response);
 
         return NextResponse.json({ success: true, data: parsed });
