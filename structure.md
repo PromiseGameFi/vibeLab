@@ -41,10 +41,17 @@ VibeLab is built using **Next.js 14 (App Router)** with a focus on modularity, A
 - `scorecard/` - Gamified engagement tracker with badges.
 - `agent/` - Browser scripts for automated X engagement.
 
-### Planned Marketing Features
-- `gtm/` - Go-To-Market Strategy Generator
-- `templates/` - Marketing Strategy Templates
-- `builder/` - Custom Marketing Builder (sentiment-based)
+### Strategy Tools (Implemented)
+- `gtm/` - Go-To-Market Strategy Generator (AI-powered)
+- `templates/` - Marketing Strategy Templates (5 industry templates)
+- `builder/` - Custom Marketing Builder (sentiment-based, AI-powered)
+
+---
+
+## 📁 `src/app/api/` (API Routes)
+- `generate/skill/route.ts` - AI skill generation endpoint
+- `generate/gtm/route.ts` - AI GTM strategy endpoint
+- `generate/marketing/route.ts` - AI marketing strategy endpoint
 
 ---
 
@@ -58,6 +65,7 @@ VibeLab is built using **Next.js 14 (App Router)** with a focus on modularity, A
 ## 📁 `src/lib/` (Data & Logic Layer)
 - `toolsData.ts` - **Tool Knowledge Base**: AI tool definitions, tips, prompts.
 - `skillsData.ts` - **Skills Data**: Skill definitions and export formatters.
+- `groq.ts` - **Groq API**: AI generation utility with system prompts.
 
 ---
 
@@ -65,7 +73,8 @@ VibeLab is built using **Next.js 14 (App Router)** with a focus on modularity, A
 - `next.config.ts` - Next.js framework settings.
 - `tailwind.config.ts` - Design system variables.
 - `tsconfig.json` - TypeScript configuration.
-- `package.json` - Dependencies (Next.js, Tailwind, Lucide React).
+- `package.json` - Dependencies (Next.js, Tailwind, Lucide React, Groq SDK).
+- `.env.local` - Environment variables (GROQ_API_KEY).
 
 ---
 

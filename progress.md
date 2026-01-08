@@ -33,10 +33,17 @@
     - [x] Engagement Scorecard (gamified tracker with badges)
     - [x] Browser Agent (automated engagement scripts)
 
-## In Progress
-- [ ] Go-To-Market Strategy Generator
-- [ ] Marketing Strategy Templates
-- [ ] Custom Marketing Builder (sentiment-based)
+## AI Integration
+- [x] Groq API Integration
+    - [x] Server-side API routes (/api/generate/*)
+    - [x] AI Skill Generator
+    - [x] AI GTM Strategy Generator
+    - [x] AI Marketing Builder
+
+## Marketing Strategy Tools
+- [x] Go-To-Market Strategy Generator (/vibeMarket/gtm)
+- [x] Marketing Strategy Templates (/vibeMarket/templates)
+- [x] Custom Marketing Builder (/vibeMarket/builder)
 
 ## Planned
 - [ ] Community skill directory
