@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import { AuthProvider } from "@/components/AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,20 +42,22 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white selection:bg-accent-primary/30 min-h-screen relative`}
       >
-        {/* Background Glows */}
-        <div className="fixed top-0 left-0 w-full h-full pointer-events-none -z-10 overflow-hidden">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent-primary/10 blur-[120px] rounded-full"></div>
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent-secondary/10 blur-[120px] rounded-full"></div>
-        </div>
+        <AuthProvider>
+          {/* Background Glows */}
+          <div className="fixed top-0 left-0 w-full h-full pointer-events-none -z-10 overflow-hidden">
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent-primary/10 blur-[120px] rounded-full"></div>
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent-secondary/10 blur-[120px] rounded-full"></div>
+          </div>
 
-        <Navbar />
-        <main className="pt-24 min-h-screen">
-          {children}
-        </main>
+          <Navbar />
+          <main className="pt-24 min-h-screen">
+            {children}
+          </main>
 
-        <footer className="py-12 px-6 text-center text-white/30 text-sm border-t border-white/5">
-          <p>© {new Date().getFullYear()} VibeLab. Built for the AI era.</p>
-        </footer>
+          <footer className="py-12 px-6 text-center text-white/30 text-sm border-t border-white/5">
+            <p>© {new Date().getFullYear()} VibeLab. Built for the AI era.</p>
+          </footer>
+        </AuthProvider>
       </body>
     </html>
   );
