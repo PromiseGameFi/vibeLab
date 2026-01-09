@@ -1,63 +1,111 @@
-We are building VibeLab.
+# VibeLab - Product Requirements
 
-It is a specialized web directory and guide for AI tools + universal skills.
+> **Build better AI workflows, faster** — Cut token costs by up to 40%
 
-The Core Concept
-Most lists just give you a link to the tool. Your site is different because it teaches people how to use the tool AND provides exportable skills.
-
-We are building a "Manual + Skill Library" for the AI era.
+## Vision
+VibeLab is the pro manual for AI tools + a suite of utilities that help users **save money on AI costs** and **work more efficiently**.
 
 ---
 
-## The 3 Main Parts
+## The 4 Main Pillars
 
-### 1. The Tool Directory (Home)
-A clean list of powerful AI tools like Vibecode, Kling, and Midjourney.
-- A search bar to find them quickly.
-- Pro Tips, Best Prompts, and Workflows for each tool.
+### 1. Security Scanner (`/scan`)
+Enterprise-grade vulnerability scanning for GitHub repositories.
 
-### 2. Universal Skills (/skills)
-Skills that can be exported to any AI coding agent.
+**Features:**
+- 153 security patterns (secrets, vulnerabilities, misconfigurations)
+- 3 external APIs: OSV, deps.dev, GitHub Advisory
+- GitHub OAuth for private repositories
+- Real-time scan progress with file-by-file updates
+- AI-powered fix suggestions via Gemini
+- Export: JSON, SARIF, Markdown
 
-#### Coding Skills
-- Next.js, React, TypeScript, Tailwind, REST APIs, Git
-- Export to: Cursor, Claude Code, Antigravity, Codex, Windsurf, Cline
-
-#### Marketing Skills (/skills/marketing)
-The AI-powered marketing suite (formerly VibeMarket):
-
-**SMM Toolkit:**
-- Thread Studio: AI thread builder
-- Posting Planner: Visual calendar
-- Evergreen Vault: Content recycler
-- Personality Profiles: Voice presets
-- Engagement Scorecard: Gamified tracker
-- Browser Agent: Automation scripts
-
-**Strategy Tools:**
-- Go-To-Market Strategy Generator
-- Marketing Strategy Templates (SaaS, Creator, E-commerce, Agency, Dev Tools)
-- Custom Marketing Builder (sentiment-based personalization)
-
-### 3. The Connection
-The site focuses on interoperability. You are showing users how to:
-- Chain AI tools together to build full projects
-- Use skills across different coding agents
-- Build marketing strategies tailored to their brand
+**User Flow:** Sign in with GitHub → Select repo from list → Scan → Get findings with fix suggestions
 
 ---
 
-## The User Experience
+### 2. Token Cost Tools (`/vibeMarket`)
 
-**Tool User:**
-A user struggles to get good video from Kling. They go to your site and type /kling. They immediately see a list of settings and prompts that fix their problem.
+**Token Calculator:**
+- Compare 7 AI providers (GPT-4o, Claude 3.5, Gemini 1.5, DeepSeek V3)
+- Paste text or enter token counts
+- See cheapest option with savings percentage
 
-**Developer:**
-A developer wants consistent coding standards. They browse /skills, find "TypeScript Strict Mode", and export it to their Cursor IDE.
-
-**Marketer:**
-A founder needs a go-to-market strategy. They go to /skills/marketing, input their product sentiment, and get a personalized marketing framework.
+**Prompt Optimizer:**
+- Remove filler words (please, basically, just, very)
+- Show token reduction (up to 40%)
+- Smart optimization tips
 
 ---
 
-It is a knowledge base for builders, developers, and marketers.
+### 3. AI Tool Directory (`/` + `/[slug]`)
+Curated blueprints for AI tools with pro tips and workflows.
+
+**Tools Covered:**
+- Vibecode, Cursor (Coding)
+- Midjourney, Flux.1 (Image)
+- Kling, Luma Dream Machine (Video)
+- ElevenLabs (Audio)
+- Meshy, Skybox AI (3D)
+
+**Each Tool Has:**
+- Pro tips from power users
+- Annotated prompts with explanations
+- Recommended workflows
+- Tool integrations
+
+---
+
+### 4. Universal Skills (`/skills`)
+Pre-built coding rules that work across AI agents.
+
+**Supported Agents:**
+- Cursor (.cursorrules)
+- Claude Code (CLAUDE.md)
+- Antigravity (.agent/workflows/)
+- Windsurf, Cline, Codex
+
+**Skill Categories:**
+- Frontend (React, Next.js, Tailwind)
+- Backend (APIs, Databases)
+- DevOps (Git, CI/CD)
+- Testing, General
+
+**Value Prop:** Define rules once → AI remembers → Less repeated prompting → Save tokens
+
+---
+
+## Supporting Features
+
+### VibeMarket Marketing Tools
+- GTM Strategy Generator (AI-powered)
+- Marketing Strategy Templates (5 industries)
+- Custom Marketing Builder (sentiment-based)
+- Thread Studio, Posting Planner, Evergreen Vault
+
+### Quick Actions Grid
+Homepage shows 4 key actions:
+1. Security Scanner
+2. Token Calculator
+3. Prompt Optimizer
+4. AI Skills
+
+---
+
+## Target Users
+
+| Persona | Problem | Solution |
+|---------|---------|----------|
+| **Developer** | Overpaying for AI tokens | Token Calculator + Prompt Optimizer |
+| **Security Engineer** | Need to scan repos fast | Security Scanner with OAuth |
+| **AI Power User** | Don't know tool best practices | Tool blueprints + pro tips |
+| **Marketer** | Need GTM strategy | AI Strategy Generator |
+
+---
+
+## Tech Stack
+- Framework: Next.js 16 (App Router)
+- Language: TypeScript
+- Styling: Tailwind CSS
+- Auth: NextAuth.js (GitHub OAuth)
+- APIs: OSV, GitHub Advisory, Gemini
