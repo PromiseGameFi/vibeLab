@@ -54,8 +54,25 @@ export default function RootLayout({
             {children}
           </main>
 
-          <footer className="py-12 px-6 text-center text-white/30 text-sm border-t border-white/5">
-            <p>© {new Date().getFullYear()} VibeLab. Built for the AI era.</p>
+          <footer className="py-12 px-6 border-t border-white/5">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <p className="text-white/30 text-sm">
+                  © {new Date().getFullYear()} VibeLab. Built for the AI era.
+                </p>
+                <div className="flex items-center gap-6 text-sm">
+                  <a href="/terms" className="text-white/30 hover:text-white transition-colors">
+                    Terms
+                  </a>
+                  <a href="/privacy" className="text-white/30 hover:text-white transition-colors">
+                    Privacy
+                  </a>
+                  <a href="/accessibility" className="text-white/30 hover:text-white transition-colors">
+                    Accessibility
+                  </a>
+                </div>
+              </div>
+            </div>
           </footer>
         </AuthProvider>
       </body>
