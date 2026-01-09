@@ -64,14 +64,30 @@ export default function SkillsPage() {
                 <div className="max-w-4xl mx-auto text-center">
                     <div className="badge badge-accent mb-6">
                         <Sparkles className="w-3 h-3" />
-                        Universal Format
+                        One-Click Install
                     </div>
                     <h1 className="hero-title text-white mb-6">
                         AI Coding <em>Skills</em>
                     </h1>
-                    <p className="text-xl text-[var(--foreground-secondary)] max-w-2xl mx-auto mb-10">
-                        Create once, export everywhere. Skills that work in Cursor, Claude Code, Antigravity, and more.
+                    <p className="text-xl text-[var(--foreground-secondary)] max-w-2xl mx-auto mb-8">
+                        Pre-built coding rules that <span className="text-white">save you tokens</span> by teaching AI your preferences upfront. Export to Cursor, Claude Code, Windsurf, and more.
                     </p>
+
+                    {/* Quick Stats */}
+                    <div className="flex items-center justify-center gap-8 mb-10">
+                        <div className="text-center">
+                            <p className="text-2xl font-bold text-[var(--accent)]">{skillsData.length}</p>
+                            <p className="text-sm text-[var(--foreground-muted)]">Skills</p>
+                        </div>
+                        <div className="text-center">
+                            <p className="text-2xl font-bold text-green-400">{agentFormats.length}</p>
+                            <p className="text-sm text-[var(--foreground-muted)]">Agents</p>
+                        </div>
+                        <div className="text-center">
+                            <p className="text-2xl font-bold text-purple-400">~30%</p>
+                            <p className="text-sm text-[var(--foreground-muted)]">Token Savings</p>
+                        </div>
+                    </div>
 
                     {/* Search */}
                     <div className="relative max-w-xl mx-auto">
@@ -80,7 +96,7 @@ export default function SkillsPage() {
                             type="text"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Search skills..."
+                            placeholder="Search skills... (e.g. 'React', 'TypeScript', 'API')"
                             className="input pl-12 w-full text-lg"
                         />
                     </div>
@@ -209,8 +225,8 @@ export default function SkillsPage() {
                                         key={format.id}
                                         onClick={() => setExportFormat(format.id)}
                                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${exportFormat === format.id
-                                                ? 'bg-[var(--accent)] text-white'
-                                                : 'bg-[var(--background-card)] border border-[var(--border)] text-[var(--foreground-secondary)] hover:border-[var(--border-hover)]'
+                                            ? 'bg-[var(--accent)] text-white'
+                                            : 'bg-[var(--background-card)] border border-[var(--border)] text-[var(--foreground-secondary)] hover:border-[var(--border-hover)]'
                                             }`}
                                     >
                                         {format.name}
