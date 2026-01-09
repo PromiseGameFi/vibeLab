@@ -109,17 +109,28 @@ export function scanFileContent(
     return findings;
 }
 
-// GitHub token for higher rate limits (5000/hour vs 60/hour)
+// Scan options interface
+export interface ScanOptions {
+    githubToken?: string;
+    maxFiles?: number;
+}
+
+// Store token for use across functions
+let currentToken: string | undefined;
+
+// GitHub token for higher rate limits (5000/hour vs 60/hour) and private repos
 const getGitHubHeaders = () => {
     const headers: Record<string, string> = {
         'Accept': 'application/vnd.github.v3+json',
         'User-Agent': 'VibeLab-Scanner/1.0'
     };
 
-    // Use token if available (server-side only)
-    const token = process.env.GITHUB_TOKEN;
+    // Use custom token first, then env token
+    const token = currentToken || process.env.GITHUB_TOKEN;
     if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+        // GitHub PATs use 'token' prefix, not 'Bearer'
+        headers['Authorization'] = `token ${token}`;
+        console.log('Using GitHub token for authenticated access');
     }
 
     return headers;
@@ -202,8 +213,9 @@ async function processTree(
         return scannableExtensions.some(ext => item.path.endsWith(ext));
     });
 
-    // Fetch file contents (limit to 50 files for performance)
-    const filesToFetch = scannableFiles.slice(0, 50);
+    // Fetch file contents (increased to 200 files for better coverage)
+    const maxFiles = 200;
+    const filesToFetch = scannableFiles.slice(0, maxFiles);
 
     for (const file of filesToFetch) {
         try {
@@ -425,7 +437,10 @@ function mapGitHubSeverity(severity: string): 'critical' | 'high' | 'medium' | '
 }
 
 // Main scan function with enhanced multi-API detection
-export async function scanRepository(repoUrl: string): Promise<ScanResult> {
+export async function scanRepository(repoUrl: string, options?: ScanOptions): Promise<ScanResult> {
+    // Set token for this scan
+    currentToken = options?.githubToken;
+
     // Fetch repo contents
     const { files, packageJson } = await fetchRepoContents(repoUrl);
 
