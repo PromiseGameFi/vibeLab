@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json();
-        const { repoUrl } = body;
+        const { repoUrl, githubToken } = body;
 
         if (!repoUrl) {
             return NextResponse.json({ error: "Repository URL is required" }, { status: 400 });
@@ -23,8 +23,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Invalid GitHub repository URL" }, { status: 400 });
         }
 
-        // Run the frontend-only scan
-        const result: ScanResult = await scanRepository(repoUrl);
+        // Run the frontend-only scan with optional token
+        const result: ScanResult = await scanRepository(repoUrl, { githubToken });
 
         // Convert to response format
         const findings = [
