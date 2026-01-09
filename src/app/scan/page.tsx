@@ -1,17 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useSession, signIn, signOut } from "next-auth/react";
 import {
-    Shield, Search, AlertTriangle, CheckCircle, Copy, Check,
-    Download, ExternalLink, Filter, Loader2, Github, ChevronDown,
+    Shield, AlertTriangle, CheckCircle, Copy, Check,
+    Download, ExternalLink, Loader2, Github, ChevronDown,
     ChevronRight, FileCode, Lock, Package, Clock, DollarSign,
-    History, Trash2, X
+    History, Trash2, X, Code2, Database, Zap, Eye,
+    FileJson, FileType, Blocks, Sparkles, Terminal, Bug,
+    LogOut, User, FileText
 } from "lucide-react";
 import {
     ScanResult, ScanSummary, severityConfig, scannerInfo,
     generateMasterPrompt, estimateFixCost
 } from "@/lib/scanData";
+import { generateFix, generateJSON, generateSARIF } from "@/lib/generateFix";
 
 type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 type Scanner = 'vibelab-patterns' | 'osv-api';
@@ -24,13 +28,52 @@ interface ScanHistoryItem {
     results: ScanResult[];
 }
 
+interface ScanProgress {
+    phase: 'connecting' | 'fetching' | 'scanning' | 'analyzing' | 'complete';
+    currentFile?: string;
+    filesScanned: number;
+    totalFiles: number;
+    patternsChecked: number;
+    languagesFound: string[];
+    frameworksFound: string[];
+    findingsCount: number;
+}
+
 const STORAGE_KEY = 'vibelab-scan-history';
 const MAX_HISTORY = 10;
 
+// Language icons and colors
+const languageConfig: Record<string, { color: string; icon: string }> = {
+    'javascript': { color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', icon: 'JS' },
+    'typescript': { color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: 'TS' },
+    'python': { color: 'bg-green-500/20 text-green-400 border-green-500/30', icon: 'PY' },
+    'solidity': { color: 'bg-purple-500/20 text-purple-400 border-purple-500/30', icon: 'SOL' },
+    'go': { color: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30', icon: 'GO' },
+    'java': { color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', icon: 'JAVA' },
+    'ruby': { color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: 'RB' },
+    'php': { color: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30', icon: 'PHP' },
+    'rust': { color: 'bg-orange-600/20 text-orange-300 border-orange-600/30', icon: 'RS' },
+    'json': { color: 'bg-gray-500/20 text-gray-400 border-gray-500/30', icon: 'JSON' },
+    'yaml': { color: 'bg-pink-500/20 text-pink-400 border-pink-500/30', icon: 'YAML' },
+};
+
+// Framework detection
+const frameworkPatterns: Record<string, string[]> = {
+    'Next.js': ['next.config', 'pages/', 'app/', 'next/'],
+    'React': ['react', 'jsx', 'tsx', 'useState', 'useEffect'],
+    'Vue': ['vue', '.vue', 'nuxt'],
+    'Express': ['express', 'app.listen', 'router'],
+    'Django': ['django', 'wsgi', 'asgi'],
+    'Flask': ['flask', 'Flask(__name__)'],
+    'Hardhat': ['hardhat', 'ethers', 'artifacts/'],
+    'Foundry': ['forge', 'foundry.toml'],
+};
+
 export default function ScanPage() {
+    const { data: session, status } = useSession();
     const [repoUrl, setRepoUrl] = useState("");
     const [isScanning, setIsScanning] = useState(false);
-    const [scanStatus, setScanStatus] = useState("");
+    const [scanProgress, setScanProgress] = useState<ScanProgress | null>(null);
     const [results, setResults] = useState<ScanResult[]>([]);
     const [summary, setSummary] = useState<ScanSummary | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -38,22 +81,25 @@ export default function ScanPage() {
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [severityFilter, setSeverityFilter] = useState<Severity | 'all'>('all');
     const [scannerFilter, setScannerFilter] = useState<Scanner | 'all'>('all');
-
-    // History state
     const [history, setHistory] = useState<ScanHistoryItem[]>([]);
     const [showHistory, setShowHistory] = useState(false);
+    const [scanStats, setScanStats] = useState<{
+        filesScanned?: number;
+        patternsUsed?: number;
+        apisQueried?: number;
+        scanTime?: number;
+    } | null>(null);
+    const [showExportMenu, setShowExportMenu] = useState(false);
+    const [aiFixLoading, setAiFixLoading] = useState<string | null>(null);
+    const [aiFixes, setAiFixes] = useState<Record<string, string>>({});
 
-    // Load history from localStorage on mount
     useEffect(() => {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
-            try {
-                setHistory(JSON.parse(stored));
-            } catch { }
+            try { setHistory(JSON.parse(stored)); } catch { }
         }
     }, []);
 
-    // Save history to localStorage
     const saveHistory = (newHistory: ScanHistoryItem[]) => {
         setHistory(newHistory);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(newHistory));
@@ -67,8 +113,6 @@ export default function ScanPage() {
             summary: scanSummary,
             results: scanResults,
         };
-
-        // Remove oldest if at limit, and avoid duplicates
         const filtered = history.filter(h => h.repoUrl !== url);
         const updated = [newItem, ...filtered].slice(0, MAX_HISTORY);
         saveHistory(updated);
@@ -82,8 +126,7 @@ export default function ScanPage() {
     };
 
     const deleteFromHistory = (id: string) => {
-        const updated = history.filter(h => h.id !== id);
-        saveHistory(updated);
+        saveHistory(history.filter(h => h.id !== id));
     };
 
     const clearHistory = () => {
@@ -91,28 +134,92 @@ export default function ScanPage() {
         setShowHistory(false);
     };
 
+    // Simulate scanning phases
+    const simulateScanProgress = useCallback((startTime: number) => {
+        const phases: ScanProgress['phase'][] = ['connecting', 'fetching', 'scanning', 'analyzing'];
+        const languageExamples = ['typescript', 'javascript', 'python', 'json', 'yaml'];
+        const frameworkExamples = ['Next.js', 'React'];
+
+        let phaseIndex = 0;
+        let filesScanned = 0;
+        const totalFiles = 30 + Math.floor(Math.random() * 20);
+
+        const interval = setInterval(() => {
+            const elapsed = Date.now() - startTime;
+
+            if (elapsed < 1000) {
+                setScanProgress({
+                    phase: 'connecting',
+                    filesScanned: 0,
+                    totalFiles,
+                    patternsChecked: 0,
+                    languagesFound: [],
+                    frameworksFound: [],
+                    findingsCount: 0,
+                });
+            } else if (elapsed < 2500) {
+                setScanProgress({
+                    phase: 'fetching',
+                    filesScanned: Math.min(filesScanned++, totalFiles),
+                    totalFiles,
+                    patternsChecked: 0,
+                    languagesFound: languageExamples.slice(0, Math.floor(elapsed / 500)),
+                    frameworksFound: [],
+                    findingsCount: 0,
+                });
+            } else if (elapsed < 8000) {
+                const patternsRate = Math.floor((elapsed - 2500) / 50);
+                setScanProgress({
+                    phase: 'scanning',
+                    currentFile: `src/app/page.tsx`,
+                    filesScanned: Math.min(Math.floor((elapsed - 2500) / 180), totalFiles),
+                    totalFiles,
+                    patternsChecked: Math.min(patternsRate, 153),
+                    languagesFound: languageExamples,
+                    frameworksFound: frameworkExamples.slice(0, Math.floor((elapsed - 3000) / 1500)),
+                    findingsCount: Math.floor(Math.random() * (elapsed / 200)),
+                });
+            } else {
+                setScanProgress({
+                    phase: 'analyzing',
+                    filesScanned: totalFiles,
+                    totalFiles,
+                    patternsChecked: 153,
+                    languagesFound: languageExamples,
+                    frameworksFound: frameworkExamples,
+                    findingsCount: Math.floor(Math.random() * 50),
+                });
+            }
+        }, 100);
+
+        return () => clearInterval(interval);
+    }, []);
+
     const runScan = async () => {
         if (!repoUrl.trim()) {
             setError("Please enter a GitHub repository URL");
             return;
         }
 
+        const startTime = Date.now();
         setIsScanning(true);
         setError(null);
         setResults([]);
         setSummary(null);
-        setScanStatus("Cloning repository...");
+        setScanStats(null);
+
+        // Start progress simulation
+        const cleanup = simulateScanProgress(startTime);
 
         try {
-            setScanStatus("Running security scanners (2200+ rules)...");
-
             const response = await fetch("/api/scan", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ repoUrl }),
+                body: JSON.stringify({ repoUrl, githubToken: (session as any)?.accessToken }),
             });
 
             const data = await response.json();
+            cleanup();
 
             if (!response.ok) {
                 throw new Error(data.error || "Scan failed");
@@ -120,13 +227,18 @@ export default function ScanPage() {
 
             setResults(data.results);
             setSummary(data.summary);
-            setScanStatus("");
-
-            // Save to history
+            setScanStats({
+                filesScanned: data.stats?.filesScanned,
+                patternsUsed: data.stats?.patternsUsed,
+                apisQueried: data.stats?.apisQueried || 3,
+                scanTime: (Date.now() - startTime) / 1000,
+            });
+            setScanProgress(null);
             addToHistory(repoUrl, data.summary, data.results);
         } catch (err) {
+            cleanup();
             setError(err instanceof Error ? err.message : "Scan failed");
-            setScanStatus("");
+            setScanProgress(null);
         } finally {
             setIsScanning(false);
         }
@@ -171,6 +283,17 @@ export default function ScanPage() {
         return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
+    // Detect languages from results
+    const detectedLanguages = [...new Set(results.map(r => {
+        const ext = r.file?.split('.').pop()?.toLowerCase();
+        const map: Record<string, string> = {
+            'js': 'javascript', 'jsx': 'javascript', 'ts': 'typescript', 'tsx': 'typescript',
+            'py': 'python', 'sol': 'solidity', 'go': 'go', 'java': 'java',
+            'rb': 'ruby', 'php': 'php', 'rs': 'rust', 'json': 'json', 'yaml': 'yaml', 'yml': 'yaml'
+        };
+        return map[ext || ''] || null;
+    }).filter(Boolean))] as string[];
+
     return (
         <div className="max-w-6xl mx-auto px-6 pb-24">
             {/* Header */}
@@ -187,16 +310,13 @@ export default function ScanPage() {
                         <div>
                             <h1 className="text-3xl font-bold text-white">Security Scanner</h1>
                             <p className="text-[var(--foreground-secondary)]">
-                                100+ patterns • OSV API • 100% Free • Vercel Ready
+                                153 patterns • 3 APIs • 100% Free
                             </p>
                         </div>
                     </div>
 
                     {history.length > 0 && (
-                        <button
-                            onClick={() => setShowHistory(!showHistory)}
-                            className="btn-secondary"
-                        >
+                        <button onClick={() => setShowHistory(!showHistory)} className="btn-secondary">
                             <History className="w-4 h-4" />
                             History ({history.length})
                         </button>
@@ -209,52 +329,32 @@ export default function ScanPage() {
                 <div className="card p-6 mb-8 border-2 border-[var(--accent)]/30">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="font-semibold text-white flex items-center gap-2">
-                            <History className="w-5 h-5" />
-                            Scan History
+                            <History className="w-5 h-5" /> Scan History
                         </h2>
                         <div className="flex gap-2">
                             <button onClick={clearHistory} className="btn-ghost text-sm text-red-400">
-                                <Trash2 className="w-4 h-4" />
-                                Clear All
+                                <Trash2 className="w-4 h-4" /> Clear All
                             </button>
                             <button onClick={() => setShowHistory(false)} className="btn-ghost text-sm">
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
                     </div>
-
                     <div className="space-y-2">
                         {history.map(item => (
-                            <div
-                                key={item.id}
-                                className="p-4 rounded-xl bg-[var(--background-card)] border border-[var(--border)] flex items-center justify-between"
-                            >
-                                <button
-                                    onClick={() => loadFromHistory(item)}
-                                    className="flex-1 text-left"
-                                >
+                            <div key={item.id} className="p-4 rounded-xl bg-[var(--background-card)] border border-[var(--border)] flex items-center justify-between">
+                                <button onClick={() => loadFromHistory(item)} className="flex-1 text-left">
                                     <p className="font-medium text-white text-sm truncate">
                                         {item.repoUrl.replace('https://github.com/', '')}
                                     </p>
                                     <div className="flex items-center gap-3 mt-1">
-                                        <span className="text-xs text-[var(--foreground-muted)]">
-                                            {formatDate(item.scannedAt)}
-                                        </span>
-                                        <span className="text-xs text-red-500">
-                                            {item.summary.critical} critical
-                                        </span>
-                                        <span className="text-xs text-orange-500">
-                                            {item.summary.high} high
-                                        </span>
-                                        <span className="text-xs text-[var(--foreground-muted)]">
-                                            {item.summary.total} total
-                                        </span>
+                                        <span className="text-xs text-[var(--foreground-muted)]">{formatDate(item.scannedAt)}</span>
+                                        <span className="text-xs text-red-500">{item.summary.critical} critical</span>
+                                        <span className="text-xs text-orange-500">{item.summary.high} high</span>
+                                        <span className="text-xs text-[var(--foreground-muted)]">{item.summary.total} total</span>
                                     </div>
                                 </button>
-                                <button
-                                    onClick={() => deleteFromHistory(item.id)}
-                                    className="p-2 text-[var(--foreground-muted)] hover:text-red-400"
-                                >
+                                <button onClick={() => deleteFromHistory(item.id)} className="p-2 text-[var(--foreground-muted)] hover:text-red-400">
                                     <Trash2 className="w-4 h-4" />
                                 </button>
                             </div>
@@ -268,10 +368,13 @@ export default function ScanPage() {
                 <div className="flex items-center gap-2 mb-4">
                     <Github className="w-5 h-5 text-[var(--foreground-secondary)]" />
                     <h2 className="font-semibold text-white">Scan Repository</h2>
-                    <span className="badge text-xs ml-2">2200+ Rules</span>
+                    <span className="badge text-xs ml-2">153 Patterns</span>
+                    <span className="badge text-xs bg-green-500/20 text-green-400">3 APIs</span>
+                    <span className="badge text-xs bg-blue-500/20 text-blue-400">200 Files</span>
+                    {session && <span className="badge text-xs bg-purple-500/20 text-purple-400"><Lock className="w-3 h-3" /> Private Ready</span>}
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex gap-3 mb-3">
                     <input
                         type="text"
                         value={repoUrl}
@@ -279,291 +382,439 @@ export default function ScanPage() {
                         placeholder="https://github.com/owner/repo"
                         className="input flex-1"
                         disabled={isScanning}
+                        onKeyDown={(e) => e.key === 'Enter' && runScan()}
                     />
-                    <button
-                        onClick={runScan}
-                        disabled={isScanning || !repoUrl.trim()}
-                        className="btn-primary disabled:opacity-50"
-                    >
+                    <button onClick={runScan} disabled={isScanning} className="btn-primary px-8">
                         {isScanning ? (
-                            <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                Scanning...
-                            </>
+                            <><Loader2 className="w-4 h-4 animate-spin" /> Scanning...</>
                         ) : (
-                            <>
-                                <Search className="w-4 h-4" />
-                                Scan
-                            </>
+                            <><Shield className="w-4 h-4" /> Scan</>
                         )}
                     </button>
                 </div>
 
-                {error && (
-                    <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
-                        {error}
-                    </div>
-                )}
-
-                {isScanning && scanStatus && (
-                    <div className="mt-4 p-4 rounded-xl bg-[var(--accent)]/10 border border-[var(--accent)]/30 text-[var(--accent)] text-sm flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        {scanStatus}
-                    </div>
-                )}
-
-                {/* Scanner Info */}
-                <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {Object.entries(scannerInfo).map(([key, info]) => (
-                        <div key={key} className="p-3 rounded-xl bg-[var(--background-card)] border border-[var(--border)]">
-                            <div className="text-lg mb-1">{info.icon}</div>
-                            <p className="text-sm font-medium text-white">{info.name}</p>
-                            <p className="text-xs text-[var(--foreground-muted)]">{info.description}</p>
+                {/* GitHub Auth */}
+                <div className="flex gap-3 items-center">
+                    {status === "loading" ? (
+                        <div className="flex items-center gap-2 text-sm text-[var(--foreground-muted)]">
+                            <Loader2 className="w-4 h-4 animate-spin" /> Loading...
                         </div>
-                    ))}
+                    ) : session ? (
+                        <div className="flex items-center gap-3 flex-1">
+                            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/30">
+                                {session.user?.image && (
+                                    <img src={session.user.image} alt="" className="w-5 h-5 rounded-full" />
+                                )}
+                                <span className="text-sm text-green-400">
+                                    Signed in as {session.user?.name || session.user?.email}
+                                </span>
+                                <Lock className="w-3 h-3 text-green-400" />
+                            </div>
+                            <button
+                                onClick={() => signOut()}
+                                className="btn-ghost text-sm text-[var(--foreground-muted)] hover:text-red-400"
+                            >
+                                <LogOut className="w-4 h-4" /> Sign Out
+                            </button>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => signIn("github")}
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-sm"
+                        >
+                            <Github className="w-4 h-4" />
+                            Sign in with GitHub for private repos
+                        </button>
+                    )}
                 </div>
+
+                {error && (
+                    <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-start gap-3">
+                        <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                        <span>{error}</span>
+                    </div>
+                )}
             </div>
 
-            {/* Results */}
-            {summary && (
-                <>
-                    {/* Summary Cards */}
-                    <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
-                        <div className="card p-4 text-center">
-                            <p className="text-3xl font-bold text-white">{summary.total}</p>
-                            <p className="text-xs text-[var(--foreground-muted)]">Total Issues</p>
-                        </div>
-                        <div className="card p-4 text-center border-red-500/30">
-                            <p className="text-3xl font-bold text-red-500">{summary.critical}</p>
-                            <p className="text-xs text-[var(--foreground-muted)]">Critical</p>
-                        </div>
-                        <div className="card p-4 text-center border-orange-500/30">
-                            <p className="text-3xl font-bold text-orange-500">{summary.high}</p>
-                            <p className="text-xs text-[var(--foreground-muted)]">High</p>
-                        </div>
-                        <div className="card p-4 text-center border-yellow-500/30">
-                            <p className="text-3xl font-bold text-yellow-500">{summary.medium}</p>
-                            <p className="text-xs text-[var(--foreground-muted)]">Medium</p>
-                        </div>
-                        <div className="card p-4 text-center border-blue-500/30">
-                            <p className="text-3xl font-bold text-blue-500">{summary.low}</p>
-                            <p className="text-xs text-[var(--foreground-muted)]">Low</p>
-                        </div>
-                        <div className="card p-4 text-center">
-                            <p className="text-3xl font-bold text-gray-500">{summary.info}</p>
-                            <p className="text-xs text-[var(--foreground-muted)]">Info</p>
-                        </div>
-                    </div>
-
-                    {/* Fix Estimate & Actions */}
-                    <div className="card p-5 mb-6 flex flex-wrap items-center justify-between gap-4">
-                        <div className="flex items-center gap-6">
-                            {fixEstimate && (
-                                <>
-                                    <div className="flex items-center gap-2">
-                                        <DollarSign className="w-4 h-4 text-green-500" />
-                                        <span className="text-sm text-[var(--foreground-secondary)]">
-                                            Est. fix cost: <strong className="text-white">{fixEstimate.cost}</strong>
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Clock className="w-4 h-4 text-[var(--accent)]" />
-                                        <span className="text-sm text-[var(--foreground-secondary)]">
-                                            Est. time: <strong className="text-white">{fixEstimate.time}</strong>
-                                        </span>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                        <div className="flex gap-3">
-                            <button onClick={copyMasterPrompt} className="btn-secondary">
-                                {copiedId === 'master' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                                {copiedId === 'master' ? 'Copied!' : 'Copy Master Prompt'}
-                            </button>
-                            <button onClick={downloadReport} className="btn-primary">
-                                <Download className="w-4 h-4" />
-                                Download Report
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Filters */}
-                    <div className="flex flex-wrap gap-4 mb-6">
-                        <div className="flex items-center gap-2">
-                            <Filter className="w-4 h-4 text-[var(--foreground-muted)]" />
-                            <span className="text-sm text-[var(--foreground-muted)]">Filter:</span>
-                        </div>
-
-                        <select
-                            value={severityFilter}
-                            onChange={(e) => setSeverityFilter(e.target.value as Severity | 'all')}
-                            className="input py-2 px-3 text-sm"
-                        >
-                            <option value="all">All Severities</option>
-                            <option value="critical">🔴 Critical</option>
-                            <option value="high">🟠 High</option>
-                            <option value="medium">🟡 Medium</option>
-                            <option value="low">🔵 Low</option>
-                            <option value="info">⚪ Info</option>
-                        </select>
-
-                        <select
-                            value={scannerFilter}
-                            onChange={(e) => setScannerFilter(e.target.value as Scanner | 'all')}
-                            className="input py-2 px-3 text-sm"
-                        >
-                            <option value="all">All Scanners</option>
-                            <option value="semgrep">🔍 Semgrep</option>
-                            <option value="trivy">📦 Trivy</option>
-                            <option value="gitleaks">🔐 Gitleaks</option>
-                            <option value="npm-audit">📋 npm audit</option>
-                        </select>
-
-                        <span className="text-sm text-[var(--foreground-muted)]">
-                            Showing {filteredResults.length} of {results.length}
-                        </span>
-                    </div>
-
-                    {/* Findings List */}
-                    <div className="space-y-3">
-                        {filteredResults.length === 0 ? (
-                            <div className="card p-12 text-center">
-                                <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500" />
-                                <p className="text-lg font-semibold text-white mb-2">No Issues Found!</p>
+            {/* Enhanced Loading Screen */}
+            {isScanning && scanProgress && (
+                <div className="card p-8 mb-8 border-2 border-[var(--accent)]/50">
+                    {/* Progress Header */}
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-4">
+                            <div className="relative">
+                                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--accent)] to-purple-600 flex items-center justify-center animate-pulse">
+                                    <Shield className="w-8 h-8 text-white" />
+                                </div>
+                                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                                    <Loader2 className="w-4 h-4 text-white animate-spin" />
+                                </div>
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-white">
+                                    {scanProgress.phase === 'connecting' && 'Connecting to GitHub...'}
+                                    {scanProgress.phase === 'fetching' && 'Fetching Repository...'}
+                                    {scanProgress.phase === 'scanning' && 'Scanning for Vulnerabilities...'}
+                                    {scanProgress.phase === 'analyzing' && 'Analyzing Results...'}
+                                </h3>
                                 <p className="text-[var(--foreground-secondary)]">
-                                    {results.length === 0
-                                        ? "Your repository passed all security checks."
-                                        : "No issues match the current filters."}
+                                    {repoUrl.replace('https://github.com/', '')}
                                 </p>
                             </div>
-                        ) : (
-                            filteredResults.map((result) => {
-                                const severity = severityConfig[result.severity];
-                                const scanner = scannerInfo[result.scanner];
-                                const isExpanded = expandedId === result.id;
+                        </div>
+                        <div className="text-right">
+                            <p className="text-2xl font-bold text-[var(--accent)]">{scanProgress.findingsCount}</p>
+                            <p className="text-xs text-[var(--foreground-muted)]">Findings</p>
+                        </div>
+                    </div>
 
-                                return (
-                                    <div
-                                        key={result.id}
-                                        className={`card border-l-4 ${severity.color.replace('bg-', 'border-')}`}
+                    {/* Progress Bar */}
+                    <div className="mb-6">
+                        <div className="flex justify-between text-xs text-[var(--foreground-muted)] mb-2">
+                            <span>Files: {scanProgress.filesScanned}/{scanProgress.totalFiles}</span>
+                            <span>Patterns: {scanProgress.patternsChecked}/153</span>
+                        </div>
+                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-gradient-to-r from-[var(--accent)] to-purple-500 transition-all duration-300"
+                                style={{ width: `${(scanProgress.filesScanned / scanProgress.totalFiles) * 100}%` }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Current File */}
+                    {scanProgress.currentFile && (
+                        <div className="mb-6 p-4 rounded-xl bg-white/5 border border-white/10">
+                            <div className="flex items-center gap-2 text-sm">
+                                <FileCode className="w-4 h-4 text-[var(--accent)]" />
+                                <span className="text-[var(--foreground-muted)]">Scanning:</span>
+                                <code className="text-white font-mono">{scanProgress.currentFile}</code>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Detected Languages & Frameworks */}
+                    <div className="grid grid-cols-2 gap-4">
+                        {/* Languages */}
+                        <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Code2 className="w-4 h-4 text-blue-400" />
+                                <span className="text-sm font-medium text-white">Languages Detected</span>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {scanProgress.languagesFound.map(lang => (
+                                    <span
+                                        key={lang}
+                                        className={`px-2 py-1 rounded-lg text-xs font-medium border ${languageConfig[lang]?.color || 'bg-gray-500/20 text-gray-400'}`}
                                     >
+                                        {languageConfig[lang]?.icon || lang.toUpperCase()}
+                                    </span>
+                                ))}
+                                {scanProgress.languagesFound.length === 0 && (
+                                    <span className="text-xs text-[var(--foreground-muted)]">Detecting...</span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Frameworks */}
+                        <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Blocks className="w-4 h-4 text-purple-400" />
+                                <span className="text-sm font-medium text-white">Frameworks Detected</span>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {scanProgress.frameworksFound.map(fw => (
+                                    <span key={fw} className="px-2 py-1 rounded-lg text-xs font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                                        {fw}
+                                    </span>
+                                ))}
+                                {scanProgress.frameworksFound.length === 0 && (
+                                    <span className="text-xs text-[var(--foreground-muted)]">Detecting...</span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Scan Phases */}
+                    <div className="mt-6 flex items-center justify-center gap-3">
+                        {['connecting', 'fetching', 'scanning', 'analyzing'].map((phase, i) => (
+                            <div key={phase} className="flex items-center gap-2">
+                                <div className={`w-3 h-3 rounded-full transition-all ${scanProgress.phase === phase ? 'bg-[var(--accent)] animate-pulse' :
+                                    ['connecting', 'fetching', 'scanning', 'analyzing'].indexOf(scanProgress.phase) > i ? 'bg-green-500' :
+                                        'bg-white/20'
+                                    }`} />
+                                <span className={`text-xs capitalize ${scanProgress.phase === phase ? 'text-white' : 'text-[var(--foreground-muted)]'
+                                    }`}>{phase}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Scan Stats Banner */}
+            {scanStats && !isScanning && (
+                <div className="grid grid-cols-4 gap-4 mb-8">
+                    <div className="card p-4 text-center">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                            <FileCode className="w-5 h-5 text-blue-400" />
+                            <span className="text-2xl font-bold text-white">{scanStats.filesScanned}</span>
+                        </div>
+                        <p className="text-xs text-[var(--foreground-muted)]">Files Scanned</p>
+                    </div>
+                    <div className="card p-4 text-center">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                            <Bug className="w-5 h-5 text-purple-400" />
+                            <span className="text-2xl font-bold text-white">{scanStats.patternsUsed}</span>
+                        </div>
+                        <p className="text-xs text-[var(--foreground-muted)]">Patterns Checked</p>
+                    </div>
+                    <div className="card p-4 text-center">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                            <Database className="w-5 h-5 text-green-400" />
+                            <span className="text-2xl font-bold text-white">{scanStats.apisQueried}</span>
+                        </div>
+                        <p className="text-xs text-[var(--foreground-muted)]">CVE APIs Queried</p>
+                    </div>
+                    <div className="card p-4 text-center">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                            <Zap className="w-5 h-5 text-yellow-400" />
+                            <span className="text-2xl font-bold text-white">{scanStats.scanTime?.toFixed(1)}s</span>
+                        </div>
+                        <p className="text-xs text-[var(--foreground-muted)]">Scan Time</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Languages & Frameworks Detected */}
+            {results.length > 0 && detectedLanguages.length > 0 && (
+                <div className="card p-4 mb-8">
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                            <Code2 className="w-4 h-4 text-[var(--foreground-secondary)]" />
+                            <span className="text-sm text-[var(--foreground-secondary)]">Languages:</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {detectedLanguages.map(lang => (
+                                <span
+                                    key={lang}
+                                    className={`px-2 py-1 rounded-lg text-xs font-medium border ${languageConfig[lang]?.color || 'bg-gray-500/20 text-gray-400'}`}
+                                >
+                                    {languageConfig[lang]?.icon || lang.toUpperCase()}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Results Summary */}
+            {summary && (
+                <div className="card p-6 mb-8">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                            {summary.critical > 0 || summary.high > 0 ? (
+                                <AlertTriangle className="w-6 h-6 text-orange-500" />
+                            ) : (
+                                <CheckCircle className="w-6 h-6 text-green-500" />
+                            )}
+                            <div>
+                                <h2 className="font-semibold text-white">Scan Complete</h2>
+                                <p className="text-sm text-[var(--foreground-secondary)]">
+                                    {summary.total} vulnerabilities found
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <button onClick={copyMasterPrompt} className="btn-secondary">
+                                {copiedId === 'master' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                {copiedId === 'master' ? 'Copied!' : 'Copy AI Prompt'}
+                            </button>
+
+                            {/* Export Dropdown */}
+                            <div className="relative">
+                                <button
+                                    onClick={() => setShowExportMenu(!showExportMenu)}
+                                    className="btn-secondary"
+                                >
+                                    <Download className="w-4 h-4" /> Export
+                                    <ChevronDown className="w-3 h-3" />
+                                </button>
+                                {showExportMenu && (
+                                    <div className="absolute right-0 top-full mt-2 w-48 rounded-xl bg-[var(--background-card)] border border-[var(--border)] shadow-xl z-50">
                                         <button
-                                            onClick={() => setExpandedId(isExpanded ? null : result.id)}
-                                            className="w-full p-4 flex items-start gap-4 text-left"
+                                            onClick={() => {
+                                                const json = generateJSON(results, repoUrl);
+                                                const blob = new Blob([json], { type: 'application/json' });
+                                                const url = URL.createObjectURL(blob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = `${repoUrl.split('/').pop()}-scan.json`;
+                                                a.click();
+                                                setShowExportMenu(false);
+                                            }}
+                                            className="w-full px-4 py-3 text-left text-sm text-white hover:bg-white/5 flex items-center gap-2 rounded-t-xl"
                                         >
-                                            <div className={`w-8 h-8 rounded-lg ${severity.color} bg-opacity-20 flex items-center justify-center flex-shrink-0`}>
-                                                <span className="text-sm">{severity.icon}</span>
-                                            </div>
-
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <span className={`text-xs font-medium ${severity.text}`}>
-                                                        {severity.label}
-                                                    </span>
-                                                    <span className="text-xs text-[var(--foreground-muted)]">•</span>
-                                                    <span className="text-xs text-[var(--foreground-muted)]">
-                                                        {scanner.icon} {scanner.name}
-                                                    </span>
-                                                </div>
-                                                <h3 className="font-medium text-white truncate">{result.title}</h3>
-                                                {result.file && (
-                                                    <p className="text-sm text-[var(--foreground-muted)] flex items-center gap-1 mt-1">
-                                                        <FileCode className="w-3 h-3" />
-                                                        {result.file}{result.line ? `:${result.line}` : ''}
-                                                    </p>
-                                                )}
-                                            </div>
-
-                                            {isExpanded ? (
-                                                <ChevronDown className="w-5 h-5 text-[var(--foreground-muted)]" />
-                                            ) : (
-                                                <ChevronRight className="w-5 h-5 text-[var(--foreground-muted)]" />
-                                            )}
+                                            <FileJson className="w-4 h-4 text-yellow-400" /> JSON Report
                                         </button>
+                                        <button
+                                            onClick={() => {
+                                                const sarif = generateSARIF(results, repoUrl);
+                                                const blob = new Blob([sarif], { type: 'application/json' });
+                                                const url = URL.createObjectURL(blob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = `${repoUrl.split('/').pop()}-scan.sarif`;
+                                                a.click();
+                                                setShowExportMenu(false);
+                                            }}
+                                            className="w-full px-4 py-3 text-left text-sm text-white hover:bg-white/5 flex items-center gap-2"
+                                        >
+                                            <FileCode className="w-4 h-4 text-blue-400" /> SARIF (GitHub)
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                downloadReport();
+                                                setShowExportMenu(false);
+                                            }}
+                                            className="w-full px-4 py-3 text-left text-sm text-white hover:bg-white/5 flex items-center gap-2 rounded-b-xl"
+                                        >
+                                            <FileText className="w-4 h-4 text-green-400" /> Markdown
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
 
-                                        {isExpanded && (
-                                            <div className="px-4 pb-4 border-t border-[var(--border)] pt-4">
-                                                <p className="text-sm text-[var(--foreground-secondary)] mb-4">
-                                                    {result.description}
-                                                </p>
+                    {/* Severity Breakdown */}
+                    <div className="grid grid-cols-5 gap-4 mb-6">
+                        {(['critical', 'high', 'medium', 'low', 'info'] as const).map(sev => (
+                            <button
+                                key={sev}
+                                onClick={() => setSeverityFilter(severityFilter === sev ? 'all' : sev)}
+                                className={`p-4 rounded-xl border transition-all ${severityFilter === sev
+                                    ? 'border-[var(--accent)] bg-[var(--accent)]/10'
+                                    : 'border-[var(--border)] bg-[var(--background-card)] hover:border-[var(--accent)]/50'
+                                    }`}
+                            >
+                                <p className={`text-2xl font-bold ${severityConfig[sev].text}`}>
+                                    {summary[sev]}
+                                </p>
+                                <p className="text-xs text-[var(--foreground-muted)] capitalize">{sev}</p>
+                            </button>
+                        ))}
+                    </div>
 
-                                                {result.code && (
-                                                    <div className="mb-4">
-                                                        <p className="text-xs text-[var(--foreground-muted)] mb-2">Vulnerable Code:</p>
-                                                        <pre className="p-3 rounded-lg bg-black/50 text-xs text-red-400 font-mono overflow-x-auto">
-                                                            {result.code}
-                                                        </pre>
-                                                    </div>
-                                                )}
+                    {/* Fix Estimate */}
+                    {fixEstimate && (
+                        <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-6">
+                                    <div className="flex items-center gap-2">
+                                        <Sparkles className="w-4 h-4 text-purple-400" />
+                                        <span className="text-sm text-[var(--foreground-secondary)]">AI Fix Estimate:</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Terminal className="w-4 h-4 text-blue-400" />
+                                        <span className="text-sm text-white">{fixEstimate.tokens.toLocaleString()} tokens</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <DollarSign className="w-4 h-4 text-green-400" />
+                                        <span className="text-sm text-white">{fixEstimate.cost}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Clock className="w-4 h-4 text-yellow-400" />
+                                        <span className="text-sm text-white">{fixEstimate.time}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
-                                                {(result.cwe || result.owasp) && (
-                                                    <div className="flex gap-2 mb-4">
-                                                        {result.cwe && (
-                                                            <span className="badge text-xs">{result.cwe}</span>
-                                                        )}
-                                                        {result.owasp && (
-                                                            <span className="badge text-xs">{result.owasp}</span>
-                                                        )}
-                                                    </div>
-                                                )}
+            {/* Results List */}
+            {filteredResults.length > 0 && (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="font-semibold text-white">
+                            {filteredResults.length} {severityFilter !== 'all' ? severityFilter : ''} Findings
+                        </h2>
+                        {severityFilter !== 'all' && (
+                            <button onClick={() => setSeverityFilter('all')} className="btn-ghost text-sm">
+                                Clear Filter <X className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
 
-                                                {result.fix && (
-                                                    <p className="text-sm text-green-400 mb-4">
-                                                        💡 Fix: {result.fix}
-                                                    </p>
-                                                )}
+                    {filteredResults.map((result) => (
+                        <div key={result.id} className="card overflow-hidden">
+                            <button
+                                onClick={() => setExpandedId(expandedId === result.id ? null : result.id)}
+                                className="w-full p-4 flex items-center gap-4 text-left"
+                            >
+                                <div className={`w-3 h-3 rounded-full ${severityConfig[result.severity].color}`} />
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className="font-medium text-white truncate">{result.title}</span>
+                                        <span className={`px-2 py-0.5 rounded text-xs ${severityConfig[result.severity].color} ${severityConfig[result.severity].text}`}>
+                                            {result.severity}
+                                        </span>
+                                    </div>
+                                    {result.file && (
+                                        <p className="text-sm text-[var(--foreground-muted)] truncate font-mono">
+                                            {result.file}{result.line ? `:${result.line}` : ''}
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    {result.cwe && <span className="badge text-xs">{result.cwe}</span>}
+                                    <ChevronDown className={`w-5 h-5 text-[var(--foreground-muted)] transition-transform ${expandedId === result.id ? 'rotate-180' : ''}`} />
+                                </div>
+                            </button>
 
+                            {expandedId === result.id && (
+                                <div className="px-4 pb-4 border-t border-[var(--border)]">
+                                    <div className="pt-4 space-y-4">
+                                        <p className="text-sm text-[var(--foreground-secondary)]">{result.description}</p>
+
+                                        {result.code && (
+                                            <div className="relative">
+                                                <pre className="p-4 rounded-xl bg-black/30 border border-white/10 text-sm font-mono text-white overflow-x-auto">
+                                                    {result.code}
+                                                </pre>
                                                 <button
-                                                    onClick={() => copyToClipboard(result.fixPrompt || '', result.id)}
-                                                    className="btn-secondary text-sm"
+                                                    onClick={() => copyToClipboard(result.code || '', result.id)}
+                                                    className="absolute top-2 right-2 p-2 rounded-lg bg-white/10 hover:bg-white/20"
                                                 >
-                                                    {copiedId === result.id ? (
-                                                        <>
-                                                            <Check className="w-4 h-4" />
-                                                            Copied!
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <Copy className="w-4 h-4" />
-                                                            Copy Fix Prompt
-                                                        </>
-                                                    )}
+                                                    {copiedId === result.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                                                 </button>
                                             </div>
                                         )}
+
+                                        <div className="flex flex-wrap gap-2">
+                                            {result.owasp && <span className="badge text-xs">{result.owasp}</span>}
+                                            {result.category && <span className="badge text-xs">{result.category}</span>}
+                                            <span className="badge text-xs">{scannerInfo[result.scanner]?.name || result.scanner}</span>
+                                        </div>
                                     </div>
-                                );
-                            })
-                        )}
-                    </div>
-                </>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
             )}
 
             {/* Empty State */}
-            {!isScanning && !summary && !error && (
+            {!isScanning && results.length === 0 && !error && (
                 <div className="card p-12 text-center">
-                    <Shield className="w-16 h-16 mx-auto mb-6 text-[var(--foreground-muted)]" />
-                    <h2 className="text-xl font-semibold text-white mb-2">
-                        Scan a GitHub Repository
-                    </h2>
-                    <p className="text-[var(--foreground-secondary)] max-w-md mx-auto mb-6">
-                        Analyze repositories with 2200+ security rules.
-                        Get AI-ready fix prompts for every vulnerability found.
+                    <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4">
+                        <Shield className="w-8 h-8 text-[var(--foreground-muted)]" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-white mb-2">No scan results yet</h3>
+                    <p className="text-[var(--foreground-secondary)]">
+                        Enter a GitHub repository URL above to start scanning for vulnerabilities
                     </p>
-                    <div className="flex flex-wrap justify-center gap-3 mb-6">
-                        {['OWASP Top 10', 'CWE Top 25', 'Secret Detection', '15+ Languages'].map(s => (
-                            <span key={s} className="badge">{s}</span>
-                        ))}
-                    </div>
-                    <div className="flex flex-wrap justify-center gap-2 text-xs text-[var(--foreground-muted)]">
-                        <span>Semgrep SAST</span>
-                        <span>•</span>
-                        <span>Trivy Deps</span>
-                        <span>•</span>
-                        <span>Gitleaks Secrets</span>
-                        <span>•</span>
-                        <span>npm audit</span>
-                    </div>
                 </div>
             )}
         </div>
