@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
     ArrowLeft, Archive, Plus, Trash2, RefreshCw, Copy, Check,
@@ -172,8 +172,8 @@ export default function VaultPage() {
                                     key={perf}
                                     onClick={() => setNewPerformance(perf)}
                                     className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all ${newPerformance === perf
-                                            ? `${config.bg} ${config.border} border ${config.color}`
-                                            : 'bg-[var(--background-card)] text-[var(--foreground-muted)] border border-[var(--border)]'
+                                        ? `${config.bg} ${config.border} border ${config.color}`
+                                        : 'bg-[var(--background-card)] text-[var(--foreground-muted)] border border-[var(--border)]'
                                         }`}
                                 >
                                     <Icon className="w-3 h-3" />
@@ -230,8 +230,8 @@ export default function VaultPage() {
                                                     key={perf}
                                                     onClick={() => updatePerformance(item.id, perf)}
                                                     className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${item.performance === perf
-                                                            ? performanceLabels[perf].bg
-                                                            : 'hover:bg-[var(--background-card)]'
+                                                        ? performanceLabels[perf].bg
+                                                        : 'hover:bg-[var(--background-card)]'
                                                         }`}
                                                 >
                                                     {React.createElement(performanceLabels[perf].icon, {
