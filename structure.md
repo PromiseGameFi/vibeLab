@@ -1,85 +1,102 @@
 # VibeLab Project Structure
 
 ## Overview
-VibeLab is built using **Next.js 14 (App Router)** with a focus on modularity, AI tool guides, and universal skills.
+VibeLab is built using **Next.js 16 (App Router)** with TypeScript and Tailwind CSS.
 
 ---
 
 ## 📁 Root Directory
-- `src/` - Primary source code containing the application logic.
-- `public/` - Static assets including icons, logos, and global SVGs.
-- `Vibelab.md` - Product vision including Skills architecture.
-- `prd.md` - Core product requirements and vision.
-- `progress.md` - Living log of completed and planned features.
-- `content.md` - Detailed content for AI tools and skills.
-- `marketing.md` - Marketing strategy and positioning.
-- `SMM.md` - SMM toolkit research and specifications.
+```
+vibelab/
+├── src/                 # Application source code
+├── public/              # Static assets
+├── .env.local           # Environment variables
+├── README.md            # Project overview
+├── progress.md          # Feature completion log
+├── prd.md               # Product requirements
+├── structure.md         # This file
+└── package.json         # Dependencies
+```
 
 ---
 
-## 📁 `src/app/` (Application Layer)
-- `[slug]/` - **Dynamic Tool Pages**: Individual "Blueprint" manuals (e.g., `/vibecode`, `/kling`).
-- `layout.tsx` - Global layout with Navbar and SEO metadata.
-- `page.tsx` - **Homepage**: Hero section and tool directory.
-- `globals.css` - Framer-style dark theme design system.
-- `not-found.tsx` - Custom 404 handler.
+## 📁 `src/app/` (Routes)
+
+### Core Pages
+| Route | File | Description |
+|-------|------|-------------|
+| `/` | `page.tsx` | Homepage with Quick Actions grid |
+| `/[slug]` | `[slug]/page.tsx` | Dynamic tool blueprints |
+| `/scan` | `scan/page.tsx` | Security Scanner |
+| `/skills` | `skills/page.tsx` | AI Coding Skills |
+
+### VibeMarket (`/vibeMarket`)
+| Route | Description |
+|-------|-------------|
+| `/token-calc` | Token Cost Calculator (7 providers) |
+| `/prompt-optimizer` | Prompt compression tool |
+| `/gtm` | GTM Strategy Generator |
+| `/templates` | Marketing Strategy Templates |
+| `/builder` | Custom Marketing Builder |
+| `/thread-studio` | AI Thread Builder |
+| `/planner` | Posting Calendar |
+| `/vault` | Evergreen Content Vault |
+| `/profiles` | Personality Voice Presets |
+| `/scorecard` | Engagement Tracker |
+| `/agent` | Browser Automation Scripts |
+
+### API Routes (`/api`)
+| Route | Purpose |
+|-------|---------|
+| `/auth/[...nextauth]` | GitHub OAuth handler |
+| `/scan` | Security scan endpoint |
+| `/repos` | Fetch user's GitHub repos |
+| `/generate/skill` | AI skill generation |
+| `/generate/gtm` | AI GTM strategy |
+| `/generate/marketing` | AI marketing strategy |
 
 ---
 
-## 📁 `src/app/skills/` (Universal Skills)
+## 📁 `src/lib/` (Data & Logic)
 
-### Coding Skills
-- `page.tsx` - **Skills Directory**: Browse and search AI coding agent skills.
-- `create/` - **Skill Creator**: Build custom skills with live preview and export.
-
-### Marketing Skills (/vibeMarket → will redirect to /skills/marketing)
-- `page.tsx` - **Marketing Skills Landing**: Hub for marketing tools.
-- `thread-studio/` - AI-powered thread builder with hooks.
-- `planner/` - Visual posting calendar with best-time recommendations.
-- `vault/` - Evergreen content storage with performance tags.
-- `profiles/` - Multi-account voice presets with AI prompt export.
-- `scorecard/` - Gamified engagement tracker with badges.
-- `agent/` - Browser scripts for automated X engagement.
-
-### Strategy Tools (Implemented)
-- `gtm/` - Go-To-Market Strategy Generator (AI-powered)
-- `templates/` - Marketing Strategy Templates (5 industry templates)
-- `builder/` - Custom Marketing Builder (sentiment-based, AI-powered)
+| File | Purpose |
+|------|---------|
+| `toolsData.ts` | AI tool definitions, prompts, workflows |
+| `skillsData.ts` | Coding skills with export formatters |
+| `scanData.ts` | Security patterns and severity config |
+| `frontendScanner.ts` | Vulnerability scanning engine |
+| `generateFix.ts` | AI fix generation + exports |
+| `groq.ts` | Groq API for AI generation |
 
 ---
 
-## 📁 `src/app/api/` (API Routes)
-- `generate/skill/route.ts` - AI skill generation endpoint
-- `generate/gtm/route.ts` - AI GTM strategy endpoint
-- `generate/marketing/route.ts` - AI marketing strategy endpoint
+## 📁 `src/components/`
+
+| Component | Purpose |
+|-----------|---------|
+| `Navbar.tsx` | Global navigation |
+| `ToolCard.tsx` | Tool directory cards |
+| `AuthProvider.tsx` | NextAuth session wrapper |
+| `CopyButton.tsx` | Clipboard utility |
 
 ---
 
-## 📁 `src/components/` (UI Layer)
-- `Navbar.tsx` - Global navigation with Product, VibeMarket, Skills, Tools links.
-- `ToolCard.tsx` - Reusable card component for the tool directory.
-- `CopyButton.tsx` - Client-side utility for copying pro-prompts.
+## 🔑 Environment Variables
 
----
+```env
+# GitHub OAuth
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+NEXTAUTH_SECRET=
+NEXTAUTH_URL=http://localhost:3000
 
-## 📁 `src/lib/` (Data & Logic Layer)
-- `toolsData.ts` - **Tool Knowledge Base**: AI tool definitions, tips, prompts.
-- `skillsData.ts` - **Skills Data**: Skill definitions and export formatters.
-- `groq.ts` - **Groq API**: AI generation utility with system prompts.
+# AI APIs
+NEXT_PUBLIC_GEMINI_API_KEY=
+GROQ_API_KEY=
 
----
-
-## ⚙️ Configuration Files
-- `next.config.ts` - Next.js framework settings.
-- `tailwind.config.ts` - Design system variables.
-- `tsconfig.json` - TypeScript configuration.
-- `package.json` - Dependencies (Next.js, Tailwind, Lucide React, Groq SDK).
-- `.env.local` - Environment variables (GROQ_API_KEY).
-
----
-
-## 🎨 Design System
-See `/Ui/Ui-ux.md` for complete design tokens, components, and patterns.
+# Optional
+GITHUB_TOKEN=
+```
 
 ---
 
@@ -87,24 +104,38 @@ See `/Ui/Ui-ux.md` for complete design tokens, components, and patterns.
 
 ```
 VibeLab
-├── Home (/)
+├── Homepage (/)
+│   ├── Quick Actions Grid
 │   └── Tool Directory
-│       └── [slug] → Tool Detail Pages
+│
+├── Security Scanner (/scan)
+│   ├── GitHub OAuth Sign-in
+│   ├── User Repo List
+│   ├── Scan Interface
+│   └── Results + AI Fixes
+│
+├── VibeMarket (/vibeMarket)
+│   ├── Token Cost Tools
+│   │   ├── Token Calculator
+│   │   └── Prompt Optimizer
+│   ├── Strategy Tools
+│   │   ├── GTM Generator
+│   │   ├── Templates
+│   │   └── Custom Builder
+│   └── SMM Tools
+│       ├── Thread Studio
+│       ├── Planner
+│       ├── Vault
+│       └── ...
 │
 ├── Skills (/skills)
-│   ├── Coding Skills
-│   │   ├── Browse & Filter
-│   │   └── Skill Creator (/skills/create)
-│   │
-│   └── Marketing Skills (/vibeMarket)
-│       ├── Thread Studio
-│       ├── Posting Planner
-│       ├── Evergreen Vault
-│       ├── Personality Profiles
-│       ├── Engagement Scorecard
-│       ├── Browser Agent
-│       └── (Planned)
-│           ├── GTM Generator
-│           ├── Strategy Templates
-│           └── Custom Builder
+│   ├── Skill Browser
+│   ├── Category Filter
+│   ├── Export Modal
+│   └── Skill Creator
+│
+└── Tool Detail (/[slug])
+    ├── Tips & Best Practices
+    ├── Annotated Prompts
+    └── Workflows
 ```
