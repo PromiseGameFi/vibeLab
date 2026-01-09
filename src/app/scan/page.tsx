@@ -9,7 +9,7 @@ import {
     ChevronRight, FileCode, Lock, Package, Clock, DollarSign,
     History, Trash2, X, Code2, Database, Zap, Eye,
     FileJson, FileType, Blocks, Sparkles, Terminal, Bug,
-    LogOut, User, FileText
+    LogOut, User, FileText, GitBranch, Star, Folder
 } from "lucide-react";
 import {
     ScanResult, ScanSummary, severityConfig, scannerInfo,
@@ -92,6 +92,17 @@ export default function ScanPage() {
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [aiFixLoading, setAiFixLoading] = useState<string | null>(null);
     const [aiFixes, setAiFixes] = useState<Record<string, string>>({});
+    const [userRepos, setUserRepos] = useState<Array<{
+        id: number;
+        name: string;
+        fullName: string;
+        url: string;
+        private: boolean;
+        description: string | null;
+        language: string | null;
+        updatedAt: string;
+    }>>([]);
+    const [loadingRepos, setLoadingRepos] = useState(false);
 
     useEffect(() => {
         const stored = localStorage.getItem(STORAGE_KEY);
@@ -99,6 +110,22 @@ export default function ScanPage() {
             try { setHistory(JSON.parse(stored)); } catch { }
         }
     }, []);
+
+    // Fetch user repos when signed in
+    useEffect(() => {
+        if (session) {
+            setLoadingRepos(true);
+            fetch('/api/repos')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.repos) setUserRepos(data.repos);
+                })
+                .catch(console.error)
+                .finally(() => setLoadingRepos(false));
+        } else {
+            setUserRepos([]);
+        }
+    }, [session]);
 
     const saveHistory = (newHistory: ScanHistoryItem[]) => {
         setHistory(newHistory);
@@ -427,6 +454,44 @@ export default function ScanPage() {
                         </button>
                     )}
                 </div>
+
+                {/* User Repos List */}
+                {session && (
+                    <div className="mt-4 pt-4 border-t border-[var(--border)]">
+                        <div className="flex items-center gap-2 mb-3">
+                            <Folder className="w-4 h-4 text-[var(--foreground-secondary)]" />
+                            <span className="text-sm text-[var(--foreground-secondary)]">Your Repositories</span>
+                            {loadingRepos && <Loader2 className="w-3 h-3 animate-spin text-[var(--foreground-muted)]" />}
+                        </div>
+                        {userRepos.length > 0 ? (
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-[200px] overflow-y-auto pr-2">
+                                {userRepos.slice(0, 12).map(repo => (
+                                    <button
+                                        key={repo.id}
+                                        onClick={() => { setRepoUrl(repo.url); setError(null); }}
+                                        className={`p-3 rounded-lg text-left transition-all border ${repoUrl === repo.url
+                                                ? 'bg-[var(--accent)]/10 border-[var(--accent)]/50'
+                                                : 'bg-[var(--background-card)] border-[var(--border)] hover:border-[var(--accent)]/30'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-sm font-medium text-white truncate">{repo.name}</span>
+                                            {repo.private && <Lock className="w-3 h-3 text-purple-400 flex-shrink-0" />}
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs text-[var(--foreground-muted)]">
+                                            {repo.language && (
+                                                <span className="px-1.5 py-0.5 rounded bg-white/5">{repo.language}</span>
+                                            )}
+                                            <span>{new Date(repo.updatedAt).toLocaleDateString()}</span>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        ) : !loadingRepos && (
+                            <p className="text-sm text-[var(--foreground-muted)]">No repositories found</p>
+                        )}
+                    </div>
+                )}
 
                 {error && (
                     <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-start gap-3">
