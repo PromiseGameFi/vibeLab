@@ -1,93 +1,85 @@
 # Marketing & Strategy - VibeLab
 
-## The Core Problem
-**AI Fragmentation & Marketing Fatigue.** Users have:
-1. **AI Tools** but don't know how to chain them for marketing outcomes
-2. **Content ideas** but no structured execution framework
-3. **Products** but no go-to-market playbook
+## Core Value Proposition
+
+**"Cut AI costs by 40%. Build 10x faster."**
+
+VibeLab solves 3 problems:
+1. **Token Waste** → Token Calculator + Prompt Optimizer
+2. **Security Blind Spots** → GitHub Scanner
+3. **Tool Confusion** → Pro Blueprints + Skills
 
 ---
 
-## The Solution: Marketing Skills
+## Product Positioning
 
-VibeLab's Marketing Skills combine AI tools with proven marketing frameworks.
+| Feature | Hook |
+|---------|------|
+| Token Calculator | "Stop overpaying for AI" |
+| Prompt Optimizer | "Say more with fewer tokens" |
+| Security Scanner | "Scan private repos in seconds" |
+| AI Skills | "One-click install for Cursor" |
 
 ---
 
-## Marketing Skills Suite
+## Marketing Tools Suite
 
-### 1. SMM Toolkit (X-First)
+### Token Cost Tools (NEW)
+| Tool | Value |
+|------|-------|
+| Token Calculator | Compare 7 providers, find cheapest |
+| Prompt Optimizer | Remove filler, save 40% tokens |
+
+### SMM Toolkit
 | Tool | Purpose |
-|---|---|
-| Thread Studio | AI thread builder with hooks, cliffhangers, CTAs |
-| Posting Planner | Visual calendar with best-time optimization |
-| Evergreen Vault | Content recycler with performance tags |
-| Personality Profiles | Voice presets with AI prompt export |
-| Engagement Scorecard | Gamified daily goals with streaks/badges |
-| Browser Agent | Console scripts for automated engagement |
+|------|---------|
+| Thread Studio | AI thread builder with hooks |
+| Posting Planner | Visual calendar |
+| Evergreen Vault | Content recycler |
+| Personality Profiles | Voice presets |
+| Engagement Scorecard | Gamified tracker |
+| Browser Agent | Automation scripts |
 
-### 2. Go-To-Market Strategy Generator
-AI-powered strategy builder that creates:
-- **Positioning Statement**: How you're different
-- **Ideal Customer Profile**: Who you're targeting
-- **Channel Strategy**: Where to reach them
-- **Content Calendar**: What to post and when
-- **Launch Timeline**: Phase-by-phase rollout
-- **Success Metrics**: KPIs to track
-
-### 3. Marketing Strategy Templates
-
-#### SaaS Launch
-- Product-led growth funnel
-- Free trial → paid conversion
-- Content marketing + SEO
-- Developer relations
-
-#### Creator Economy
-- Audience building on X/YouTube
-- Newsletter monetization
-- Community management
-- Sponsorship playbook
-
-#### E-commerce
-- D2C brand strategy
-- Influencer partnerships
-- Email automation
-- Retention loops
-
-#### Agency Model
-- Client acquisition system
-- Case study framework
-- Retainer pricing
-- Referral program
-
-#### Developer Tools
-- Open source strategy
-- Documentation-first
-- DevRel programs
-- Technical content
-
-### 4. Custom Marketing Builder
-Create personalized strategies based on:
-
-| Input | Options |
-|---|---|
-| **Sentiment** | Professional, Casual, Bold, Minimal, Technical, Friendly |
-| **Goals** | Awareness, Leads, Sales, Retention, Community |
-| **Channels** | Social, Content, Paid, SEO, Email, Partnerships |
-| **Budget** | Bootstrap ($0-1k), Funded ($1k-10k), Enterprise ($10k+) |
-| **Timeline** | Sprint (2 weeks), Quarter (3 months), Annual |
+### Strategy Generators
+| Tool | Output |
+|------|--------|
+| GTM Strategy Generator | Full go-to-market plan |
+| Strategy Templates | 5 industry playbooks |
+| Custom Builder | Personalized strategy |
 
 ---
 
 ## Marketing Hook
-**"Stop guessing. Start executing."**
-- Position VibeLab as the playbook for AI-native marketing
-- Focus on actionable frameworks, not generic advice
+
+**"The Pro Manual for AI"**
+- Not just lists of tools
+- Actual workflows and cost savings
+- Works with YOUR existing tools
 
 ---
 
 ## Growth Channels
-1. **SEO**: "Go-to-market strategy template", "X marketing automation"
-2. **Social**: Share strategies as threads/posts
-3. **Community**: User-submitted marketing playbooks
+
+1. **SEO** 
+   - "AI token calculator"
+   - "GitHub security scanner free"
+   - "Cursor rules examples"
+
+2. **Social (X/Twitter)**
+   - Share token savings tips
+   - Security scan results (redacted)
+   - Pro tips from blueprints
+
+3. **Community**
+   - User-submitted skills
+   - Workflow sharing
+
+---
+
+## Competitive Advantage
+
+| Competitor | VibeLab Difference |
+|------------|---------------------|
+| Generic tool lists | We teach HOW to use tools |
+| Paid security scanners | Free, 200 files, 3 APIs |
+| Token counting apps | We compare + optimize |
