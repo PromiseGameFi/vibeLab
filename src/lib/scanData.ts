@@ -46,11 +46,11 @@ export interface ScanJob {
 
 // Severity colors and icons
 export const severityConfig = {
-    critical: { color: 'bg-red-500', text: 'text-red-500', label: 'Critical', icon: '🔴' },
-    high: { color: 'bg-orange-500', text: 'text-orange-500', label: 'High', icon: '🟠' },
-    medium: { color: 'bg-yellow-500', text: 'text-yellow-500', label: 'Medium', icon: '🟡' },
-    low: { color: 'bg-blue-500', text: 'text-blue-500', label: 'Low', icon: '🔵' },
-    info: { color: 'bg-gray-500', text: 'text-gray-500', label: 'Info', icon: '⚪' },
+    critical: { color: 'bg-red-500', text: 'text-red-500', label: 'Critical', icon: '' },
+    high: { color: 'bg-orange-500', text: 'text-orange-500', label: 'High', icon: '' },
+    medium: { color: 'bg-yellow-500', text: 'text-yellow-500', label: 'Medium', icon: '' },
+    low: { color: 'bg-blue-500', text: 'text-blue-500', label: 'Low', icon: '' },
+    info: { color: 'bg-gray-500', text: 'text-gray-500', label: 'Info', icon: '' },
 };
 
 // Scanner descriptions
@@ -58,12 +58,12 @@ export const scannerInfo = {
     'vibelab-patterns': {
         name: 'VibeLab Patterns',
         description: '100+ Security Patterns (Secrets, SQLi, XSS, etc.)',
-        icon: '🔍',
+        icon: '',
     },
     'osv-api': {
         name: 'OSV API',
         description: 'Open Source Vulnerabilities (40,000+ CVEs)',
-        icon: '📦',
+        icon: '',
     },
 };
 
