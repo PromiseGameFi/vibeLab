@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Shield, Lock, Eye, Database, Mail, Globe } from "lucide-react";
+import { ArrowLeft, Shield, Lock, Eye, Database, Mail, Globe, Brain, Chrome } from "lucide-react";
 
 export const metadata = {
     title: "Privacy Policy | VibeLab",
@@ -35,8 +35,9 @@ export default function PrivacyPage() {
                         Introduction
                     </h2>
                     <p className="text-[var(--foreground-secondary)]">
-                        VibeLab ("we", "our", or "us") respects your privacy and is committed to protecting your personal data.
-                        This privacy policy explains how we collect, use, and safeguard your information when you use our platform.
+                        VibeLab (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) respects your privacy and is committed to protecting your personal data.
+                        This privacy policy explains how we collect, use, and safeguard your information when you use our platform,
+                        including the Security Scanner, AI Memory, Browser Extension, Skills, and VibeMarket tools.
                     </p>
                 </section>
 
@@ -56,19 +57,50 @@ export default function PrivacyPage() {
                             </ul>
                         </div>
                         <div>
-                            <h3 className="font-medium text-white mb-2">Usage Data</h3>
+                            <h3 className="font-medium text-white mb-2">Security Scanner Data</h3>
                             <ul className="list-disc list-inside space-y-1 ml-2">
-                                <li>Scan history (stored locally in your browser)</li>
-                                <li>Prompts entered in the optimizer (not stored on servers)</li>
-                                <li>Skills you export or create</li>
+                                <li>Repository names scanned (stored locally)</li>
+                                <li>Scan history and results (stored locally in your browser)</li>
+                                <li>AI fix suggestions are generated server-side but not stored</li>
                             </ul>
                         </div>
                         <div>
-                            <h3 className="font-medium text-white mb-2">What We DON'T Collect</h3>
+                            <h3 className="font-medium text-white mb-2 flex items-center gap-2">
+                                <Brain className="w-4 h-4 text-purple-400" />
+                                AI Memory Data
+                            </h3>
+                            <ul className="list-disc list-inside space-y-1 ml-2">
+                                <li>Memory titles, content, and tags (stored locally in IndexedDB)</li>
+                                <li>Memory embeddings for semantic search (stored locally)</li>
+                                <li>Chat history with memories (stored locally)</li>
+                                <li>Imported URLs and file content (stored locally)</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 className="font-medium text-white mb-2 flex items-center gap-2">
+                                <Chrome className="w-4 h-4 text-blue-400" />
+                                Browser Extension Data
+                            </h3>
+                            <ul className="list-disc list-inside space-y-1 ml-2">
+                                <li>Captured conversations from AI sites (stored in chrome.storage.local)</li>
+                                <li>Auto-save settings and preferences (stored locally)</li>
+                                <li>No data is sent to external servers without your action</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 className="font-medium text-white mb-2">Skills & VibeMarket Data</h3>
+                            <ul className="list-disc list-inside space-y-1 ml-2">
+                                <li>Skills you create and export (stored locally)</li>
+                                <li>Marketing prompts and generated content (not stored on servers)</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 className="font-medium text-white mb-2">What We DON&apos;T Collect</h3>
                             <ul className="list-disc list-inside space-y-1 ml-2">
                                 <li>Your source code (scans happen client-side)</li>
-                                <li>GitHub repository contents beyond what's needed for scanning</li>
-                                <li>Payment information (we don't charge)</li>
+                                <li>Your AI conversations (processed locally)</li>
+                                <li>Payment information (we don&apos;t charge)</li>
+                                <li>Personal files or documents</li>
                             </ul>
                         </div>
                     </div>
@@ -83,6 +115,8 @@ export default function PrivacyPage() {
                     <ul className="list-disc list-inside space-y-2 text-[var(--foreground-secondary)]">
                         <li>Authenticate you via GitHub OAuth</li>
                         <li>Access your repositories for security scanning (with your permission)</li>
+                        <li>Generate AI responses using Groq/Gemini APIs (prompts not stored)</li>
+                        <li>Create semantic embeddings for memory search</li>
                         <li>Display your profile information in the UI</li>
                         <li>Improve our services and fix bugs</li>
                     </ul>
@@ -104,7 +138,11 @@ export default function PrivacyPage() {
                             </div>
                             <div className="p-4 rounded-lg bg-white/5 border border-[var(--border)]">
                                 <h3 className="font-medium text-white">Google Gemini</h3>
-                                <p className="text-sm">AI-powered fix suggestions</p>
+                                <p className="text-sm">Embeddings for semantic search</p>
+                            </div>
+                            <div className="p-4 rounded-lg bg-white/5 border border-[var(--border)]">
+                                <h3 className="font-medium text-white">Groq</h3>
+                                <p className="text-sm">AI chat and fix suggestions</p>
                             </div>
                             <div className="p-4 rounded-lg bg-white/5 border border-[var(--border)]">
                                 <h3 className="font-medium text-white">Vercel</h3>
@@ -122,9 +160,12 @@ export default function PrivacyPage() {
                     </h2>
                     <ul className="list-disc list-inside space-y-2 text-[var(--foreground-secondary)]">
                         <li>Session data is stored securely using encrypted cookies</li>
-                        <li>Scan history is stored in your browser's localStorage (not on our servers)</li>
+                        <li>AI Memories are stored in your browser&apos;s IndexedDB (not on our servers)</li>
+                        <li>Extension data is stored in chrome.storage.local</li>
+                        <li>Scan history is stored in your browser&apos;s localStorage</li>
                         <li>We use HTTPS for all communications</li>
                         <li>GitHub tokens are never stored permanently</li>
+                        <li>API keys (Groq, Gemini) are stored only in your .env.local file</li>
                     </ul>
                 </section>
 
@@ -132,10 +173,11 @@ export default function PrivacyPage() {
                 <section className="card p-6">
                     <h2 className="text-xl font-semibold text-white mb-4">Your Rights</h2>
                     <ul className="list-disc list-inside space-y-2 text-[var(--foreground-secondary)]">
-                        <li><strong>Access:</strong> Request a copy of your data</li>
-                        <li><strong>Deletion:</strong> Request deletion of your data</li>
-                        <li><strong>Revoke Access:</strong> Revoke GitHub permissions at any time via GitHub settings</li>
-                        <li><strong>Opt-out:</strong> Clear localStorage to remove local data</li>
+                        <li><strong>Access:</strong> All your data is stored locally - view it anytime</li>
+                        <li><strong>Deletion:</strong> Clear browser storage to remove all local data</li>
+                        <li><strong>Revoke Access:</strong> Revoke GitHub permissions via GitHub settings</li>
+                        <li><strong>Extension:</strong> Remove extension to delete all captured memories</li>
+                        <li><strong>Export:</strong> Export your memories as JSON from the dashboard</li>
                     </ul>
                 </section>
 
@@ -144,7 +186,8 @@ export default function PrivacyPage() {
                     <h2 className="text-xl font-semibold text-white mb-4">GDPR Compliance (EU Users)</h2>
                     <p className="text-[var(--foreground-secondary)]">
                         If you are in the European Union, you have additional rights under GDPR including the right to access,
-                        rectify, port, and erase your personal data. We process data based on your consent (GitHub OAuth authorization).
+                        rectify, port, and erase your personal data. Since most data is stored locally in your browser,
+                        you have full control. We process minimal data based on your consent (GitHub OAuth authorization).
                     </p>
                 </section>
 
@@ -155,9 +198,9 @@ export default function PrivacyPage() {
                         Contact Us
                     </h2>
                     <p className="text-[var(--foreground-secondary)]">
-                        For privacy-related questions or requests, contact us {" "}
+                        For privacy-related questions or requests, contact us at{" "}
                         <a href="mailto:privacy@vibelab.ai" className="text-[var(--accent)] hover:underline">
-
+                            privacy@vibelab.ai
                         </a>
                     </p>
                 </section>
