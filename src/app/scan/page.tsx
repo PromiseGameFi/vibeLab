@@ -771,6 +771,78 @@ export default function ScanPage() {
                         ))}
                     </div>
 
+                    {/* Category Breakdown */}
+                    {(() => {
+                        const categoryBreakdown = results.reduce((acc, r) => {
+                            const cat = r.category || 'other';
+                            acc[cat] = (acc[cat] || 0) + 1;
+                            return acc;
+                        }, {} as Record<string, number>);
+
+                        const categoryColors: Record<string, string> = {
+                            'secrets': 'bg-red-500',
+                            'sqli': 'bg-orange-500',
+                            'xss': 'bg-yellow-500',
+                            'smart-contract': 'bg-purple-500',
+                            'wallet': 'bg-indigo-500',
+                            'api': 'bg-blue-500',
+                            'graphql': 'bg-pink-500',
+                            'jwt': 'bg-cyan-500',
+                            'backend': 'bg-teal-500',
+                            'container': 'bg-green-500',
+                            'cicd': 'bg-lime-500',
+                            'react': 'bg-sky-500',
+                            'nextjs': 'bg-slate-400',
+                            'auth': 'bg-amber-500',
+                            'crypto': 'bg-violet-500',
+                            'defi': 'bg-fuchsia-500',
+                            'dependency': 'bg-gray-500',
+                        };
+
+                        const categories = Object.entries(categoryBreakdown)
+                            .sort((a, b) => b[1] - a[1])
+                            .slice(0, 8);
+
+                        if (categories.length === 0) return null;
+
+                        const total = categories.reduce((sum, [, count]) => sum + count, 0);
+
+                        return (
+                            <div className="mb-6 p-4 rounded-xl bg-white/5 border border-white/10">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <Bug className="w-4 h-4 text-[var(--foreground-secondary)]" />
+                                    <span className="text-sm font-medium text-white">Findings by Category</span>
+                                </div>
+
+                                {/* Category Bar */}
+                                <div className="h-3 rounded-full overflow-hidden flex mb-3">
+                                    {categories.map(([cat, count]) => (
+                                        <div
+                                            key={cat}
+                                            className={`${categoryColors[cat] || 'bg-gray-500'} transition-all`}
+                                            style={{ width: `${(count / total) * 100}%` }}
+                                            title={`${cat}: ${count}`}
+                                        />
+                                    ))}
+                                </div>
+
+                                {/* Category Labels */}
+                                <div className="flex flex-wrap gap-2">
+                                    {categories.map(([cat, count]) => (
+                                        <span
+                                            key={cat}
+                                            className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5 text-xs"
+                                        >
+                                            <span className={`w-2 h-2 rounded-full ${categoryColors[cat] || 'bg-gray-500'}`} />
+                                            <span className="text-[var(--foreground-secondary)] capitalize">{cat.replace('-', ' ')}</span>
+                                            <span className="text-white font-medium">{count}</span>
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })()}
+
                     {/* Fix Estimate */}
                     {fixEstimate && (
                         <div className="p-4 rounded-xl bg-white/5 border border-white/10">
