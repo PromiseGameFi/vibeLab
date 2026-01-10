@@ -173,8 +173,8 @@ export default function ScorecardPage() {
                             <div
                                 key={badge.id}
                                 className={`flex-shrink-0 w-24 p-4 rounded-xl text-center transition-all ${badge.unlocked
-                                        ? 'bg-gradient-to-b from-[var(--accent)]/20 to-transparent border border-[var(--accent)]/30'
-                                        : 'bg-[var(--background-card)] border border-[var(--border)] opacity-40'
+                                    ? 'bg-gradient-to-b from-[var(--accent)]/20 to-transparent border border-[var(--accent)]/30'
+                                    : 'bg-[var(--background-card)] border border-[var(--border)] opacity-40'
                                     }`}
                             >
                                 <Icon className={`w-8 h-8 mx-auto mb-2 ${badge.unlocked ? 'text-[var(--accent)]' : 'text-[var(--foreground-muted)]'}`} />
@@ -242,7 +242,7 @@ export default function ScorecardPage() {
             {allDailyComplete && (
                 <div className="card p-8 mt-10 text-center bg-gradient-to-r from-[var(--accent)] to-[var(--accent-secondary)]">
                     <Sparkles className="w-12 h-12 mx-auto mb-4 text-white" />
-                    <h2 className="text-2xl font-bold text-white mb-2">🎉 Daily Goals Complete!</h2>
+                    <h2 className="text-2xl font-bold text-white mb-2">Daily Goals Complete!</h2>
                     <p className="text-white/80 mb-4">Click "Complete Day" to log your streak.</p>
                 </div>
             )}
