@@ -264,6 +264,52 @@ export default function MemoryPage() {
                     </div>
                 </div>
 
+                {/* Extension & MCP Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className="p-4 rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                                <span className="text-xl">🧩</span>
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-white">Chrome Extension</h3>
+                                <p className="text-xs text-[var(--foreground-secondary)]">
+                                    Auto-capture from ChatGPT, Claude, Gemini, Twitter & more
+                                </p>
+                            </div>
+                            <a
+                                href="https://github.com/your-repo/vibelab/tree/main/extensions/chrome"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="ml-auto text-xs px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 transition-colors"
+                            >
+                                Install →
+                            </a>
+                        </div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-gradient-to-r from-green-500/10 to-teal-500/10 border border-green-500/20">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                                <span className="text-xl">⚡</span>
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-white">MCP Server</h3>
+                                <p className="text-xs text-[var(--foreground-secondary)]">
+                                    Access memories from Cursor & Claude Desktop
+                                </p>
+                            </div>
+                            <a
+                                href="https://github.com/your-repo/vibelab/tree/main/mcp-server"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="ml-auto text-xs px-3 py-1.5 rounded-lg bg-green-500/20 text-green-300 hover:bg-green-500/30 transition-colors"
+                            >
+                                Setup →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Search & Filters */}
                 <div className="flex items-center gap-4 mb-6">
                     <div className="relative flex-1">
