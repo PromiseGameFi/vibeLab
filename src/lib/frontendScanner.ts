@@ -3,6 +3,8 @@
 
 import { allPatterns, VulnPattern, patternStats } from './scanPatterns';
 import { allWeb3Patterns, Web3Pattern, detectWeb3Language } from './web3Patterns';
+import { allApiPatterns, ApiPattern, apiPatternStats } from './apiSecurityPatterns';
+import { allAdditionalPatterns, AdditionalPattern, additionalPatternStats } from './additionalPatterns';
 
 export interface ScanFinding {
     id: string;
@@ -158,6 +160,121 @@ export function scanWeb3Content(
             });
 
             // Prevent infinite loops for non-global regex
+            if (!regex.global) break;
+        }
+    }
+
+    return findings;
+}
+
+// Scan a file for API/Backend security patterns (GraphQL, JWT, REST, Node.js, Python)
+export function scanApiContent(
+    content: string,
+    filename: string
+): ScanFinding[] {
+    const findings: ScanFinding[] = [];
+    const lines = content.split('\n');
+
+    // Detect language for this file
+    const ext = filename.split('.').pop()?.toLowerCase() || '';
+    const apiLangs = ['js', 'jsx', 'ts', 'tsx', 'py', 'go', 'java', 'rb', 'php'];
+    if (!apiLangs.includes(ext)) return findings;
+
+    const langMap: Record<string, string> = {
+        'js': 'javascript', 'jsx': 'javascript', 'ts': 'typescript', 'tsx': 'typescript',
+        'py': 'python', 'go': 'go', 'java': 'java', 'rb': 'ruby', 'php': 'php'
+    };
+    const fileLanguage = langMap[ext];
+
+    for (const pattern of allApiPatterns) {
+        // Skip patterns for other languages if specified
+        if (pattern.languages && !pattern.languages.includes(fileLanguage)) {
+            continue;
+        }
+
+        // Create new regex to avoid state issues
+        const regex = new RegExp(pattern.pattern.source, pattern.pattern.flags);
+
+        let match;
+        while ((match = regex.exec(content)) !== null) {
+            const beforeMatch = content.substring(0, match.index);
+            const lineNumber = (beforeMatch.match(/\n/g) || []).length + 1;
+            const codeLine = lines[lineNumber - 1] || '';
+
+            findings.push({
+                id: generateId(),
+                ruleId: pattern.id,
+                severity: pattern.severity,
+                category: pattern.category,
+                title: pattern.name,
+                message: pattern.description,
+                file: filename,
+                line: lineNumber,
+                code: codeLine.trim().substring(0, 200),
+                cwe: pattern.cwe,
+                owasp: pattern.owasp,
+                fix: pattern.fix,
+                scanner: 'vibelab-patterns', // API patterns are part of vibelab
+            });
+
+            // Prevent infinite loops for non-global regex
+            if (!regex.global) break;
+        }
+    }
+
+    return findings;
+}
+
+// Scan for additional patterns (Docker, CI/CD, React, Next.js, Auth)
+export function scanAdditionalContent(
+    content: string,
+    filename: string
+): ScanFinding[] {
+    const findings: ScanFinding[] = [];
+    const lines = content.split('\n');
+
+    // Detect file type for pattern filtering
+    const lowerName = filename.toLowerCase();
+    const isDockerfile = lowerName.includes('dockerfile') || lowerName.endsWith('.dockerfile');
+    const isCICD = lowerName.includes('.github/workflows') || lowerName.includes('.gitlab-ci') || lowerName.includes('azure-pipelines');
+    const ext = filename.split('.').pop()?.toLowerCase() || '';
+    const isReactFile = ['js', 'jsx', 'ts', 'tsx'].includes(ext);
+    const isNextConfig = lowerName.includes('next.config');
+
+    // Filter patterns based on file type
+    const applicablePatterns = allAdditionalPatterns.filter(p => {
+        if (p.category === 'container' && !isDockerfile) return false;
+        if (p.category === 'cicd' && !isCICD) return false;
+        if (p.category === 'react' && !isReactFile) return false;
+        if (p.category === 'nextjs' && !isReactFile && !isNextConfig) return false;
+        return true;
+    });
+
+    for (const pattern of applicablePatterns) {
+        const regex = new RegExp(pattern.pattern.source, pattern.pattern.flags);
+
+        let match;
+        while ((match = regex.exec(content)) !== null) {
+            const beforeMatch = content.substring(0, match.index);
+            const lineNumber = (beforeMatch.match(/\n/g) || []).length + 1;
+            const codeLine = lines[lineNumber - 1] || '';
+
+            findings.push({
+                id: generateId(),
+                ruleId: pattern.id,
+                severity: pattern.severity,
+                category: pattern.category,
+                title: pattern.name,
+                message: pattern.description,
+                file: filename,
+                line: lineNumber,
+                code: codeLine.trim().substring(0, 200),
+                cwe: pattern.cwe,
+                owasp: pattern.owasp,
+                fix: pattern.fix,
+                scanner: 'vibelab-patterns',
+            });
+
             if (!regex.global) break;
         }
     }
@@ -500,7 +617,7 @@ export async function scanRepository(repoUrl: string, options?: ScanOptions): Pr
     // Fetch repo contents
     const { files, packageJson } = await fetchRepoContents(repoUrl);
 
-    // Scan all files with expanded patterns + web3 patterns
+    // Scan all files with all pattern types
     const allFindings: ScanFinding[] = [];
     for (const file of files) {
         // Standard security patterns
@@ -510,6 +627,14 @@ export async function scanRepository(repoUrl: string, options?: ScanOptions): Pr
         // Web3/blockchain patterns (Solidity, Rust, Move, FunC, JS/TS dApp patterns)
         const web3Findings = scanWeb3Content(file.content, file.path);
         allFindings.push(...web3Findings);
+
+        // API/Backend patterns (GraphQL, JWT, REST, Node.js, Python)
+        const apiFindings = scanApiContent(file.content, file.path);
+        allFindings.push(...apiFindings);
+
+        // Additional patterns (Docker, CI/CD, React, Next.js, Auth)
+        const additionalFindings = scanAdditionalContent(file.content, file.path);
+        allFindings.push(...additionalFindings);
     }
 
     // Scan dependencies with multiple APIs
