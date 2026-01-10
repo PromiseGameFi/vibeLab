@@ -118,13 +118,13 @@ export async function GET(request: Request) {
     } catch (error) {
         console.error('Kalshi API error:', error);
 
-        // Return mock data for development
+        // Return mock data for development (demo mode)
         const mockMarkets: Market[] = [
             {
-                id: 'KXBTC-26DEC31-T100',
-                slug: 'btc-100k-dec-2026',
-                title: 'Bitcoin above $100,000 on December 31, 2026?',
-                description: 'This market resolves Yes if Bitcoin trades above $100,000 on Dec 31, 2026.',
+                id: 'demo-kalshi-1',
+                slug: 'bitcoin-price',
+                title: '[DEMO] Bitcoin price prediction',
+                description: 'Demo data - visit Kalshi for live markets.',
                 platform: 'kalshi',
                 category: 'crypto',
                 outcomes: [
@@ -136,13 +136,13 @@ export async function GET(request: Request) {
                 endDate: new Date('2026-12-31'),
                 createdAt: new Date(),
                 status: 'open',
-                url: 'https://kalshi.com/markets/btc-100k',
+                url: 'https://kalshi.com',
             },
             {
-                id: 'KXINF-26FEB-T3',
-                slug: 'cpi-above-3-feb',
-                title: 'CPI above 3% in February 2026?',
-                description: 'Resolves Yes if monthly CPI exceeds 3%.',
+                id: 'demo-kalshi-2',
+                slug: 'inflation-rate',
+                title: '[DEMO] CPI inflation forecast',
+                description: 'Demo data - visit Kalshi for live markets.',
                 platform: 'kalshi',
                 category: 'economics',
                 outcomes: [
@@ -154,13 +154,13 @@ export async function GET(request: Request) {
                 endDate: new Date('2026-03-15'),
                 createdAt: new Date(),
                 status: 'open',
-                url: 'https://kalshi.com/markets/cpi-feb',
+                url: 'https://kalshi.com',
             },
             {
-                id: 'KXREC-26',
-                slug: 'recession-2026',
-                title: 'US recession in 2026?',
-                description: 'Resolves Yes if NBER declares a recession starting in 2026.',
+                id: 'demo-kalshi-3',
+                slug: 'recession-forecast',
+                title: '[DEMO] US recession probability',
+                description: 'Demo data - visit Kalshi for live markets.',
                 platform: 'kalshi',
                 category: 'economics',
                 outcomes: [
@@ -172,7 +172,7 @@ export async function GET(request: Request) {
                 endDate: new Date('2027-01-15'),
                 createdAt: new Date(),
                 status: 'open',
-                url: 'https://kalshi.com/markets/recession-2026',
+                url: 'https://kalshi.com',
             },
         ];
 
