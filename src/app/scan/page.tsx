@@ -470,8 +470,8 @@ export default function ScanPage() {
                                         key={repo.id}
                                         onClick={() => { setRepoUrl(repo.url); setError(null); }}
                                         className={`p-3 rounded-lg text-left transition-all border ${repoUrl === repo.url
-                                                ? 'bg-[var(--accent)]/10 border-[var(--accent)]/50'
-                                                : 'bg-[var(--background-card)] border-[var(--border)] hover:border-[var(--accent)]/30'
+                                            ? 'bg-[var(--accent)]/10 border-[var(--accent)]/50'
+                                            : 'bg-[var(--background-card)] border-[var(--border)] hover:border-[var(--accent)]/30'
                                             }`}
                                     >
                                         <div className="flex items-center gap-2 mb-1">
@@ -690,10 +690,11 @@ export default function ScanPage() {
                             </div>
                         </div>
                         <div className="flex gap-2">
-                            <button onClick={copyMasterPrompt} className="btn-secondary">
+                            {/* Master Prompt Button - Hidden for now */}
+                            {/* <button onClick={copyMasterPrompt} className="btn-secondary">
                                 {copiedId === 'master' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                                 {copiedId === 'master' ? 'Copied!' : 'Copy AI Prompt'}
-                            </button>
+                            </button> */}
 
                             {/* Export Dropdown */}
                             <div className="relative">
