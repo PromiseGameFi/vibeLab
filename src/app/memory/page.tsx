@@ -227,8 +227,8 @@ export default function MemoryPage() {
                                         : [...selectedTags, tag]
                                 )}
                                 className={`badge text-xs transition-all ${selectedTags.includes(tag)
-                                        ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
-                                        : 'bg-white/5 hover:bg-white/10'
+                                    ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
+                                    : 'bg-white/5 hover:bg-white/10'
                                     }`}
                             >
                                 {tag}
@@ -260,8 +260,8 @@ export default function MemoryPage() {
                             <div
                                 key={memory.id}
                                 className={`card p-5 group transition-all ${selectedMemories.has(memory.id)
-                                        ? 'border-[var(--accent)] bg-[var(--accent)]/5'
-                                        : ''
+                                    ? 'border-[var(--accent)] bg-[var(--accent)]/5'
+                                    : ''
                                     }`}
                             >
                                 {/* Header */}
@@ -387,10 +387,11 @@ export default function MemoryPage() {
                                         {(Object.keys(SOURCE_CONFIG) as MemorySource[]).map(source => (
                                             <button
                                                 key={source}
+                                                type="button"
                                                 onClick={() => setFormSource(source)}
-                                                className={`badge transition-all ${formSource === source
-                                                        ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
-                                                        : 'bg-white/5 hover:bg-white/10'
+                                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${formSource === source
+                                                        ? 'bg-purple-500 text-white ring-2 ring-purple-400 ring-offset-2 ring-offset-black scale-105'
+                                                        : 'bg-white/10 text-[var(--foreground-secondary)] hover:bg-white/20'
                                                     }`}
                                             >
                                                 {SOURCE_CONFIG[source].icon} {SOURCE_CONFIG[source].label}
@@ -405,14 +406,15 @@ export default function MemoryPage() {
                                         {DEFAULT_TAGS.map(tag => (
                                             <button
                                                 key={tag}
+                                                type="button"
                                                 onClick={() => setFormTags(
                                                     formTags.includes(tag)
                                                         ? formTags.filter(t => t !== tag)
                                                         : [...formTags, tag]
                                                 )}
-                                                className={`badge text-xs transition-all ${formTags.includes(tag)
-                                                        ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
-                                                        : 'bg-white/5 hover:bg-white/10'
+                                                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${formTags.includes(tag)
+                                                        ? 'bg-blue-500 text-white ring-2 ring-blue-400 ring-offset-1 ring-offset-black'
+                                                        : 'bg-white/10 text-[var(--foreground-secondary)] hover:bg-white/20'
                                                     }`}
                                             >
                                                 {tag}
