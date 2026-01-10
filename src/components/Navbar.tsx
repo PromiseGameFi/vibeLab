@@ -36,6 +36,12 @@ export default function Navbar() {
                         Scan
                     </Link>
                     <Link
+                        href="/memory"
+                        className="text-sm text-[var(--foreground-secondary)] hover:text-white transition-colors"
+                    >
+                        Memory
+                    </Link>
+                    <Link
                         href="/skills"
                         className="text-sm text-[var(--foreground-secondary)] hover:text-white transition-colors"
                     >
