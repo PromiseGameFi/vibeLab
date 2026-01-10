@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, FileText, AlertTriangle, Shield, Scale, Users } from "lucide-react";
+import { ArrowLeft, FileText, AlertTriangle, Shield, Scale, Users, Brain, Chrome, Zap } from "lucide-react";
 
 export const metadata = {
     title: "Terms of Service | VibeLab",
@@ -32,7 +32,7 @@ export default function TermsPage() {
                 <section className="card p-6">
                     <h2 className="text-xl font-semibold text-white mb-4">1. Acceptance of Terms</h2>
                     <p className="text-[var(--foreground-secondary)]">
-                        By accessing or using VibeLab ("the Service"), you agree to be bound by these Terms of Service.
+                        By accessing or using VibeLab (&quot;the Service&quot;), you agree to be bound by these Terms of Service.
                         If you do not agree to these terms, please do not use the Service.
                     </p>
                 </section>
@@ -41,13 +41,49 @@ export default function TermsPage() {
                 <section className="card p-6">
                     <h2 className="text-xl font-semibold text-white mb-4">2. Description of Service</h2>
                     <p className="text-[var(--foreground-secondary)] mb-4">VibeLab provides:</p>
-                    <ul className="list-disc list-inside space-y-2 text-[var(--foreground-secondary)]">
-                        <li>Security vulnerability scanning for GitHub repositories</li>
-                        <li>Token cost calculators and prompt optimization tools</li>
-                        <li>AI tool blueprints and workflow guides</li>
-                        <li>Universal coding skills for AI agents</li>
-                        <li>Marketing strategy generation tools</li>
-                    </ul>
+                    <div className="space-y-4">
+                        <div className="p-4 rounded-lg bg-white/5 border border-[var(--border)]">
+                            <h3 className="font-medium text-white flex items-center gap-2">
+                                <Shield className="w-4 h-4 text-red-400" />
+                                Security Scanner
+                            </h3>
+                            <p className="text-sm text-[var(--foreground-secondary)]">
+                                Vulnerability scanning for GitHub repositories with AI-powered fix suggestions
+                            </p>
+                        </div>
+                        <div className="p-4 rounded-lg bg-white/5 border border-[var(--border)]">
+                            <h3 className="font-medium text-white flex items-center gap-2">
+                                <Brain className="w-4 h-4 text-purple-400" />
+                                AI Memory
+                            </h3>
+                            <p className="text-sm text-[var(--foreground-secondary)]">
+                                Persistent memory system with semantic search, chat, and URL import
+                            </p>
+                        </div>
+                        <div className="p-4 rounded-lg bg-white/5 border border-[var(--border)]">
+                            <h3 className="font-medium text-white flex items-center gap-2">
+                                <Chrome className="w-4 h-4 text-blue-400" />
+                                Browser Extension
+                            </h3>
+                            <p className="text-sm text-[var(--foreground-secondary)]">
+                                Auto-capture from ChatGPT, Claude, Gemini, Perplexity, Copilot, and Twitter
+                            </p>
+                        </div>
+                        <div className="p-4 rounded-lg bg-white/5 border border-[var(--border)]">
+                            <h3 className="font-medium text-white flex items-center gap-2">
+                                <Zap className="w-4 h-4 text-yellow-400" />
+                                MCP Server
+                            </h3>
+                            <p className="text-sm text-[var(--foreground-secondary)]">
+                                Memory access for Cursor, Claude Desktop, and other MCP clients
+                            </p>
+                        </div>
+                        <ul className="list-disc list-inside space-y-2 text-[var(--foreground-secondary)]">
+                            <li>Universal AI Skills for coding agents</li>
+                            <li>VibeMarket marketing strategy tools</li>
+                            <li>AI tool blueprints and workflow guides</li>
+                        </ul>
+                    </div>
                 </section>
 
                 {/* User Responsibilities */}
@@ -59,10 +95,12 @@ export default function TermsPage() {
                     <p className="text-[var(--foreground-secondary)] mb-4">You agree to:</p>
                     <ul className="list-disc list-inside space-y-2 text-[var(--foreground-secondary)]">
                         <li>Only scan repositories you own or have permission to scan</li>
+                        <li>Only capture conversations you have permission to save</li>
                         <li>Not use the Service for any illegal or unauthorized purpose</li>
                         <li>Not attempt to bypass security measures</li>
                         <li>Not abuse API rate limits or overload our systems</li>
-                        <li>Comply with GitHub's Terms of Service when using OAuth</li>
+                        <li>Comply with third-party terms (GitHub, ChatGPT, Claude, etc.)</li>
+                        <li>Keep your API keys secure</li>
                     </ul>
                 </section>
 
@@ -84,10 +122,14 @@ export default function TermsPage() {
                     <div className="space-y-4 text-[var(--foreground-secondary)]">
                         <p>
                             <strong className="text-white">Your Content:</strong> You retain all rights to your code, repositories,
-                            and any content you create using our tools.
+                            memories, and any content you create using our tools.
                         </p>
                         <p>
-                            <strong className="text-white">Our Content:</strong> VibeLab's interface, designs, patterns, and
+                            <strong className="text-white">Your Memories:</strong> All memories you save are yours. We don&apos;t claim
+                            any ownership over captured conversations or imported content.
+                        </p>
+                        <p>
+                            <strong className="text-white">Our Content:</strong> VibeLab&apos;s interface, designs, patterns, and
                             documentation are owned by us and protected by copyright.
                         </p>
                         <p>
@@ -105,16 +147,24 @@ export default function TermsPage() {
                     </h2>
                     <div className="space-y-4 text-[var(--foreground-secondary)]">
                         <p>
-                            <strong className="text-orange-400">Security Scanner:</strong> Our scanner is provided "as is" and does not
+                            <strong className="text-orange-400">Security Scanner:</strong> Our scanner is provided &quot;as is&quot; and does not
                             guarantee detection of all vulnerabilities. It should complement, not replace, professional security audits.
                         </p>
                         <p>
-                            <strong className="text-orange-400">AI Suggestions:</strong> AI-generated fix suggestions are provided for
-                            informational purposes. Always review and test suggestions before implementing.
+                            <strong className="text-orange-400">AI Features:</strong> AI-generated responses (chat, fix suggestions, summaries)
+                            are provided for informational purposes. Always review AI output before use.
                         </p>
                         <p>
-                            <strong className="text-orange-400">Token Costs:</strong> Token pricing data is approximate and may change.
-                            Always verify with the actual provider.
+                            <strong className="text-orange-400">Memory Accuracy:</strong> Conversation extraction may not capture 100% of content.
+                            Always verify important information.
+                        </p>
+                        <p>
+                            <strong className="text-orange-400">Third-Party Sites:</strong> Content scraped from AI sites (ChatGPT, Claude, etc.)
+                            may be subject to those platforms&apos; terms of service.
+                        </p>
+                        <p>
+                            <strong className="text-orange-400">MCP Integration:</strong> MCP server functionality depends on third-party tools
+                            (Cursor, Claude Desktop) which may change without notice.
                         </p>
                     </div>
                 </section>
@@ -137,7 +187,8 @@ export default function TermsPage() {
                     <h2 className="text-xl font-semibold text-white mb-4">8. Termination</h2>
                     <p className="text-[var(--foreground-secondary)]">
                         We may terminate or suspend access to our Service immediately, without prior notice, for any reason,
-                        including breach of these Terms. You may stop using the Service at any time by revoking GitHub OAuth access.
+                        including breach of these Terms. You may stop using the Service at any time by revoking GitHub OAuth access
+                        and removing the browser extension.
                     </p>
                 </section>
 
@@ -146,7 +197,7 @@ export default function TermsPage() {
                     <h2 className="text-xl font-semibold text-white mb-4">9. Changes to Terms</h2>
                     <p className="text-[var(--foreground-secondary)]">
                         We reserve the right to modify these terms at any time. We will notify users of significant changes
-                        by updating the "Last updated" date. Continued use after changes constitutes acceptance.
+                        by updating the &quot;Last updated&quot; date. Continued use after changes constitutes acceptance.
                     </p>
                 </section>
 
