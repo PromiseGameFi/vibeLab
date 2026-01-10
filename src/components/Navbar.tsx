@@ -48,6 +48,12 @@ export default function Navbar() {
                         Skills
                     </Link>
                     <Link
+                        href="/predictions"
+                        className="text-sm text-[var(--foreground-secondary)] hover:text-white transition-colors"
+                    >
+                        Predictions
+                    </Link>
+                    <Link
                         href="/#tools"
                         className="text-sm text-[var(--foreground-secondary)] hover:text-white transition-colors"
                     >
