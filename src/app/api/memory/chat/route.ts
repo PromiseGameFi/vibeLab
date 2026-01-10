@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '');
+// Initialize Groq
+const groq = new Groq({
+    apiKey: process.env.GROQ_API_KEY,
+});
 
 // Simple token estimation
 function estimateTokens(text: string): number {
@@ -93,15 +95,15 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Message required' }, { status: 400 });
         }
 
-        if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
-            return NextResponse.json({ error: 'Gemini API key not configured' }, { status: 500 });
+        if (!process.env.GROQ_API_KEY) {
+            return NextResponse.json({ error: 'Groq API key not configured' }, { status: 500 });
         }
 
         // Search for relevant memories
         const relevantMemories = searchMemories(memories, message, 3000);
         const context = formatContext(relevantMemories);
 
-        // Build the prompt
+        // Build the system prompt
         const systemPrompt = `You are a helpful AI assistant with access to the user's saved memories. 
 Use the provided context to answer questions accurately. If the context doesn't contain relevant information, 
 say so and provide your best general knowledge answer.
@@ -112,28 +114,34 @@ Be concise but thorough. Reference specific memories when relevant.`;
             ? `\n\n## Your Memories (${relevantMemories.length} relevant):\n\n${context}`
             : '\n\n(No relevant memories found for this query)';
 
-        // Build conversation history
-        const historyText = history.map(h =>
-            `${h.role === 'user' ? 'User' : 'Assistant'}: ${h.content}`
-        ).join('\n\n');
+        // Build messages for Groq
+        const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
+            { role: 'system', content: systemPrompt + contextSection }
+        ];
 
-        const fullPrompt = `${systemPrompt}${contextSection}
+        // Add conversation history
+        history.forEach(h => {
+            messages.push({ role: h.role, content: h.content });
+        });
 
-${historyText ? `## Previous Conversation:\n${historyText}\n\n` : ''}## Current Question:
-${message}
+        // Add current message
+        messages.push({ role: 'user', content: message });
 
-Answer:`;
+        // Call Groq
+        const completion = await groq.chat.completions.create({
+            model: 'llama-3.3-70b-versatile',
+            messages,
+            temperature: 0.7,
+            max_tokens: 1024,
+        });
 
-        // Call Gemini
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-        const result = await model.generateContent(fullPrompt);
-        const response = result.response.text();
+        const response = completion.choices[0]?.message?.content || 'No response generated';
 
         return NextResponse.json({
             response,
             memoriesUsed: relevantMemories.length,
             memoryTitles: relevantMemories.map(m => m.title),
-            tokensUsed: estimateTokens(fullPrompt)
+            tokensUsed: estimateTokens(message + context)
         });
 
     } catch (error) {
