@@ -2,7 +2,7 @@
 
 > **Build better AI workflows, faster**
 
-VibeLab helps you use AI tools effectively. Security scanners, AI memory, and curated workflows.
+VibeLab helps you use AI tools effectively. Security scanners, AI memory, prediction market intelligence, and curated workflows.
 
 ## 🚀 Quick Start
 
@@ -28,10 +28,21 @@ Universal AI memory system inspired by [supermemory.ai](https://supermemory.ai):
 |---------|-------------|
 | **Chat with Memories** | Ask questions, AI answers using your context |
 | **Semantic Search** | AI-powered vector search (click "AI" toggle) |
+| **Memory Graph** | Visualize connections between memories |
 | **URL/File Import** | Import from any URL or upload files |
 | **Token Budgeting** | Export 500-8000 tokens with auto-summarization |
-| **Browser Extension** | Auto-capture from ChatGPT, Claude, Gemini |
+| **Browser Extension** | Auto-capture from ChatGPT, Claude, Gemini, Twitter, Perplexity, Copilot |
 | **MCP Server** | Access from Cursor/Claude Desktop |
+
+### 📊 Prediction Markets (`/predictions`)
+AI-powered prediction market intelligence:
+
+| Feature | Description |
+|---------|-------------|
+| **Market Scanner** | Aggregate odds from Polymarket & Kalshi |
+| **Arbitrage Finder** | Detect guaranteed profit opportunities |
+| **AI Research Agent** | Deep probability analysis with edge detection |
+| **Category Filters** | Politics, Crypto, Economics, Sports |
 
 ### 🎯 AI Skills (`/skills`)
 - Pre-built coding rules for Cursor, Claude Code, Windsurf
@@ -51,8 +62,9 @@ GITHUB_CLIENT_SECRET=
 NEXTAUTH_SECRET=
 NEXTAUTH_URL=http://localhost:3000
 
-# Gemini API (required for AI features)
-NEXT_PUBLIC_GEMINI_API_KEY=
+# AI APIs
+NEXT_PUBLIC_GEMINI_API_KEY=  # For embeddings
+GROQ_API_KEY=                 # For chat & analysis
 ```
 
 ## 📁 Project Structure
@@ -63,20 +75,25 @@ src/
 │   ├── scan/              # Security scanner
 │   ├── memory/            # AI memory dashboard
 │   ├── memory/chat/       # Chat with memories
+│   ├── memory/graph/      # Memory graph visualization
+│   ├── predictions/       # Prediction market scanner
 │   ├── skills/            # AI coding skills
 │   ├── vibeMarket/        # Marketing tools
-│   └── api/memory/        # Memory APIs (chat, import, search)
+│   └── api/
+│       ├── memory/        # Memory APIs (chat, import, search, sync)
+│       └── predictions/   # Prediction APIs (polymarket, kalshi, analyze, arbitrage)
 ├── lib/
 │   ├── memoryStore.ts     # IndexedDB storage
 │   ├── memoryTypes.ts     # Memory interfaces
+│   ├── predictionTypes.ts # Prediction interfaces
 │   └── scanPatterns/      # Scanner patterns
 └── components/
 
 extensions/
-└── chrome/                # Browser extension
+└── chrome/                # Browser extension (7 sites)
 
 mcp-server/
-└── index.js               # MCP server
+└── index.js               # MCP server for Cursor/Claude
 ```
 
 ## 🛠️ Tech Stack
@@ -85,7 +102,7 @@ mcp-server/
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS
 - **Auth:** NextAuth.js (GitHub OAuth)
-- **AI:** Gemini (embeddings, chat, fixes)
+- **AI:** Groq (llama-3.3-70b), Gemini (embeddings)
 
 ## 📄 License
 
