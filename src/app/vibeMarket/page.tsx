@@ -1,55 +1,10 @@
 import Link from "next/link";
 import {
-    MessageSquare,
-    Calendar,
-    Archive,
-    Users,
-    Trophy,
-    Bot,
     ArrowRight,
     Rocket,
     TrendingUp,
     Palette
 } from "lucide-react";
-
-const smmTools = [
-    {
-        id: "thread-studio",
-        name: "Thread Studio",
-        description: "AI-powered thread builder with viral hooks and cliffhangers.",
-        icon: MessageSquare
-    },
-    {
-        id: "planner",
-        name: "Posting Planner",
-        description: "Visual calendar with best-time recommendations.",
-        icon: Calendar
-    },
-    {
-        id: "vault",
-        name: "Evergreen Vault",
-        description: "Recycle your best content with AI freshness updates.",
-        icon: Archive
-    },
-    {
-        id: "profiles",
-        name: "Personality Profiles",
-        description: "Switch voice presets for multi-account management.",
-        icon: Users
-    },
-    {
-        id: "scorecard",
-        name: "Engagement Scorecard",
-        description: "Gamified daily goals, streaks, and badges.",
-        icon: Trophy
-    },
-    {
-        id: "agent",
-        name: "Browser Agent",
-        description: "Automated engagement scripts for your browser.",
-        icon: Bot
-    }
-];
 
 const strategyTools = [
     {
@@ -98,9 +53,9 @@ export default function VibeMarketPage() {
                             <Rocket className="w-4 h-4" />
                             Generate GTM Strategy
                         </Link>
-                        <Link href="/vibeMarket/thread-studio" className="btn-secondary">
-                            <MessageSquare className="w-4 h-4" />
-                            Thread Studio
+                        <Link href="/vibeMarket/templates" className="btn-secondary">
+                            <TrendingUp className="w-4 h-4" />
+                            Strategy Templates
                         </Link>
                     </div>
                 </div>
@@ -149,42 +104,7 @@ export default function VibeMarketPage() {
                 </div>
             </section>
 
-            {/* SMM Tools */}
-            <section className="py-24 px-6 border-t border-[var(--border)]">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-16">
-                        <h2 className="section-title text-white mb-4">SMM Toolkit</h2>
-                        <p className="text-[var(--foreground-secondary)]">
-                            Your X command center. No API required.
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {smmTools.map((feature) => (
-                            <Link
-                                key={feature.id}
-                                href={`/vibeMarket/${feature.id}`}
-                                className="card card-interactive p-6 group"
-                            >
-                                <div className="w-12 h-12 rounded-2xl bg-[var(--accent)] bg-opacity-10 flex items-center justify-center mb-5 group-hover:bg-opacity-20 transition-all">
-                                    <feature.icon className="w-6 h-6 text-[var(--accent)]" />
-                                </div>
-
-                                <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-[var(--accent)] transition-colors">
-                                    {feature.name}
-                                </h3>
-                                <p className="text-[var(--foreground-secondary)] text-sm mb-4">
-                                    {feature.description}
-                                </p>
-
-                                <span className="btn-ghost text-sm">
-                                    Open <ArrowRight className="w-3 h-3" />
-                                </span>
-                            </Link>
-                        ))}
-                    </div>
-                </div>
-            </section>
+            {/* SMM Tools section removed */}
 
             {/* Stats */}
             <section className="py-24 px-6 border-t border-[var(--border)]">
