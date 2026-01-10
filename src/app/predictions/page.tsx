@@ -167,6 +167,52 @@ export default function PredictionsPage() {
                     </div>
                 </div>
 
+                {/* Feature Links */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <Link
+                        href="/predictions/whales"
+                        className="card p-4 hover:border-[var(--accent)]/50 transition-all group"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <span className="text-xl">🐋</span>
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-white">Smart Money</h3>
+                                <p className="text-xs text-[var(--foreground-secondary)]">Track whale wallets</p>
+                            </div>
+                        </div>
+                    </Link>
+                    <Link
+                        href="/predictions/sentiment"
+                        className="card p-4 hover:border-[var(--accent)]/50 transition-all group"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <span className="text-xl">📰</span>
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-white">News Sentiment</h3>
+                                <p className="text-xs text-[var(--foreground-secondary)]">Market-moving news</p>
+                            </div>
+                        </div>
+                    </Link>
+                    <Link
+                        href="/predictions/alerts"
+                        className="card p-4 hover:border-[var(--accent)]/50 transition-all group"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <span className="text-xl">🔔</span>
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-white">Market Alerts</h3>
+                                <p className="text-xs text-[var(--foreground-secondary)]">Price notifications</p>
+                            </div>
+                        </div>
+                    </Link>
+                </div>
+
                 {/* Arbitrage Alert */}
                 {showArbitrage && arbitrageOpps.length > 0 && (
                     <div className="mb-6 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30">
@@ -234,8 +280,8 @@ export default function PredictionsPage() {
                                 key={p}
                                 onClick={() => setSelectedPlatform(p)}
                                 className={`px-3 py-2 rounded-lg text-sm transition-all ${selectedPlatform === p
-                                        ? 'bg-[var(--accent)] text-white'
-                                        : 'bg-white/5 text-[var(--foreground-secondary)] hover:bg-white/10'
+                                    ? 'bg-[var(--accent)] text-white'
+                                    : 'bg-white/5 text-[var(--foreground-secondary)] hover:bg-white/10'
                                     }`}
                             >
                                 {p === "all" ? "All" : PLATFORM_CONFIG[p].icon + " " + PLATFORM_CONFIG[p].name}
@@ -369,13 +415,13 @@ export default function PredictionsPage() {
                                     </p>
                                 </div>
                                 <div className={`text-center p-3 rounded-lg ${aiAnalysis.edge > 0.05 ? 'bg-green-500/10 border-green-500/30' :
-                                        aiAnalysis.edge < -0.05 ? 'bg-red-500/10 border-red-500/30' :
-                                            'bg-gray-500/10 border-gray-500/30'
+                                    aiAnalysis.edge < -0.05 ? 'bg-red-500/10 border-red-500/30' :
+                                        'bg-gray-500/10 border-gray-500/30'
                                     } border`}>
                                     <p className="text-xs text-[var(--foreground-muted)] mb-1">Edge</p>
                                     <p className={`text-xl font-bold ${aiAnalysis.edge > 0.05 ? 'text-green-400' :
-                                            aiAnalysis.edge < -0.05 ? 'text-red-400' :
-                                                'text-gray-400'
+                                        aiAnalysis.edge < -0.05 ? 'text-red-400' :
+                                            'text-gray-400'
                                         }`}>
                                         {aiAnalysis.edge > 0 ? '+' : ''}{(aiAnalysis.edge * 100).toFixed(1)}%
                                     </p>
@@ -384,8 +430,8 @@ export default function PredictionsPage() {
 
                             {/* Recommendation */}
                             <div className={`p-3 rounded-lg mb-4 ${aiAnalysis.edge > 0.1 ? 'bg-green-500/20 border border-green-500/30' :
-                                    aiAnalysis.edge < -0.1 ? 'bg-red-500/20 border border-red-500/30' :
-                                        'bg-gray-500/20 border border-gray-500/30'
+                                aiAnalysis.edge < -0.1 ? 'bg-red-500/20 border border-red-500/30' :
+                                    'bg-gray-500/20 border border-gray-500/30'
                                 }`}>
                                 <p className="text-sm font-semibold">
                                     {aiAnalysis.edge > 0.1 ? '🟢 BUY YES - Market undervalues this outcome' :
@@ -398,8 +444,8 @@ export default function PredictionsPage() {
                             <div className="flex items-center gap-2 mb-4">
                                 <span className="text-xs text-[var(--foreground-muted)]">Confidence:</span>
                                 <span className={`text-xs px-2 py-1 rounded-full ${aiAnalysis.confidence === 'high' ? 'bg-green-500/20 text-green-400' :
-                                        aiAnalysis.confidence === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                                            'bg-red-500/20 text-red-400'
+                                    aiAnalysis.confidence === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                                        'bg-red-500/20 text-red-400'
                                     }`}>
                                     {aiAnalysis.confidence.toUpperCase()}
                                 </span>
