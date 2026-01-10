@@ -1,8 +1,8 @@
 # VibeLab
 
-> **Build better AI workflows, faster** — Cut token costs by up to 40%
+> **Build better AI workflows, faster**
 
-VibeLab helps you use AI tools effectively while reducing costs. Security scanners, token optimizers, and curated workflows.
+VibeLab helps you use AI tools effectively. Security scanners, AI memory, and curated workflows.
 
 ## 🚀 Quick Start
 
@@ -17,23 +17,26 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ### 🔒 Security Scanner (`/scan`)
 - Scan GitHub repos (public & private via OAuth)
-- 153 vulnerability patterns + 3 APIs (OSV, deps.dev, GitHub Advisory)
+- 218+ vulnerability patterns across 6 categories
 - AI-powered fix suggestions with Gemini
 - Export: JSON, SARIF, Markdown
 
-### 💰 Token Cost Tools (`/vibeMarket`)
-- **Token Calculator** - Compare 7 AI providers (GPT-4o, Claude, Gemini, DeepSeek)
-- **Prompt Optimizer** - Remove filler words, save up to 40% tokens
+### 🧠 AI Memory (`/memory`)
+- Persistent context across all AI tools
+- Token-budgeted export (500-8000 tokens)
+- Auto-summarization (10x compression)
+- **Browser Extension** - Auto-capture from ChatGPT, Claude, Gemini
+- **MCP Server** - Access memories from Cursor/Claude Desktop
 
 ### 🎯 AI Skills (`/skills`)
 - Pre-built coding rules for Cursor, Claude Code, Windsurf
 - One-click export to `.cursorrules`, `CLAUDE.md`, etc.
-- Reduce repeated prompting = save tokens
+- Reduce repeated prompting
 
-### 📈 VibeMarket Tools
+### 📈 VibeMarket (`/vibeMarket`)
 - GTM Strategy Generator
-- Thread Studio (AI threads)
-- Evergreen Vault (content recycler)
+- Marketing Templates
+- Custom Strategy Builder
 
 ## 🔑 Environment Variables
 
@@ -44,7 +47,7 @@ GITHUB_CLIENT_SECRET=
 NEXTAUTH_SECRET=
 NEXTAUTH_URL=http://localhost:3000
 
-# Optional: Gemini API (AI fixes)
+# Optional: Gemini API (AI features)
 NEXT_PUBLIC_GEMINI_API_KEY=
 ```
 
@@ -54,14 +57,21 @@ NEXT_PUBLIC_GEMINI_API_KEY=
 src/
 ├── app/
 │   ├── scan/          # Security scanner
+│   ├── memory/        # AI memory dashboard
 │   ├── skills/        # AI coding skills
-│   ├── vibeMarket/    # Token tools + marketing
+│   ├── vibeMarket/    # Marketing tools
 │   └── [slug]/        # Tool detail pages
 ├── lib/
-│   ├── toolsData.ts   # AI tool blueprints
-│   ├── skillsData.ts  # Coding skills
-│   └── scanData.ts    # Scanner patterns
+│   ├── memoryStore.ts # AI memory storage
+│   ├── scanPatterns/  # Scanner patterns
+│   └── toolsData.ts   # AI tool blueprints
 └── components/
+
+extensions/
+└── chrome/            # Browser extension for memory capture
+
+mcp-server/
+└── index.js           # MCP server for Cursor/Claude Desktop
 ```
 
 ## 🛠️ Tech Stack
