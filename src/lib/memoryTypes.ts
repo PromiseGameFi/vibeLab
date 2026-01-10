@@ -15,6 +15,8 @@ export interface Memory {
     relevanceScore: number;  // 0-100, for smart export
     tier: MemoryTier;
     embedding?: number[];  // Vector embedding for semantic search
+    space?: string;  // Memory Space for organization (e.g., "work", "personal")
+    images?: string[];  // Image URLs extracted from content
 }
 
 export type MemorySource =
