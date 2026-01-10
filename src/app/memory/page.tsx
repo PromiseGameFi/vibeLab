@@ -17,7 +17,9 @@ import {
     Filter,
     Download,
     MessageSquare,
-    Link as LinkIcon
+    Link as LinkIcon,
+    GitBranch,
+    FolderOpen
 } from "lucide-react";
 import Link from "next/link";
 import { memoryStore, estimateTokens } from "@/lib/memoryStore";
@@ -231,6 +233,13 @@ export default function MemoryPage() {
                             <MessageSquare className="w-4 h-4" />
                             Chat
                         </Link>
+                        <Link
+                            href="/memory/graph"
+                            className="btn-secondary"
+                        >
+                            <GitBranch className="w-4 h-4" />
+                            Graph
+                        </Link>
                         <button
                             onClick={() => setShowImportModal(true)}
                             className="btn-secondary"
@@ -281,8 +290,8 @@ export default function MemoryPage() {
                             setSemanticResults([]);
                         }}
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${useSemanticSearch
-                                ? "bg-purple-500/20 text-purple-400 ring-1 ring-purple-500/50"
-                                : "bg-white/5 text-[var(--foreground-secondary)] hover:bg-white/10"
+                            ? "bg-purple-500/20 text-purple-400 ring-1 ring-purple-500/50"
+                            : "bg-white/5 text-[var(--foreground-secondary)] hover:bg-white/10"
                             }`}
                     >
                         <Zap className="w-4 h-4" />
