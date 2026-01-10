@@ -17,14 +17,14 @@ interface GTMStrategy {
 }
 
 const channelOptions = [
-    { id: "x", name: "X (Twitter)", icon: "𝕏" },
+    { id: "x", name: "X (Twitter)", icon: "X" },
     { id: "linkedin", name: "LinkedIn", icon: "in" },
-    { id: "youtube", name: "YouTube", icon: "▶" },
-    { id: "newsletter", name: "Newsletter", icon: "📧" },
-    { id: "blog", name: "Blog/SEO", icon: "📝" },
-    { id: "paid", name: "Paid Ads", icon: "💰" },
-    { id: "community", name: "Community", icon: "👥" },
-    { id: "partnerships", name: "Partnerships", icon: "🤝" }
+    { id: "youtube", name: "YouTube", icon: "YT" },
+    { id: "newsletter", name: "Newsletter", icon: "@" },
+    { id: "blog", name: "Blog/SEO", icon: "B" },
+    { id: "paid", name: "Paid Ads", icon: "$" },
+    { id: "community", name: "Community", icon: "C" },
+    { id: "partnerships", name: "Partnerships", icon: "P" }
 ];
 
 const industryOptions = [
