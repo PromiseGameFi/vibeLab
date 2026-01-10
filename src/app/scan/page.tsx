@@ -843,31 +843,7 @@ export default function ScanPage() {
                         );
                     })()}
 
-                    {/* Fix Estimate */}
-                    {fixEstimate && (
-                        <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-6">
-                                    <div className="flex items-center gap-2">
-                                        <Sparkles className="w-4 h-4 text-purple-400" />
-                                        <span className="text-sm text-[var(--foreground-secondary)]">AI Fix Estimate:</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Terminal className="w-4 h-4 text-blue-400" />
-                                        <span className="text-sm text-white">{fixEstimate.tokens.toLocaleString()} tokens</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <DollarSign className="w-4 h-4 text-green-400" />
-                                        <span className="text-sm text-white">{fixEstimate.cost}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Clock className="w-4 h-4 text-yellow-400" />
-                                        <span className="text-sm text-white">{fixEstimate.time}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    {/* Fix Estimate - Removed */}
                 </div>
             )}
 
