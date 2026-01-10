@@ -2,6 +2,7 @@
 // 100% free, works on Vercel, no external binaries needed
 
 import { allPatterns, VulnPattern, patternStats } from './scanPatterns';
+import { allWeb3Patterns, Web3Pattern, detectWeb3Language } from './web3Patterns';
 
 export interface ScanFinding {
     id: string;
@@ -16,6 +17,7 @@ export interface ScanFinding {
     cwe?: string;
     owasp?: string;
     fix?: string;
+    scanner?: 'vibelab-patterns' | 'web3-patterns';
 }
 
 export interface DependencyVuln {
@@ -41,6 +43,7 @@ export interface ScanResult {
         low: number;
         info: number;
         dependencyVulns: number;
+        web3Findings: number;
     };
     patternsUsed: number;
 }
@@ -65,6 +68,7 @@ export function scanFileContent(
         'js': 'javascript', 'jsx': 'javascript', 'ts': 'typescript', 'tsx': 'typescript',
         'py': 'python', 'sol': 'solidity', 'go': 'go', 'java': 'java',
         'rb': 'ruby', 'php': 'php', 'cs': 'csharp', 'rs': 'rust',
+        'move': 'move', 'fc': 'func', 'func': 'func',
     };
     const fileLanguage = langMap[ext];
 
@@ -99,10 +103,62 @@ export function scanFileContent(
                 cwe: pattern.cwe,
                 owasp: pattern.owasp,
                 fix: pattern.fix,
+                scanner: 'vibelab-patterns',
             });
 
             // Prevent infinite loops for non-global regex
             if (!pattern.pattern.global) break;
+        }
+    }
+
+    return findings;
+}
+
+// Scan a file for Web3/blockchain security patterns
+export function scanWeb3Content(
+    content: string,
+    filename: string
+): ScanFinding[] {
+    const findings: ScanFinding[] = [];
+    const lines = content.split('\n');
+
+    // Detect language for this file
+    const web3Language = detectWeb3Language(filename);
+    if (!web3Language) return findings;
+
+    // Get patterns for this language
+    const applicablePatterns = allWeb3Patterns.filter(p => {
+        if (p.language === 'typescript') return web3Language === 'typescript' || web3Language === 'javascript';
+        return p.language === web3Language;
+    });
+
+    for (const pattern of applicablePatterns) {
+        // Create new regex to avoid state issues
+        const regex = new RegExp(pattern.pattern.source, pattern.pattern.flags);
+
+        let match;
+        while ((match = regex.exec(content)) !== null) {
+            const beforeMatch = content.substring(0, match.index);
+            const lineNumber = (beforeMatch.match(/\n/g) || []).length + 1;
+            const codeLine = lines[lineNumber - 1] || '';
+
+            findings.push({
+                id: generateId(),
+                ruleId: pattern.id,
+                severity: pattern.severity,
+                category: pattern.category,
+                title: pattern.name,
+                message: pattern.description,
+                file: filename,
+                line: lineNumber,
+                code: codeLine.trim().substring(0, 200),
+                cwe: pattern.cwe,
+                fix: pattern.fix,
+                scanner: 'web3-patterns',
+            });
+
+            // Prevent infinite loops for non-global regex
+            if (!regex.global) break;
         }
     }
 
@@ -444,11 +500,16 @@ export async function scanRepository(repoUrl: string, options?: ScanOptions): Pr
     // Fetch repo contents
     const { files, packageJson } = await fetchRepoContents(repoUrl);
 
-    // Scan all files with expanded patterns
+    // Scan all files with expanded patterns + web3 patterns
     const allFindings: ScanFinding[] = [];
     for (const file of files) {
+        // Standard security patterns
         const findings = scanFileContent(file.content, file.path);
         allFindings.push(...findings);
+
+        // Web3/blockchain patterns (Solidity, Rust, Move, FunC, JS/TS dApp patterns)
+        const web3Findings = scanWeb3Content(file.content, file.path);
+        allFindings.push(...web3Findings);
     }
 
     // Scan dependencies with multiple APIs
@@ -464,6 +525,7 @@ export async function scanRepository(repoUrl: string, options?: ScanOptions): Pr
         low: allFindings.filter(f => f.severity === 'low').length + dependencyVulns.filter(d => d.severity === 'low').length,
         info: allFindings.filter(f => f.severity === 'info').length,
         dependencyVulns: dependencyVulns.length,
+        web3Findings: allFindings.filter(f => f.scanner === 'web3-patterns').length,
         apisQueried: 3, // OSV, deps.dev, GitHub Advisory
     };
 
