@@ -14,21 +14,29 @@ GITHUB_CLIENT_SECRET=
 NEXTAUTH_SECRET=
 NEXTAUTH_URL=http://localhost:3000
 NEXT_PUBLIC_GEMINI_API_KEY=
-GROQ_API_KEY=
 ```
 
 ---
 
-## Documentation Updates
+## Key Routes
 
-When contributing, keep these docs in sync:
+| Route | Purpose |
+|-------|---------|
+| `/scan` | Security Scanner |
+| `/memory` | AI Memory Dashboard |
+| `/memory/chat` | Chat with Memories |
+| `/skills` | AI Coding Skills |
+| `/vibeMarket` | Marketing Tools |
+| `/[slug]` | Tool Blueprints |
 
-| File | Update When |
-|------|-------------|
-| `progress.md` | Completing any feature |
-| `structure.md` | Adding new routes/files |
-| `prd.md` | Major features |
-| `README.md` | Setup/dependency changes |
+## API Routes
+
+| Route | Purpose |
+|-------|---------|
+| `/api/memory/chat` | RAG-based chat |
+| `/api/memory/import` | URL fetcher |
+| `/api/memory/search` | Semantic search |
+| `/api/scan` | Security scan |
 
 ---
 
@@ -39,7 +47,7 @@ When contributing, keep these docs in sync:
 - **Styling:** Tailwind CSS
 - **Auth:** NextAuth.js (GitHub OAuth)
 - **Icons:** Lucide React
-- **AI:** Gemini, Groq
+- **AI:** Gemini (embeddings, chat)
 
 ---
 
@@ -53,12 +61,13 @@ When contributing, keep these docs in sync:
 
 ---
 
-## Key Routes
+## Extensions
 
-| Route | Purpose |
-|-------|---------|
-| `/scan` | Security Scanner |
-| `/memory` | AI Memory Dashboard |
-| `/skills` | AI Coding Skills |
-| `/vibeMarket` | Marketing Tools |
-| `/[slug]` | Tool Blueprints |
+### Browser Extension
+Location: `extensions/chrome/`
+- Install via `chrome://extensions/` → Load unpacked
+
+### MCP Server
+Location: `mcp-server/`
+- Install: `cd mcp-server && npm install`
+- Configure in Cursor: `~/.cursor/mcp.json`
