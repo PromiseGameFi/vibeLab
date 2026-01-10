@@ -1,7 +1,7 @@
 // Security Scanner Types and Rules
 export interface ScanResult {
     id: string;
-    scanner: 'vibelab-patterns' | 'osv-api';
+    scanner: 'vibelab-patterns' | 'osv-api' | 'web3-patterns';
     severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
     title: string;
     description: string;
@@ -29,6 +29,7 @@ export interface ScanSummary {
     scanners: {
         'vibelab-patterns': number;
         'osv-api': number;
+        'web3-patterns': number;
     };
 }
 
@@ -57,12 +58,17 @@ export const severityConfig = {
 export const scannerInfo = {
     'vibelab-patterns': {
         name: 'VibeLab Patterns',
-        description: '100+ Security Patterns (Secrets, SQLi, XSS, etc.)',
+        description: '150+ Security Patterns (Secrets, SQLi, XSS, etc.)',
         icon: '',
     },
     'osv-api': {
         name: 'OSV API',
         description: 'Open Source Vulnerabilities (40,000+ CVEs)',
+        icon: '',
+    },
+    'web3-patterns': {
+        name: 'Web3 Patterns',
+        description: 'Smart Contract & dApp Security (Solidity, Rust, Move)',
         icon: '',
     },
 };
