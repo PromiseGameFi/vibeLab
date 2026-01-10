@@ -135,21 +135,21 @@ export default function VaultPage() {
                     className={`card p-4 text-center transition-all ${filter === "high" ? 'border-orange-500/50' : ''}`}
                 >
                     <div className="text-2xl font-bold text-orange-500">{stats.high}</div>
-                    <p className="text-xs text-[var(--foreground-muted)]">🔥 High</p>
+                    <p className="text-xs text-[var(--foreground-muted)]">High</p>
                 </button>
                 <button
                     onClick={() => setFilter(filter === "medium" ? "all" : "medium")}
                     className={`card p-4 text-center transition-all ${filter === "medium" ? 'border-yellow-500/50' : ''}`}
                 >
                     <div className="text-2xl font-bold text-yellow-500">{stats.medium}</div>
-                    <p className="text-xs text-[var(--foreground-muted)]">⚡ Solid</p>
+                    <p className="text-xs text-[var(--foreground-muted)]">Solid</p>
                 </button>
                 <button
                     onClick={() => setFilter(filter === "low" ? "all" : "low")}
                     className={`card p-4 text-center transition-all ${filter === "low" ? 'border-[var(--border-hover)]' : ''}`}
                 >
                     <div className="text-2xl font-bold text-[var(--foreground-muted)]">{stats.low}</div>
-                    <p className="text-xs text-[var(--foreground-muted)]">📝 Archive</p>
+                    <p className="text-xs text-[var(--foreground-muted)]">Archive</p>
                 </button>
             </div>
 
@@ -286,7 +286,7 @@ export default function VaultPage() {
                     <div>
                         <h3 className="font-semibold text-[var(--accent)] mb-1">Pro Tips</h3>
                         <ul className="text-[var(--foreground-secondary)] text-sm space-y-1">
-                            <li>• Tag high performers 🔥 to prioritize them in recycling</li>
+                            <li>• Tag high performers to prioritize them in recycling</li>
                             <li>• "Refresh" adds a new hook to make content feel fresh</li>
                             <li>• Usage stats help you identify your best evergreens</li>
                         </ul>
