@@ -32,34 +32,34 @@ const emojiStyleDescriptions = {
 
 const exampleOutputs: Record<string, Record<string, string>> = {
     Professional: {
-        none: "Key insight from q4 analysis: companies that shipped weekly outperformed by 3.2x. Speed compounds.",
-        minimal: "Key insight from Q4 analysis: companies that shipped weekly outperformed by 3.2x. Speed compounds. 📈",
-        heavy: "📊 Key insight from Q4 analysis: companies that shipped weekly outperformed by 3.2x 🚀 Speed compounds ✨"
+        none: "Key insight from Q4 analysis: companies that shipped weekly outperformed by 3.2x. Speed compounds.",
+        minimal: "Key insight from Q4 analysis: companies that shipped weekly outperformed by 3.2x. Speed compounds.",
+        heavy: "Key insight from Q4 analysis: companies that shipped weekly outperformed by 3.2x. Speed compounds."
     },
     Casual: {
         none: "honestly been shipping so much lately that I forgot what weekends feel like. no regrets though.",
-        minimal: "honestly been shipping so much lately that I forgot what weekends feel like 😅 no regrets though",
-        heavy: "honestly been shipping so much lately 🔥 that I forgot what weekends feel like 😅💀 no regrets though 🙌"
+        minimal: "honestly been shipping so much lately that I forgot what weekends feel like. no regrets though.",
+        heavy: "honestly been shipping so much lately that I forgot what weekends feel like. no regrets though."
     },
     Witty: {
         none: "My code works. I have no idea why. Classic Tuesday.",
-        minimal: "My code works. I have no idea why. Classic Tuesday. 🤷‍♂️",
-        heavy: "My code works 🤯 I have no idea why 💀 Classic Tuesday 😂🔥"
+        minimal: "My code works. I have no idea why. Classic Tuesday.",
+        heavy: "My code works. I have no idea why. Classic Tuesday."
     },
     Inspirational: {
         none: "Every expert was once a beginner. Start before you're ready.",
-        minimal: "Every expert was once a beginner. Start before you're ready. ✨",
-        heavy: "✨ Every expert was once a beginner 🌱 Start before you're ready 🚀💪"
+        minimal: "Every expert was once a beginner. Start before you're ready.",
+        heavy: "Every expert was once a beginner. Start before you're ready."
     },
     Technical: {
         none: "TIL: React 19 compiler eliminates 80% of useMemo calls. Performance wins without the boilerplate.",
-        minimal: "TIL: React 19 compiler eliminates 80% of useMemo calls. Performance wins without the boilerplate. 🧵",
-        heavy: "⚡ TIL: React 19 compiler eliminates 80% of useMemo calls 🔥 Performance wins without the boilerplate 💻✨"
+        minimal: "TIL: React 19 compiler eliminates 80% of useMemo calls. Performance wins without the boilerplate.",
+        heavy: "TIL: React 19 compiler eliminates 80% of useMemo calls. Performance wins without the boilerplate."
     },
     Sarcastic: {
         none: "\"Just use AI\" they said. \"It'll be easy\" they said. Three prompt iterations later, I am become bug, destroyer of prod.",
-        minimal: "\"Just use AI\" they said. \"It'll be easy\" they said. Three prompt iterations later... 💀",
-        heavy: "\"Just use AI\" they said 🤖 \"It'll be easy\" they said 🙃 Three prompt iterations later 💀😭🔥"
+        minimal: "\"Just use AI\" they said. \"It'll be easy\" they said. Three prompt iterations later...",
+        heavy: "\"Just use AI\" they said. \"It'll be easy\" they said. Three prompt iterations later..."
     }
 };
 
@@ -187,8 +187,8 @@ EXAMPLE OUTPUT:
                                     key={profile.id}
                                     onClick={() => setActiveProfile(profile.id)}
                                     className={`w-full p-4 rounded-xl text-left transition-all flex items-center justify-between ${activeProfile === profile.id
-                                            ? 'bg-[var(--accent-secondary)]/10 border border-[var(--accent-secondary)]/30'
-                                            : 'bg-[var(--background-card)] border border-[var(--border)] hover:border-[var(--border-hover)]'
+                                        ? 'bg-[var(--accent-secondary)]/10 border border-[var(--accent-secondary)]/30'
+                                        : 'bg-[var(--background-card)] border border-[var(--border)] hover:border-[var(--border-hover)]'
                                         }`}
                                 >
                                     <div>
@@ -236,8 +236,8 @@ EXAMPLE OUTPUT:
                                                 key={tone.value}
                                                 onClick={() => setNewProfile({ ...newProfile, tone: tone.value })}
                                                 className={`p-3 rounded-xl text-left transition-all ${newProfile.tone === tone.value
-                                                        ? 'bg-[var(--accent)]/10 border border-[var(--accent)]/30'
-                                                        : 'bg-[var(--background-card)] border border-[var(--border)] hover:border-[var(--border-hover)]'
+                                                    ? 'bg-[var(--accent)]/10 border border-[var(--accent)]/30'
+                                                    : 'bg-[var(--background-card)] border border-[var(--border)] hover:border-[var(--border-hover)]'
                                                     }`}
                                             >
                                                 <p className="text-sm font-semibold text-white">{tone.value}</p>
@@ -255,8 +255,8 @@ EXAMPLE OUTPUT:
                                                 key={style}
                                                 onClick={() => setNewProfile({ ...newProfile, emojiStyle: style })}
                                                 className={`flex-1 p-3 rounded-xl text-center transition-all ${newProfile.emojiStyle === style
-                                                        ? 'bg-[var(--accent-secondary)]/10 border border-[var(--accent-secondary)]/30'
-                                                        : 'bg-[var(--background-card)] border border-[var(--border)]'
+                                                    ? 'bg-[var(--accent-secondary)]/10 border border-[var(--accent-secondary)]/30'
+                                                    : 'bg-[var(--background-card)] border border-[var(--border)]'
                                                     }`}
                                             >
                                                 <Smile className={`w-5 h-5 mx-auto mb-1 ${newProfile.emojiStyle === style ? 'text-[var(--accent-secondary)]' : 'text-[var(--foreground-muted)]'}`} />
