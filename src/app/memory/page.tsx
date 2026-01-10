@@ -61,6 +61,11 @@ export default function MemoryPage() {
     const [importLoading, setImportLoading] = useState(false);
     const [importError, setImportError] = useState("");
 
+    // Semantic search state
+    const [useSemanticSearch, setUseSemanticSearch] = useState(false);
+    const [semanticResults, setSemanticResults] = useState<{ id: string; score: number }[]>([]);
+    const [searchLoading, setSearchLoading] = useState(false);
+
     // Load memories
     const loadMemories = useCallback(async () => {
         setLoading(true);
@@ -77,17 +82,41 @@ export default function MemoryPage() {
         loadMemories();
     }, [loadMemories]);
 
+    // Semantic search handler
+    const handleSemanticSearch = useCallback(async () => {
+        if (!search.trim() || !useSemanticSearch) return;
+        setSearchLoading(true);
+        try {
+            const res = await fetch("/api/memory/search", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query: search, memories, maxResults: 10 }),
+            });
+            const data = await res.json();
+            if (data.results) {
+                setSemanticResults(data.results.map((r: { id: string; score: number }) => ({ id: r.id, score: r.score })));
+            }
+        } catch (error) {
+            console.error("Semantic search failed:", error);
+        }
+        setSearchLoading(false);
+    }, [search, useSemanticSearch, memories]);
+
     // Filter memories
-    const filteredMemories = memories.filter(m => {
-        const matchesSearch = !search ||
-            m.title.toLowerCase().includes(search.toLowerCase()) ||
-            m.content.toLowerCase().includes(search.toLowerCase());
+    const filteredMemories = useSemanticSearch && semanticResults.length > 0
+        ? semanticResults
+            .map(r => memories.find(m => m.id === r.id))
+            .filter((m): m is Memory => m !== undefined)
+        : memories.filter(m => {
+            const matchesSearch = !search ||
+                m.title.toLowerCase().includes(search.toLowerCase()) ||
+                m.content.toLowerCase().includes(search.toLowerCase());
 
-        const matchesTags = selectedTags.length === 0 ||
-            selectedTags.some(tag => m.tags.includes(tag));
+            const matchesTags = selectedTags.length === 0 ||
+                selectedTags.some(tag => m.tags.includes(tag));
 
-        return matchesSearch && matchesTags;
-    });
+            return matchesSearch && matchesTags;
+        });
 
     // Stats
     const totalTokens = memories.reduce((sum, m) => sum + m.tokenCount, 0);
@@ -232,12 +261,43 @@ export default function MemoryPage() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--foreground-muted)]" />
                         <input
                             type="text"
-                            placeholder="Search memories..."
+                            placeholder={useSemanticSearch ? "AI semantic search..." : "Search memories..."}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && useSemanticSearch && handleSemanticSearch()}
                             className="input pl-10 w-full"
                         />
+                        {searchLoading && (
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                            </div>
+                        )}
                     </div>
+
+                    {/* AI Search Toggle */}
+                    <button
+                        onClick={() => {
+                            setUseSemanticSearch(!useSemanticSearch);
+                            setSemanticResults([]);
+                        }}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${useSemanticSearch
+                                ? "bg-purple-500/20 text-purple-400 ring-1 ring-purple-500/50"
+                                : "bg-white/5 text-[var(--foreground-secondary)] hover:bg-white/10"
+                            }`}
+                    >
+                        <Zap className="w-4 h-4" />
+                        AI
+                    </button>
+
+                    {useSemanticSearch && search.trim() && (
+                        <button
+                            onClick={handleSemanticSearch}
+                            disabled={searchLoading}
+                            className="btn-primary"
+                        >
+                            Search
+                        </button>
+                    )}
 
                     <div className="flex items-center gap-2">
                         <Filter className="w-4 h-4 text-[var(--foreground-muted)]" />
