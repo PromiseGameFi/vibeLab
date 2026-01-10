@@ -15,8 +15,11 @@ import {
     Clock,
     Zap,
     Filter,
-    Download
+    Download,
+    MessageSquare,
+    Link as LinkIcon
 } from "lucide-react";
+import Link from "next/link";
 import { memoryStore, estimateTokens } from "@/lib/memoryStore";
 import {
     Memory,
@@ -38,6 +41,7 @@ export default function MemoryPage() {
     // Modal states
     const [showAddModal, setShowAddModal] = useState(false);
     const [showExportModal, setShowExportModal] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false);
     const [editingMemory, setEditingMemory] = useState<Memory | null>(null);
     const [copied, setCopied] = useState(false);
 
@@ -51,6 +55,11 @@ export default function MemoryPage() {
     const [formContent, setFormContent] = useState("");
     const [formTags, setFormTags] = useState<string[]>([]);
     const [formSource, setFormSource] = useState<MemorySource>("manual");
+
+    // Import state
+    const [importUrl, setImportUrl] = useState("");
+    const [importLoading, setImportLoading] = useState(false);
+    const [importError, setImportError] = useState("");
 
     // Load memories
     const loadMemories = useCallback(async () => {
@@ -186,12 +195,26 @@ export default function MemoryPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
+                        <Link
+                            href="/memory/chat"
+                            className="btn-secondary"
+                        >
+                            <MessageSquare className="w-4 h-4" />
+                            Chat
+                        </Link>
+                        <button
+                            onClick={() => setShowImportModal(true)}
+                            className="btn-secondary"
+                        >
+                            <LinkIcon className="w-4 h-4" />
+                            Import
+                        </button>
                         <button
                             onClick={() => setShowExportModal(true)}
                             className="btn-secondary"
                         >
                             <Download className="w-4 h-4" />
-                            Export Context
+                            Export
                         </button>
                         <button
                             onClick={() => setShowAddModal(true)}
@@ -390,8 +413,8 @@ export default function MemoryPage() {
                                                 type="button"
                                                 onClick={() => setFormSource(source)}
                                                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${formSource === source
-                                                        ? 'bg-purple-500 text-white ring-2 ring-purple-400 ring-offset-2 ring-offset-black scale-105'
-                                                        : 'bg-white/10 text-[var(--foreground-secondary)] hover:bg-white/20'
+                                                    ? 'bg-purple-500 text-white ring-2 ring-purple-400 ring-offset-2 ring-offset-black scale-105'
+                                                    : 'bg-white/10 text-[var(--foreground-secondary)] hover:bg-white/20'
                                                     }`}
                                             >
                                                 {SOURCE_CONFIG[source].icon} {SOURCE_CONFIG[source].label}
@@ -413,8 +436,8 @@ export default function MemoryPage() {
                                                         : [...formTags, tag]
                                                 )}
                                                 className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${formTags.includes(tag)
-                                                        ? 'bg-blue-500 text-white ring-2 ring-blue-400 ring-offset-1 ring-offset-black'
-                                                        : 'bg-white/10 text-[var(--foreground-secondary)] hover:bg-white/20'
+                                                    ? 'bg-blue-500 text-white ring-2 ring-blue-400 ring-offset-1 ring-offset-black'
+                                                    : 'bg-white/10 text-[var(--foreground-secondary)] hover:bg-white/20'
                                                     }`}
                                             >
                                                 {tag}
@@ -544,6 +567,152 @@ export default function MemoryPage() {
                                     </div>
                                 </div>
                             )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Import Modal */}
+                {showImportModal && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                        <div className="card p-6 w-full max-w-lg">
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-xl font-semibold text-white">Import Content</h2>
+                                <button
+                                    onClick={() => {
+                                        setShowImportModal(false);
+                                        setImportUrl("");
+                                        setImportError("");
+                                        setFormTitle("");
+                                        setFormContent("");
+                                    }}
+                                    className="p-2 rounded-lg hover:bg-white/10"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            {/* URL Import */}
+                            <div className="mb-6">
+                                <label className="block text-sm font-medium text-white mb-2">
+                                    Import from URL
+                                </label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="url"
+                                        value={importUrl}
+                                        onChange={(e) => setImportUrl(e.target.value)}
+                                        placeholder="https://example.com/article"
+                                        className="input flex-1"
+                                    />
+                                    <button
+                                        onClick={async () => {
+                                            if (!importUrl) return;
+                                            setImportLoading(true);
+                                            setImportError("");
+                                            try {
+                                                const res = await fetch("/api/memory/import", {
+                                                    method: "POST",
+                                                    headers: { "Content-Type": "application/json" },
+                                                    body: JSON.stringify({ url: importUrl }),
+                                                });
+                                                const data = await res.json();
+                                                if (data.error) {
+                                                    setImportError(data.error);
+                                                } else {
+                                                    setFormTitle(data.title);
+                                                    setFormContent(data.content);
+                                                    setFormSource("other");
+                                                }
+                                            } catch {
+                                                setImportError("Failed to fetch URL");
+                                            }
+                                            setImportLoading(false);
+                                        }}
+                                        disabled={!importUrl || importLoading}
+                                        className="btn-primary"
+                                    >
+                                        {importLoading ? "Fetching..." : "Fetch"}
+                                    </button>
+                                </div>
+                                {importError && (
+                                    <p className="text-sm text-red-400 mt-2">{importError}</p>
+                                )}
+                            </div>
+
+                            {/* File Upload */}
+                            <div className="mb-6">
+                                <label className="block text-sm font-medium text-white mb-2">
+                                    Or upload a file
+                                </label>
+                                <input
+                                    type="file"
+                                    accept=".txt,.md,.json"
+                                    onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (!file) return;
+                                        const text = await file.text();
+                                        setFormTitle(file.name.replace(/\.[^/.]+$/, ""));
+                                        setFormContent(text);
+                                        setFormSource("other");
+                                    }}
+                                    className="input w-full file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-purple-500 file:text-white file:cursor-pointer"
+                                />
+                            </div>
+
+                            {/* Preview */}
+                            {formContent && (
+                                <div className="mb-6">
+                                    <label className="block text-sm font-medium text-white mb-2">
+                                        Preview
+                                        <span className="text-[var(--foreground-muted)] ml-2">
+                                            (~{estimateTokens(formContent)} tokens)
+                                        </span>
+                                    </label>
+                                    <div className="p-3 rounded-lg bg-black/40 max-h-40 overflow-auto">
+                                        <p className="text-sm font-medium text-white mb-1">{formTitle}</p>
+                                        <p className="text-xs text-[var(--foreground-secondary)]">
+                                            {formContent.slice(0, 300)}
+                                            {formContent.length > 300 && "..."}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    onClick={() => {
+                                        setShowImportModal(false);
+                                        setImportUrl("");
+                                        setImportError("");
+                                        setFormTitle("");
+                                        setFormContent("");
+                                    }}
+                                    className="btn-secondary"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        if (!formTitle || !formContent) return;
+                                        await memoryStore.add({
+                                            title: formTitle,
+                                            content: formContent,
+                                            tags: formTags,
+                                            source: formSource,
+                                            sourceUrl: importUrl || undefined,
+                                        });
+                                        setShowImportModal(false);
+                                        setImportUrl("");
+                                        setFormTitle("");
+                                        setFormContent("");
+                                        loadMemories();
+                                    }}
+                                    disabled={!formTitle || !formContent}
+                                    className="btn-primary"
+                                >
+                                    Save Memory
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
