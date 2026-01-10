@@ -8,7 +8,7 @@
 
 VibeLab is the hub for **AI tool optimization**:
 - Security Scanner for GitHub repos
-- Universal AI Memory across all tools
+- Universal AI Memory (supermemory-style)
 - Pro blueprints for AI tools
 - Universal skills for coding agents
 
@@ -24,13 +24,16 @@ Enterprise-grade vulnerability scanning.
 - Export: JSON, SARIF, Markdown
 
 ### 2. AI Memory (`/memory`) ✅
-Persistent context that works across ALL AI tools.
+Supermemory-style universal AI memory.
 
-| Component | Purpose |
-|-----------|---------|
-| Dashboard | View, search, export memories |
+| Feature | Description |
+|---------|-------------|
+| Chat | Ask questions, AI answers with your context |
+| Semantic Search | AI-powered vector search |
+| URL Import | Fetch and save any webpage |
+| File Upload | Import .txt, .md, .json files |
 | Browser Extension | Auto-capture from ChatGPT, Claude, Gemini |
-| MCP Server | Access memories from Cursor/Claude Desktop |
+| MCP Server | Access from Cursor/Claude Desktop |
 
 **Token Optimization:**
 - Budget slider (500-8000 tokens)
@@ -39,14 +42,10 @@ Persistent context that works across ALL AI tools.
 
 ### 3. Tool Directory ✅
 Pro blueprints for AI tools: Cursor, Midjourney, Kling, Flux, ElevenLabs, etc.
-- Annotated prompts with explanations
-- Recommended workflows
-- Tool integrations
 
 ### 4. Universal Skills (`/skills`) ✅
 Coding rules that work across AI agents.
 - Export to: Cursor, Claude Code, Windsurf, Antigravity
-- One skill → Works everywhere
 
 ---
 
@@ -62,16 +61,18 @@ Coding rules that work across AI agents.
 ## Roadmap
 
 ### ✅ Completed
-- [x] Security Scanner with OAuth (218+ patterns)
-- [x] AI Memory with token optimization
+- [x] Security Scanner (218+ patterns)
+- [x] AI Memory Dashboard
+- [x] Chat with Memories (RAG)
+- [x] Semantic Search (embeddings)
+- [x] URL/File Import
 - [x] Browser Extension (ChatGPT, Claude, Gemini)
-- [x] MCP Server for Cursor/Claude Desktop
+- [x] MCP Server (Cursor, Claude Desktop)
 - [x] Universal Skills with export
 - [x] VibeMarket marketing tools
 
 ### 🔮 Planned
-- [ ] PDF export for scans
-- [ ] Community skill directory
-- [ ] VS Code extension
+- [ ] Service connectors (Notion, Google Drive)
 - [ ] Cloud sync for memories
-- [ ] Auto-capture improvements
+- [ ] Raycast extension
+- [ ] VS Code extension
