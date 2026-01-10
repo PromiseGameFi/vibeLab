@@ -7,34 +7,10 @@ import {
     Trophy,
     Bot,
     ArrowRight,
-    Zap,
     Rocket,
     TrendingUp,
-    TrendingDown,
-    Palette,
-    Calculator,
-    Wand2,
-    DollarSign
+    Palette
 } from "lucide-react";
-
-const tokenTools = [
-    {
-        id: "token-calc",
-        name: "Token Cost Calculator",
-        description: "Compare costs across GPT-4, Claude, Gemini, and more. Find the cheapest option.",
-        icon: Calculator,
-        color: "#22c55e",
-        badge: "Save Money"
-    },
-    {
-        id: "prompt-optimizer",
-        name: "Prompt Optimizer",
-        description: "Compress verbose prompts. Remove filler words. Save up to 40% on tokens.",
-        icon: Wand2,
-        color: "#a855f7",
-        badge: "Popular"
-    }
-];
 
 const smmTools = [
     {
@@ -106,78 +82,31 @@ export default function VibeMarketPage() {
             <section className="pt-32 pb-24 px-6">
                 <div className="max-w-4xl mx-auto text-center">
                     <span className="badge badge-accent mb-6">
-                        <DollarSign className="w-3 h-3" />
-                        Save on AI Costs
+                        <Rocket className="w-3 h-3" />
+                        Marketing Tools
                     </span>
 
                     <h1 className="hero-title text-white mb-6">
                         Vibe<em>Market</em>
                     </h1>
                     <p className="text-xl text-[var(--foreground-secondary)] max-w-2xl mx-auto mb-12">
-                        Cut your AI costs by up to <span className="text-green-400 font-semibold">40%</span>. Token calculators, prompt optimizers, and marketing tools in one place.
+                        Marketing strategy generators, SMM tools, and content templates for your next launch.
                     </p>
 
                     <div className="flex items-center justify-center gap-4">
-                        <Link href="/vibeMarket/token-calc" className="btn-primary">
-                            <Calculator className="w-4 h-4" />
-                            Calculate Token Costs
+                        <Link href="/vibeMarket/gtm" className="btn-primary">
+                            <Rocket className="w-4 h-4" />
+                            Generate GTM Strategy
                         </Link>
-                        <Link href="/vibeMarket/prompt-optimizer" className="btn-secondary">
-                            <Wand2 className="w-4 h-4" />
-                            Optimize Prompts
+                        <Link href="/vibeMarket/thread-studio" className="btn-secondary">
+                            <MessageSquare className="w-4 h-4" />
+                            Thread Studio
                         </Link>
                     </div>
                 </div>
             </section>
 
-            {/* Token Tools - NEW PRIORITY SECTION */}
-            <section className="py-16 px-6 bg-gradient-to-b from-green-500/5 to-transparent border-t border-green-500/20">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-12">
-                        <span className="badge bg-green-500/20 text-green-400 border-green-500/30 mb-4">
-                            <TrendingDown className="w-3 h-3" />
-                            Save Tokens
-                        </span>
-                        <h2 className="section-title text-white mb-4">Token Cost Tools</h2>
-                        <p className="text-[var(--foreground-secondary)]">
-                            Stop overpaying for AI. Optimize prompts and compare provider costs.
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-                        {tokenTools.map((tool) => (
-                            <Link
-                                key={tool.id}
-                                href={`/vibeMarket/${tool.id}`}
-                                className="card card-interactive p-8 group border-2 hover:border-green-500/50"
-                            >
-                                <div className="flex items-start justify-between mb-4">
-                                    <div
-                                        className="w-14 h-14 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"
-                                        style={{ backgroundColor: `${tool.color}20` }}
-                                    >
-                                        <tool.icon className="w-7 h-7" style={{ color: tool.color }} />
-                                    </div>
-                                    <span className="badge text-xs" style={{ backgroundColor: `${tool.color}20`, color: tool.color }}>
-                                        {tool.badge}
-                                    </span>
-                                </div>
-
-                                <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-green-400 transition-colors">
-                                    {tool.name}
-                                </h3>
-                                <p className="text-[var(--foreground-secondary)] text-sm mb-4">
-                                    {tool.description}
-                                </p>
-
-                                <span className="btn-ghost text-green-400">
-                                    Try Now <ArrowRight className="w-4 h-4" />
-                                </span>
-                            </Link>
-                        ))}
-                    </div>
-                </div>
-            </section>
+            {/* Token Tools section removed */}
 
             {/* Strategy Tools - NEW */}
             <section className="py-24 px-6 border-t border-[var(--border)]">
