@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { toolsData } from "@/lib/toolsData";
 import ToolCard from "@/components/ToolCard";
-import { ArrowRight, Shield, Calculator, Sparkles, Wand2 } from "lucide-react";
+import { ArrowRight, Shield, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 const quickActions = [
@@ -14,25 +14,7 @@ const quickActions = [
     icon: Shield,
     color: "text-red-400",
     bg: "bg-red-500/10",
-    badge: "200 Files"
-  },
-  {
-    title: "Token Calculator",
-    description: "Compare AI provider costs",
-    href: "/vibeMarket/token-calc",
-    icon: Calculator,
-    color: "text-green-400",
-    bg: "bg-green-500/10",
-    badge: "Save Money"
-  },
-  {
-    title: "Prompt Optimizer",
-    description: "Compress prompts, save tokens",
-    href: "/vibeMarket/prompt-optimizer",
-    icon: Wand2,
-    color: "text-purple-400",
-    bg: "bg-purple-500/10",
-    badge: "-40%"
+    badge: "218+ Patterns"
   },
   {
     title: "AI Skills",
@@ -67,23 +49,19 @@ export default function Home() {
             Build better <em>AI workflows,</em> faster
           </h1>
           <p className="text-xl text-[var(--foreground-secondary)] max-w-2xl mx-auto mb-12">
-            VibeLab helps you use AI tools effectively and <span className="text-green-400">cut costs on tokens</span>. Blueprints, optimizers, and security tools in one place.
+            VibeLab helps you use AI tools effectively. Blueprints, security scanning, and marketing tools in one place.
           </p>
 
-          {/* CTA Buttons */}
+          {/* CTA Button */}
           <div className="flex items-center justify-center gap-4 mb-16">
-            <Link href="/scan" className="btn-primary">
-              <Shield className="w-4 h-4" />
-              Scan Repository
-            </Link>
-            <Link href="/vibeMarket" className="btn-secondary">
+            <Link href="/vibeMarket" className="btn-primary">
               Explore VibeMarket
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
 
           {/* Quick Actions Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto">
             {quickActions.map((action) => (
               <Link
                 key={action.href}
