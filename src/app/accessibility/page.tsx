@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Accessibility, Eye, Keyboard, MessageSquare, Monitor, Volume2 } from "lucide-react";
+import { ArrowLeft, Accessibility, Eye, Keyboard, MessageSquare, Monitor, Volume2, Brain, Shield } from "lucide-react";
 
 export const metadata = {
     title: "Accessibility Statement | VibeLab",
@@ -33,7 +33,8 @@ export default function AccessibilityPage() {
                     <h2 className="text-xl font-semibold text-white mb-4">Our Commitment</h2>
                     <p className="text-[var(--foreground-secondary)]">
                         VibeLab is committed to ensuring digital accessibility for people with disabilities.
-                        We are continually improving the user experience for everyone by applying relevant accessibility standards.
+                        We are continually improving the user experience for everyone across all our features:
+                        Security Scanner, AI Memory, Browser Extension, Skills, and VibeMarket.
                     </p>
                 </section>
 
@@ -56,7 +57,7 @@ export default function AccessibilityPage() {
                                 <h3 className="font-medium text-white">Keyboard Navigation</h3>
                             </div>
                             <p className="text-sm text-[var(--foreground-secondary)]">
-                                All interactive elements are accessible via keyboard navigation.
+                                All interactive elements are accessible via keyboard. Extension shortcuts: Cmd+Shift+S (save), Cmd+Shift+A (auto-save).
                             </p>
                         </div>
                         <div className="p-4 rounded-lg bg-white/5 border border-[var(--border)]">
@@ -65,7 +66,7 @@ export default function AccessibilityPage() {
                                 <h3 className="font-medium text-white">Color Contrast</h3>
                             </div>
                             <p className="text-sm text-[var(--foreground-secondary)]">
-                                Text meets WCAG AA contrast ratios for readability.
+                                Text meets WCAG AA contrast ratios. Dark theme designed for readability.
                             </p>
                         </div>
                         <div className="p-4 rounded-lg bg-white/5 border border-[var(--border)]">
@@ -74,7 +75,7 @@ export default function AccessibilityPage() {
                                 <h3 className="font-medium text-white">Screen Reader Support</h3>
                             </div>
                             <p className="text-sm text-[var(--foreground-secondary)]">
-                                Semantic HTML and ARIA labels for screen reader compatibility.
+                                Semantic HTML and ARIA labels throughout dashboard, scanner, and memory pages.
                             </p>
                         </div>
                         <div className="p-4 rounded-lg bg-white/5 border border-[var(--border)]">
@@ -83,15 +84,53 @@ export default function AccessibilityPage() {
                                 <h3 className="font-medium text-white">Reduced Motion</h3>
                             </div>
                             <p className="text-sm text-[var(--foreground-secondary)]">
-                                Respects prefers-reduced-motion for users sensitive to animations.
+                                Respects prefers-reduced-motion. Memory Graph animations can be paused.
                             </p>
                         </div>
                     </div>
                 </section>
 
-                {/* What We Do */}
+                {/* Feature-Specific Accessibility */}
                 <section className="card p-6">
-                    <h2 className="text-xl font-semibold text-white mb-4">What We're Doing</h2>
+                    <h2 className="text-xl font-semibold text-white mb-4">Feature-Specific Accessibility</h2>
+                    <div className="space-y-4 text-[var(--foreground-secondary)]">
+                        <div>
+                            <h3 className="font-medium text-white flex items-center gap-2 mb-2">
+                                <Shield className="w-4 h-4 text-red-400" />
+                                Security Scanner
+                            </h3>
+                            <ul className="list-disc list-inside space-y-1 ml-2">
+                                <li>Vulnerability severity indicated by both color and text</li>
+                                <li>Scan results are structured with proper headings</li>
+                                <li>Export options include accessible formats (Markdown)</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 className="font-medium text-white flex items-center gap-2 mb-2">
+                                <Brain className="w-4 h-4 text-purple-400" />
+                                AI Memory
+                            </h3>
+                            <ul className="list-disc list-inside space-y-1 ml-2">
+                                <li>Memory cards have clear focus states</li>
+                                <li>Search and filter controls are keyboard accessible</li>
+                                <li>Chat interface supports screen readers</li>
+                                <li>Graph can be navigated with keyboard when nodes are selected</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 className="font-medium text-white mb-2">Browser Extension</h3>
+                            <ul className="list-disc list-inside space-y-1 ml-2">
+                                <li>Popup is keyboard navigable</li>
+                                <li>Floating buttons have visible focus states</li>
+                                <li>Keyboard shortcuts announced in popup</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                {/* What We're Doing */}
+                <section className="card p-6">
+                    <h2 className="text-xl font-semibold text-white mb-4">What We&apos;re Doing</h2>
                     <ul className="list-disc list-inside space-y-2 text-[var(--foreground-secondary)]">
                         <li>Using semantic HTML elements (nav, main, section, article)</li>
                         <li>Providing alt text for images and icons</li>
@@ -99,6 +138,7 @@ export default function AccessibilityPage() {
                         <li>Maintaining focus indicators for keyboard users</li>
                         <li>Testing with screen readers (VoiceOver, NVDA)</li>
                         <li>Using ARIA attributes where needed</li>
+                        <li>Providing text alternatives for visual-only features</li>
                     </ul>
                 </section>
 
@@ -109,8 +149,9 @@ export default function AccessibilityPage() {
                         We are actively working to address the following known accessibility limitations:
                     </p>
                     <ul className="list-disc list-inside space-y-2 text-[var(--foreground-secondary)]">
-                        <li>Some complex interactive components may not be fully accessible</li>
-                        <li>Third-party integrations (GitHub OAuth) may have their own accessibility issues</li>
+                        <li>Memory Graph canvas may not be fully accessible to screen readers</li>
+                        <li>Some third-party integrations (GitHub OAuth) may have their own accessibility issues</li>
+                        <li>Extension content scripts depend on AI site accessibility</li>
                         <li>Older browser versions may not fully support all accessibility features</li>
                     </ul>
                 </section>
@@ -119,7 +160,7 @@ export default function AccessibilityPage() {
                 <section className="card p-6">
                     <h2 className="text-xl font-semibold text-white mb-4">Tested With</h2>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        {["VoiceOver", "NVDA", "Chrome DevTools", "axe DevTools"].map(tool => (
+                        {["VoiceOver", "NVDA", "Chrome DevTools", "axe DevTools", "Lighthouse", "Safari"].map(tool => (
                             <div key={tool} className="px-3 py-2 rounded-lg bg-white/5 border border-[var(--border)] text-center text-sm text-[var(--foreground-secondary)]">
                                 {tool}
                             </div>
@@ -135,7 +176,7 @@ export default function AccessibilityPage() {
                     </h2>
                     <p className="text-[var(--foreground-secondary)] mb-4">
                         We welcome your feedback on the accessibility of VibeLab. Please let us know if you encounter
-                        accessibility barriers:
+                        accessibility barriers in any feature:
                     </p>
                     <ul className="text-[var(--foreground-secondary)] space-y-2">
                         <li>
