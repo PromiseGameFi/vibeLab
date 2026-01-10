@@ -155,9 +155,9 @@ export default function PrivacyPage() {
                         Contact Us
                     </h2>
                     <p className="text-[var(--foreground-secondary)]">
-                        For privacy-related questions or requests, contact us at:{" "}
+                        For privacy-related questions or requests, contact us {" "}
                         <a href="mailto:privacy@vibelab.ai" className="text-[var(--accent)] hover:underline">
-                            privacy@vibelab.ai
+
                         </a>
                     </p>
                 </section>
