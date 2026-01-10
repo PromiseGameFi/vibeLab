@@ -58,7 +58,7 @@ When contributing, keep these docs in sync:
 | Route | Purpose |
 |-------|---------|
 | `/scan` | Security Scanner |
-| `/vibeMarket/token-calc` | Token Calculator |
-| `/vibeMarket/prompt-optimizer` | Prompt Optimizer |
+| `/memory` | AI Memory Dashboard |
 | `/skills` | AI Coding Skills |
+| `/vibeMarket` | Marketing Tools |
 | `/[slug]` | Tool Blueprints |
