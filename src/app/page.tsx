@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { toolsData } from "@/lib/toolsData";
 import ToolCard from "@/components/ToolCard";
-import { ArrowRight, Shield, Sparkles } from "lucide-react";
+import { ArrowRight, Shield, Sparkles, Brain } from "lucide-react";
 import Link from "next/link";
 
 const quickActions = [
@@ -15,6 +15,15 @@ const quickActions = [
     color: "text-red-400",
     bg: "bg-red-500/10",
     badge: "218+ Patterns"
+  },
+  {
+    title: "AI Memory",
+    description: "Persistent context across tools",
+    href: "/memory",
+    icon: Brain,
+    color: "text-purple-400",
+    bg: "bg-purple-500/10",
+    badge: "New"
   },
   {
     title: "AI Skills",
