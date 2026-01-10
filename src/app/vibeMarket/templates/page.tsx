@@ -301,7 +301,7 @@ export default function TemplatesPage() {
                                         <ul className="space-y-2">
                                             {template.tips.map((tip, i) => (
                                                 <li key={i} className="text-[var(--foreground-secondary)] flex items-start gap-2">
-                                                    <span className="text-[var(--accent)]">💡</span> {tip}
+                                                    <span className="text-[var(--accent)]">•</span> {tip}
                                                 </li>
                                             ))}
                                         </ul>
