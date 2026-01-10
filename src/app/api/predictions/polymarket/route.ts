@@ -114,31 +114,31 @@ export async function GET(request: Request) {
     } catch (error) {
         console.error('Polymarket API error:', error);
 
-        // Return mock data for development
+        // Return mock data for development (demo mode)
         const mockMarkets: Market[] = [
             {
-                id: 'mock-1',
-                slug: 'trump-wins-2028',
-                title: 'Will Trump win the 2028 Presidential Election?',
-                description: 'Market resolves YES if Donald Trump wins the 2028 US Presidential Election.',
+                id: 'demo-poly-1',
+                slug: 'presidential-election-winner-2024',
+                title: '[DEMO] Presidential Election Winner 2024',
+                description: 'Demo data - visit Polymarket for live markets.',
                 platform: 'polymarket',
                 category: 'politics',
                 outcomes: [
-                    { id: '1', name: 'Yes', price: 0.32 },
-                    { id: '2', name: 'No', price: 0.68 },
+                    { id: '1', name: 'Yes', price: 0.52 },
+                    { id: '2', name: 'No', price: 0.48 },
                 ],
                 volume: 5420000,
                 liquidity: 890000,
-                endDate: new Date('2028-11-05'),
+                endDate: new Date('2024-11-05'),
                 createdAt: new Date(),
                 status: 'open',
-                url: 'https://polymarket.com/event/trump-2028',
+                url: 'https://polymarket.com',
             },
             {
-                id: 'mock-2',
-                slug: 'btc-100k-2026',
-                title: 'Will Bitcoin reach $100k in 2026?',
-                description: 'Market resolves YES if Bitcoin price exceeds $100,000 at any point in 2026.',
+                id: 'demo-poly-2',
+                slug: 'bitcoin-price',
+                title: '[DEMO] Bitcoin above $100k by end of year?',
+                description: 'Demo data - visit Polymarket for live markets.',
                 platform: 'polymarket',
                 category: 'crypto',
                 outcomes: [
@@ -150,13 +150,13 @@ export async function GET(request: Request) {
                 endDate: new Date('2026-12-31'),
                 createdAt: new Date(),
                 status: 'open',
-                url: 'https://polymarket.com/event/btc-100k',
+                url: 'https://polymarket.com',
             },
             {
-                id: 'mock-3',
-                slug: 'fed-rate-cut-q1',
-                title: 'Will the Fed cut rates in Q1 2026?',
-                description: 'Market resolves YES if the Federal Reserve announces a rate cut before April 1, 2026.',
+                id: 'demo-poly-3',
+                slug: 'fed-interest-rates',
+                title: '[DEMO] Fed rate cut in next meeting?',
+                description: 'Demo data - visit Polymarket for live markets.',
                 platform: 'polymarket',
                 category: 'economics',
                 outcomes: [
@@ -168,7 +168,7 @@ export async function GET(request: Request) {
                 endDate: new Date('2026-04-01'),
                 createdAt: new Date(),
                 status: 'open',
-                url: 'https://polymarket.com/event/fed-rate-cut',
+                url: 'https://polymarket.com',
             },
         ];
 
