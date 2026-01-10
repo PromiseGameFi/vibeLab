@@ -22,16 +22,20 @@ Open [http://localhost:3000](http://localhost:3000)
 - Export: JSON, SARIF, Markdown
 
 ### 🧠 AI Memory (`/memory`)
-- Persistent context across all AI tools
-- Token-budgeted export (500-8000 tokens)
-- Auto-summarization (10x compression)
-- **Browser Extension** - Auto-capture from ChatGPT, Claude, Gemini
-- **MCP Server** - Access memories from Cursor/Claude Desktop
+Universal AI memory system inspired by [supermemory.ai](https://supermemory.ai):
+
+| Feature | Description |
+|---------|-------------|
+| **Chat with Memories** | Ask questions, AI answers using your context |
+| **Semantic Search** | AI-powered vector search (click "AI" toggle) |
+| **URL/File Import** | Import from any URL or upload files |
+| **Token Budgeting** | Export 500-8000 tokens with auto-summarization |
+| **Browser Extension** | Auto-capture from ChatGPT, Claude, Gemini |
+| **MCP Server** | Access from Cursor/Claude Desktop |
 
 ### 🎯 AI Skills (`/skills`)
 - Pre-built coding rules for Cursor, Claude Code, Windsurf
 - One-click export to `.cursorrules`, `CLAUDE.md`, etc.
-- Reduce repeated prompting
 
 ### 📈 VibeMarket (`/vibeMarket`)
 - GTM Strategy Generator
@@ -47,7 +51,7 @@ GITHUB_CLIENT_SECRET=
 NEXTAUTH_SECRET=
 NEXTAUTH_URL=http://localhost:3000
 
-# Optional: Gemini API (AI features)
+# Gemini API (required for AI features)
 NEXT_PUBLIC_GEMINI_API_KEY=
 ```
 
@@ -56,22 +60,23 @@ NEXT_PUBLIC_GEMINI_API_KEY=
 ```
 src/
 ├── app/
-│   ├── scan/          # Security scanner
-│   ├── memory/        # AI memory dashboard
-│   ├── skills/        # AI coding skills
-│   ├── vibeMarket/    # Marketing tools
-│   └── [slug]/        # Tool detail pages
+│   ├── scan/              # Security scanner
+│   ├── memory/            # AI memory dashboard
+│   ├── memory/chat/       # Chat with memories
+│   ├── skills/            # AI coding skills
+│   ├── vibeMarket/        # Marketing tools
+│   └── api/memory/        # Memory APIs (chat, import, search)
 ├── lib/
-│   ├── memoryStore.ts # AI memory storage
-│   ├── scanPatterns/  # Scanner patterns
-│   └── toolsData.ts   # AI tool blueprints
+│   ├── memoryStore.ts     # IndexedDB storage
+│   ├── memoryTypes.ts     # Memory interfaces
+│   └── scanPatterns/      # Scanner patterns
 └── components/
 
 extensions/
-└── chrome/            # Browser extension for memory capture
+└── chrome/                # Browser extension
 
 mcp-server/
-└── index.js           # MCP server for Cursor/Claude Desktop
+└── index.js               # MCP server
 ```
 
 ## 🛠️ Tech Stack
@@ -80,7 +85,7 @@ mcp-server/
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS
 - **Auth:** NextAuth.js (GitHub OAuth)
-- **APIs:** OSV, GitHub Advisory, Gemini
+- **AI:** Gemini (embeddings, chat, fixes)
 
 ## 📄 License
 
