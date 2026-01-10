@@ -14,6 +14,7 @@ export interface Memory {
     summaryTokenCount?: number;
     relevanceScore: number;  // 0-100, for smart export
     tier: MemoryTier;
+    embedding?: number[];  // Vector embedding for semantic search
 }
 
 export type MemorySource =
