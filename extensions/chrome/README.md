@@ -1,68 +1,68 @@
-# VibeLab Memory - Chrome Extension
+# VibeLab Memory - Chrome Extension v2.0
 
-Automatically capture AI conversations from ChatGPT, Claude, and Gemini to build your persistent AI memory.
+Universal AI memory capture from ChatGPT, Claude, Gemini, Perplexity, and Copilot.
 
 ## Installation
 
-### From Source (Developer Mode)
-
-1. Open Chrome and navigate to `chrome://extensions/`
-2. Enable **Developer mode** (toggle in top right)
+1. Go to `chrome://extensions/`
+2. Enable **Developer mode** (top right)
 3. Click **Load unpacked**
 4. Select this `extensions/chrome` folder
-5. The VibeLab Memory extension should now appear!
 
 ## Features
 
-- 🧠 **One-click save** - Floating button on ChatGPT, Claude, and Gemini
-- 📊 **Auto-extract** - Captures full conversations with role attribution
-- 💾 **Local storage** - Memories stored in browser, synced to VibeLab dashboard
-- 🎯 **Token tracking** - See token count for each saved memory
+### Supported Sites
+| Site | Status |
+|------|--------|
+| ChatGPT | ✅ chat.openai.com, chatgpt.com |
+| Claude | ✅ claude.ai |
+| Gemini | ✅ gemini.google.com |
+| Perplexity | ✅ perplexity.ai |
+| Copilot | ✅ copilot.microsoft.com |
 
-## Supported Sites
+### Key Features
+- 🧠 **One-click save** - Floating button on all AI sites
+- ⌨️ **Keyboard shortcuts** - Cmd+Shift+S to save, Cmd+Shift+A to toggle auto-save
+- 🔄 **Auto-save** - Optionally save after each conversation
+- 📋 **Context menu** - Right-click any text to save
+- 🏷️ **Auto-tagging** - Detects code, api, debug, design, ideas
+- 🔗 **Sync** - Saves to VibeLab dashboard
 
-| Site | URL | Status |
-|------|-----|--------|
-| ChatGPT | chat.openai.com, chatgpt.com | ✅ |
-| Claude | claude.ai | ✅ |
-| Gemini | gemini.google.com | ✅ |
+### Keyboard Shortcuts
+| Shortcut | Action |
+|----------|--------|
+| `Cmd+Shift+S` | Save current conversation |
+| `Cmd+Shift+A` | Toggle auto-save mode |
 
-## Usage
-
-1. Visit any supported AI chat site
-2. Have a conversation
-3. Click the floating "🧠 Save to Memory" button
-4. Open the extension popup or VibeLab dashboard to view memories
+### Context Menu
+Right-click on any page:
+- **Save to VibeLab Memory** - Save selected text
+- **Save page to VibeLab Memory** - Save full page content
 
 ## Files
 
 ```
 extensions/chrome/
-├── manifest.json          # Extension configuration
-├── background.js          # Service worker for storage
-├── content-chatgpt.js     # ChatGPT content script
-├── content-claude.js      # Claude content script
-├── content-gemini.js      # Gemini content script
-├── popup.html             # Extension popup UI
-├── popup.js               # Popup logic
-└── icons/                 # Extension icons
-    ├── icon16.png
-    ├── icon48.png
-    └── icon128.png
+├── manifest.json         # Chrome extension config
+├── background.js         # Service worker (storage, menus, shortcuts)
+├── content-chatgpt.js    # ChatGPT extraction
+├── content-claude.js     # Claude extraction
+├── content-gemini.js     # Gemini extraction
+├── content-perplexity.js # Perplexity extraction
+├── content-copilot.js    # Copilot extraction
+├── popup.html/js         # Extension popup
+└── icons/                # Extension icons
 ```
 
-## Development
+## Settings
 
-To modify the extension:
+In the popup:
+- **Auto-save** - Automatically save after conversations
+- **Sync** - Sync memories to VibeLab dashboard
 
-1. Edit the content scripts for DOM extraction logic
-2. Reload the extension in `chrome://extensions/`
-3. Refresh the AI chat page to see changes
+## Troubleshooting
 
-## Syncing with VibeLab Dashboard
-
-Currently, memories are stored in Chrome's local storage. To sync with the VibeLab dashboard:
-
-1. Open the extension popup
-2. Click "Open Memory Dashboard"
-3. (Future) Auto-sync via API when authenticated
+If extraction doesn't work:
+1. Reload the extension in `chrome://extensions/`
+2. Refresh the AI chat page
+3. Make sure the page has fully loaded before clicking Save
