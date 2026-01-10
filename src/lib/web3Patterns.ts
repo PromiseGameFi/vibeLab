@@ -523,13 +523,15 @@ export const walletPatterns: Web3Pattern[] = [
     },
     {
         id: 'wallet-private-key-code',
-        name: 'Private Key in Code',
-        description: 'Private key or mnemonic phrase found in source code.',
+        name: 'Hardcoded Private Key',
+        description: 'Private key or mnemonic phrase hardcoded in source code (not from env).',
         severity: 'critical',
         language: 'javascript',
         category: 'wallet',
-        pattern: /(?:privateKey|private_key|mnemonic|seedPhrase|seed_phrase)\s*[:=]\s*['"`]/i,
-        fix: 'Never hardcode private keys. Use environment variables or secure key management.',
+        // Match: privateKey = "0x..." or mnemonic: "word word..."
+        // Don't match: privateKey = process.env.PRIVATE_KEY (safe!)
+        pattern: /(?:privateKey|private_key|mnemonic|seedPhrase|seed_phrase)\s*[:=]\s*['"`](?!.*process\.env)[0-9a-fA-Fx]/i,
+        fix: 'Never hardcode private keys. Use environment variables: process.env.PRIVATE_KEY',
     },
     // High Severity
     {
