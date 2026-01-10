@@ -1,0 +1,24 @@
+{
+    "name": "@vibelab/memory-mcp",
+    "version": "1.0.0",
+    "description": "MCP Server for VibeLab AI Memory - access your memories from Cursor, Claude Desktop, and other MCP-compatible tools",
+    "type": "module",
+    "main": "index.js",
+    "bin": {
+        "vibelab-memory": "./index.js"
+    },
+    "scripts": {
+        "start": "node index.js"
+    },
+    "dependencies": {
+        "@modelcontextprotocol/sdk": "^1.0.0"
+    },
+    "keywords": [
+        "mcp",
+        "ai",
+        "memory",
+        "context",
+        "vibelab"
+    ],
+    "license": "MIT"
+}
