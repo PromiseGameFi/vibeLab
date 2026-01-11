@@ -1,117 +1,120 @@
-# VibeLab Autonomous Loop (vibeloop)
+# VibeLab Loop
 
-> Put your AI coding agent on autopilot
+> **Autonomous AI development loop with multi-IDE support**
 
-An autonomous development loop for **Claude Code**, **Cursor**, **Antigravity**, and other AI coding tools. Inspired by [Ralph for Claude Code](https://github.com/frankbria/ralph-claude-code).
+Ported from [Ralph for Claude Code](https://github.com/frankbria/ralph-claude-code) with support for multiple AI coding tools.
 
 ## Features
 
-- 🔄 **Autonomous Loop** - Continuously execute AI agent until task is complete
-- 🎯 **Exit Detection** - Automatically stop when objectives are met
-- ⚡ **Circuit Breaker** - Detect stuck loops and repeated errors
-- 🚦 **Rate Limiting** - Manage API calls, handle usage limits
-- 💾 **Session Continuity** - Preserve context across iterations
-- 📊 **Live Dashboard** - Real-time progress monitoring (coming soon)
+- 🔄 **Autonomous Loop** - Continuously executes AI with your requirements
+- 🎯 **Exit Detection** - Stops when project is complete
+- ⚡ **Circuit Breaker** - Prevents stuck loops
+- 💾 **Session Continuity** - Preserves context across iterations
+- 🔌 **Multi-IDE Adapters** - Claude, Cursor, Aider, OpenCode
+- 📊 **Live Dashboard** - tmux-based monitoring
+- 📁 **Project Templates** - Ralph-style structure
 
 ## Quick Start
 
+### 1. Install (One Time)
+
 ```bash
-# Install dependencies
-cd vibeloop && npm install
+cd vibeloop
+./install.sh
+source ~/.zshrc  # or ~/.bashrc
+```
 
-# Initialize a project
-npx ts-node cli/index.ts init
+### 2. Create Project
 
-# Edit PROMPT.md with your requirements
+```bash
+vibeloop-setup my-project
+cd my-project
+```
 
-# Start the loop
-npx ts-node cli/index.ts start
+### 3. Run Loop
+
+```bash
+# With default adapter (claude)
+vibeloop
+
+# With tmux monitoring
+vibeloop --monitor
+
+# With different adapter
+vibeloop --adapter aider
+```
+
+## Adapters
+
+| Adapter | CLI | Status |
+|---------|-----|--------|
+| Claude Code | `claude` | ✅ |
+| Cursor | `cursor` | ⚠️ Experimental |
+| Aider | `aider` | ✅ |
+| OpenCode | `opencode` | ⚠️ Experimental |
+
+```bash
+# List available adapters
+vibeloop --list-adapters
+
+# Use specific adapter
+vibeloop --adapter aider
 ```
 
 ## Commands
 
-### `vibeloop start`
-
-Start the autonomous development loop.
-
 ```bash
-vibeloop start [options]
-
-Options:
-  -p, --prompt <file>     Prompt file path (default: "PROMPT.md")
-  -a, --adapter <type>    AI adapter to use (default: "claude-code")
-  -t, --timeout <minutes> Execution timeout per iteration (default: 15)
-  -c, --calls <number>    Max API calls per hour (default: 100)
-  -m, --monitor           Enable live monitoring dashboard
-  -v, --verbose           Enable verbose output
+vibeloop              # Run autonomous loop
+vibeloop-setup        # Create new project
+vibeloop-monitor      # Live dashboard
 ```
 
-### `vibeloop status`
+## Options
 
-Check current loop status and session info.
+```
+-a, --adapter NAME    AI adapter (default: claude)
+-p, --prompt FILE     Prompt file (default: PROMPT.md)
+-t, --timeout MIN     Timeout per iteration (default: 15)
+-c, --calls NUM       Max API calls/hour (default: 100)
+-m, --monitor         Enable tmux dashboard
+-v, --verbose         Verbose output
+--status              Show current status
+--reset-session       Reset session
+--reset-circuit       Reset circuit breaker
+```
 
-### `vibeloop init`
+## Project Structure
 
-Create a `PROMPT.md` template in the current directory.
-
-### `vibeloop reset`
-
-Reset session and circuit breaker state.
-
-## How It Works
-
-1. **Read Prompt** - Loads your `PROMPT.md` with project requirements
-2. **Execute Agent** - Runs the AI coding agent with context
-3. **Track Progress** - Monitors file changes and output
-4. **Detect Completion** - Looks for "done" signals in output
-5. **Repeat** - Continues until complete or limits reached
-
-## Adapters
-
-| Adapter | Status | CLI Command |
-|---------|--------|-------------|
-| Claude Code | ✅ Ready | `claude` |
-| Cursor | 🔜 Coming | - |
-| Antigravity | 🔜 Coming | - |
-| OpenCode | 🔜 Coming | - |
-| Copilot | 🔜 Coming | - |
+```
+my-project/
+├── PROMPT.md           # Main instructions for AI
+├── @fix_plan.md        # Priority task list
+├── @AGENT.md           # Build/run instructions
+├── specs/              # Requirements
+├── src/                # Source code
+├── logs/               # Execution logs
+└── docs/generated/     # Auto-generated docs
+```
 
 ## Configuration
 
-### PROMPT.md Template
+Edit thresholds in `~/.vibeloop/vibeloop_loop.sh`:
 
-```markdown
-# Project Requirements
+```bash
+# Exit detection
+MAX_CONSECUTIVE_TEST_LOOPS=3
+MAX_CONSECUTIVE_DONE_SIGNALS=2
 
-## Objective
-Describe what you want to build.
-
-## Tasks
-- [ ] Task 1
-- [ ] Task 2
-
-## Exit Conditions
-When all tasks are complete, signal by saying "All tasks complete."
+# Circuit breaker
+CB_NO_PROGRESS_THRESHOLD=3
+CB_SAME_ERROR_THRESHOLD=5
 ```
-
-### Exit Detection
-
-The loop automatically exits when:
-- 2 consecutive "completion" signals detected
-- 3 consecutive test-only loops
-- 3 consecutive loops with no file changes
-
-### Circuit Breaker
-
-Opens when:
-- 3 loops with no progress (no file changes)
-- 5 loops with the same error
-- Output declines by >70%
 
 ## Requirements
 
-- Node.js 18+
-- Claude Code CLI (`claude`) for Claude adapter
+- Bash 4+
+- tmux (for `--monitor` mode)
+- One of: claude, cursor, aider, opencode CLI
 
 ## License
 
