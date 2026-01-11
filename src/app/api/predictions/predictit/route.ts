@@ -103,8 +103,26 @@ export async function GET(request: Request) {
     } catch (error) {
         console.error('PredictIt API error:', error);
 
-        // Fallback with real markets from PredictIt (verified)
+        // Fallback with real markets from PredictIt (verified 2026-01-11)
         const mockMarkets: Market[] = [
+            {
+                id: 'pi-2028-winner',
+                slug: '2028-presidential-election-winner',
+                title: 'Which party will win the 2028 US presidential election?',
+                description: 'Market on which party wins the 2028 presidential election.',
+                platform: 'predictit',
+                category: 'politics',
+                outcomes: [
+                    { id: '1', name: 'Republican', price: 0.52 },
+                    { id: '2', name: 'Democratic', price: 0.48 },
+                ],
+                volume: 0,
+                liquidity: 0,
+                endDate: new Date('2028-11-05'),
+                createdAt: new Date('2025-01-01'),
+                status: 'open',
+                url: 'https://www.predictit.org/markets/detail/7456/Which-party-will-win-the-2028-US-presidential-election',
+            },
             {
                 id: 'pi-dem-nominee-2028',
                 slug: 'dem-presidential-nominee-2028',
@@ -121,25 +139,7 @@ export async function GET(request: Request) {
                 endDate: new Date('2028-08-31'),
                 createdAt: new Date('2025-01-01'),
                 status: 'open',
-                url: 'https://www.predictit.org/markets',
-            },
-            {
-                id: 'pi-gop-nominee-2028',
-                slug: 'gop-presidential-nominee-2028',
-                title: 'Who will win the 2028 Republican presidential nomination?',
-                description: 'Republican Party nominee for 2028 presidential election.',
-                platform: 'predictit',
-                category: 'politics',
-                outcomes: [
-                    { id: '1', name: 'Vance', price: 0.35 },
-                    { id: '2', name: 'DeSantis', price: 0.18 },
-                ],
-                volume: 0,
-                liquidity: 0,
-                endDate: new Date('2028-08-31'),
-                createdAt: new Date('2025-01-01'),
-                status: 'open',
-                url: 'https://www.predictit.org/markets',
+                url: 'https://www.predictit.org/markets/detail/7457/Who-will-win-the-2028-Democratic-presidential-nomination',
             },
         ];
 
