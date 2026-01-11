@@ -165,6 +165,7 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
         const maxTokens = 4000;
         const selected = [];
 
+
         // Sort by recency
         const sorted = [...memories].sort((a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
