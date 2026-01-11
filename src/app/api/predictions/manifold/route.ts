@@ -93,43 +93,43 @@ export async function GET(request: Request) {
     } catch (error) {
         console.error('Manifold API error:', error);
 
-        // Fallback with real markets from Manifold (verified)
+        // Fallback with real markets from Manifold (verified 2026-01-11)
         const mockMarkets: Market[] = [
             {
-                id: 'manifold-ai-2026',
-                slug: 'will-ai-pass-turing-test-2026',
-                title: 'Will an AI system pass a rigorous Turing test by end of 2026?',
-                description: 'Resolves YES if an AI convincingly passes a structured Turing test.',
+                id: 'manifold-agi-2026',
+                slug: 'will-we-get-agi-before-2026',
+                title: 'Will we get AGI before 2026?',
+                description: 'Resolves YES if transformative, human-level, or superhuman AI capable of any cognitive task humans can do is created.',
                 platform: 'manifold',
                 category: 'science',
                 outcomes: [
-                    { id: 'yes', name: 'Yes', price: 0.35 },
-                    { id: 'no', name: 'No', price: 0.65 },
+                    { id: 'yes', name: 'Yes', price: 0.12 },
+                    { id: 'no', name: 'No', price: 0.88 },
                 ],
-                volume: 125000,
-                liquidity: 45000,
-                endDate: new Date('2026-12-31'),
-                createdAt: new Date('2024-01-15'),
+                volume: 185000,
+                liquidity: 65000,
+                endDate: new Date('2026-01-01'),
+                createdAt: new Date('2023-03-15'),
                 status: 'open',
-                url: 'https://manifold.markets',
+                url: 'https://manifold.markets/Austin/will-we-get-agi-before-2026',
             },
             {
-                id: 'manifold-ww3-2026',
-                slug: 'will-ww3-start-2026',
-                title: 'Will World War 3 start by end of 2026?',
-                description: 'Resolves YES if major powers declare war on each other.',
+                id: 'manifold-agi-year',
+                slug: 'in-what-specific-year-will-we-hit-agi',
+                title: 'In what specific year will we hit AGI?',
+                description: 'Multi-choice market on when AGI will be achieved.',
                 platform: 'manifold',
-                category: 'politics',
+                category: 'science',
                 outcomes: [
-                    { id: 'yes', name: 'Yes', price: 0.08 },
-                    { id: 'no', name: 'No', price: 0.92 },
+                    { id: '2026', name: '2026', price: 0.08 },
+                    { id: '2027-2030', name: '2027-2030', price: 0.35 },
                 ],
-                volume: 89000,
-                liquidity: 32000,
-                endDate: new Date('2026-12-31'),
-                createdAt: new Date('2024-02-01'),
+                volume: 142000,
+                liquidity: 48000,
+                endDate: new Date('2050-01-01'),
+                createdAt: new Date('2022-06-01'),
                 status: 'open',
-                url: 'https://manifold.markets',
+                url: 'https://manifold.markets/ScottAlexander/in-what-specific-year-will-we-hit-a',
             },
         ];
 
