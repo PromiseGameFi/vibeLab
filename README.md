@@ -47,15 +47,23 @@ AI-powered prediction market intelligence:
 | **Market Alerts** | Custom price and volume alerts (`/predictions/alerts`) |
 
 ### 🔄 VibeLab Loop (`vibeloop/`)
-Autonomous AI development loop for Cursor, Antigravity, and VS Code:
+Autonomous AI development loop ported from [Ralph](https://github.com/frankbria/ralph-claude-code):
 
 | Feature | Description |
 |---------|-------------|
-| **CLI Tool** | `vibeloop start` - run autonomous loop from terminal |
-| **VS Code Extension** | Dashboard, status bar, commands |
-| **Multi-IDE** | Works on VS Code, Cursor, Antigravity (OpenVSX) |
+| **Global CLI** | `vibeloop`, `vibeloop-setup`, `vibeloop-import` |
+| **Multi-IDE** | Claude, Cursor, Aider, OpenCode adapters |
+| **tmux Dashboard** | `vibeloop --monitor` for live monitoring |
 | **Exit Detection** | Auto-stop when tasks complete |
 | **Circuit Breaker** | Prevents stuck loops |
+| **Session Continuity** | Preserves context across iterations |
+
+**Quick Start:**
+```bash
+cd vibeloop && ./install.sh   # Install globally
+vibeloop-setup my-project     # Create project
+cd my-project && vibeloop     # Run loop
+```
 
 ### 🎯 AI Skills (`/skills`)
 - Pre-built coding rules for Cursor, Claude Code, Windsurf
