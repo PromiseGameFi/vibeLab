@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Shield, Lock, Eye, Database, Mail, Globe, Brain, Chrome } from "lucide-react";
+import { ArrowLeft, Shield, Lock, Eye, Database, Mail, Globe, Brain, Chrome, RefreshCw } from "lucide-react";
 
 export const metadata = {
     title: "Privacy Policy | VibeLab",
@@ -37,7 +37,7 @@ export default function PrivacyPage() {
                     <p className="text-[var(--foreground-secondary)]">
                         VibeLab (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) respects your privacy and is committed to protecting your personal data.
                         This privacy policy explains how we collect, use, and safeguard your information when you use our platform,
-                        including the Security Scanner, AI Memory, Browser Extension, Skills, and VibeMarket tools.
+                        including the Security Scanner, AI Memory, Browser Extension, Skills, VibeMarket, and VibeLab Loop tools.
                     </p>
                 </section>
 
@@ -92,6 +92,18 @@ export default function PrivacyPage() {
                             <ul className="list-disc list-inside space-y-1 ml-2">
                                 <li>Skills you create and export (stored locally)</li>
                                 <li>Marketing prompts and generated content (not stored on servers)</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 className="font-medium text-white mb-2 flex items-center gap-2">
+                                <RefreshCw className="w-4 h-4 text-cyan-400" />
+                                VibeLab Loop Data
+                            </h3>
+                            <ul className="list-disc list-inside space-y-1 ml-2">
+                                <li>Session state and iteration history (stored locally)</li>
+                                <li>PROMPT.md content is read locally, not sent to our servers</li>
+                                <li>VS Code extension settings (stored in VS Code settings)</li>
+                                <li>Loop execution logs (stored locally in your project)</li>
                             </ul>
                         </div>
                         <div>
