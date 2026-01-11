@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Accessibility, Eye, Keyboard, MessageSquare, Monitor, Volume2, Brain, Shield } from "lucide-react";
+import { ArrowLeft, Accessibility, Eye, Keyboard, MessageSquare, Monitor, Volume2, Brain, Shield, RefreshCw } from "lucide-react";
 
 export const metadata = {
     title: "Accessibility Statement | VibeLab",
@@ -34,7 +34,7 @@ export default function AccessibilityPage() {
                     <p className="text-[var(--foreground-secondary)]">
                         VibeLab is committed to ensuring digital accessibility for people with disabilities.
                         We are continually improving the user experience for everyone across all our features:
-                        Security Scanner, AI Memory, Browser Extension, Skills, and VibeMarket.
+                        Security Scanner, AI Memory, Browser Extension, Skills, VibeMarket, and VibeLab Loop.
                     </p>
                 </section>
 
@@ -123,6 +123,18 @@ export default function AccessibilityPage() {
                                 <li>Popup is keyboard navigable</li>
                                 <li>Floating buttons have visible focus states</li>
                                 <li>Keyboard shortcuts announced in popup</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 className="font-medium text-white flex items-center gap-2 mb-2">
+                                <RefreshCw className="w-4 h-4 text-cyan-400" />
+                                VibeLab Loop
+                            </h3>
+                            <ul className="list-disc list-inside space-y-1 ml-2">
+                                <li>VS Code extension follows VS Code accessibility standards</li>
+                                <li>Dashboard webview has proper heading structure</li>
+                                <li>Status bar provides screen reader announcements</li>
+                                <li>CLI tool outputs clear, structured text</li>
                             </ul>
                         </div>
                     </div>
