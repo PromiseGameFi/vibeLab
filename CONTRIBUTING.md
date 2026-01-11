@@ -28,6 +28,9 @@ GROQ_API_KEY=
 | `/memory/chat` | Chat with Memories |
 | `/memory/graph` | Memory Graph Visualization |
 | `/predictions` | Prediction Market Scanner |
+| `/predictions/whales` | Smart Money Tracker |
+| `/predictions/sentiment` | News Sentiment Monitor |
+| `/predictions/alerts` | Market Alerts |
 | `/skills` | AI Coding Skills |
 | `/vibeMarket` | Marketing Tools |
 | `/[slug]` | Tool Blueprints |
@@ -49,6 +52,9 @@ GROQ_API_KEY=
 | `/api/predictions/kalshi` | Kalshi markets |
 | `/api/predictions/analyze` | AI probability analysis |
 | `/api/predictions/arbitrage` | Arbitrage detection |
+| `/api/predictions/whales` | Smart money tracking |
+| `/api/predictions/sentiment` | News sentiment analysis |
+| `/api/predictions/alerts` | Market alerts management |
 
 ### Other APIs
 | Route | Purpose |
