@@ -1,0 +1,23 @@
+# VibeLab Loop
+.vibeloop_session
+.vibeloop_session_history
+logs/
+
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
