@@ -1,0 +1,155 @@
+{
+    "name": "vibeloop",
+    "displayName": "VibeLab Loop",
+    "description": "Autonomous AI development loop for Cursor, Antigravity, and VS Code",
+    "version": "0.1.0",
+    "publisher": "vibelab",
+    "engines": {
+        "vscode": "^1.85.0"
+    },
+    "categories": [
+        "Machine Learning",
+        "Other"
+    ],
+    "keywords": [
+        "ai",
+        "autonomous",
+        "claude",
+        "cursor",
+        "antigravity",
+        "vibe-coding",
+        "loop"
+    ],
+    "activationEvents": [
+        "onStartupFinished"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "vibeloop.start",
+                "title": "VibeLab: Start Autonomous Loop",
+                "icon": "$(play)"
+            },
+            {
+                "command": "vibeloop.stop",
+                "title": "VibeLab: Stop Loop",
+                "icon": "$(debug-stop)"
+            },
+            {
+                "command": "vibeloop.status",
+                "title": "VibeLab: Show Loop Status"
+            },
+            {
+                "command": "vibeloop.openDashboard",
+                "title": "VibeLab: Open Dashboard",
+                "icon": "$(dashboard)"
+            },
+            {
+                "command": "vibeloop.init",
+                "title": "VibeLab: Initialize Project (Create PROMPT.md)"
+            },
+            {
+                "command": "vibeloop.reset",
+                "title": "VibeLab: Reset Session"
+            }
+        ],
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "vibeloop",
+                    "title": "VibeLab Loop",
+                    "icon": "$(rocket)"
+                }
+            ]
+        },
+        "views": {
+            "vibeloop": [
+                {
+                    "type": "webview",
+                    "id": "vibeloop.dashboard",
+                    "name": "Dashboard"
+                }
+            ]
+        },
+        "configuration": {
+            "title": "VibeLab Loop",
+            "properties": {
+                "vibeloop.adapter": {
+                    "type": "string",
+                    "default": "claude-code",
+                    "enum": [
+                        "claude-code",
+                        "cursor",
+                        "opencode",
+                        "antigravity"
+                    ],
+                    "description": "AI adapter to use for the autonomous loop"
+                },
+                "vibeloop.timeout": {
+                    "type": "number",
+                    "default": 15,
+                    "description": "Execution timeout per iteration (minutes)"
+                },
+                "vibeloop.maxCalls": {
+                    "type": "number",
+                    "default": 100,
+                    "description": "Maximum API calls per hour"
+                },
+                "vibeloop.promptFile": {
+                    "type": "string",
+                    "default": "PROMPT.md",
+                    "description": "Path to the prompt file"
+                },
+                "vibeloop.autoStart": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Auto-start loop when workspace opens"
+                }
+            }
+        },
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "vibeloop.start",
+                    "when": "!vibeloop.isRunning"
+                },
+                {
+                    "command": "vibeloop.stop",
+                    "when": "vibeloop.isRunning"
+                }
+            ],
+            "view/title": [
+                {
+                    "command": "vibeloop.start",
+                    "when": "view == vibeloop.dashboard && !vibeloop.isRunning",
+                    "group": "navigation"
+                },
+                {
+                    "command": "vibeloop.stop",
+                    "when": "view == vibeloop.dashboard && vibeloop.isRunning",
+                    "group": "navigation"
+                }
+            ]
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "package": "vsce package",
+        "publish:vscode": "vsce publish",
+        "publish:ovsx": "ovsx publish"
+    },
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "@types/vscode": "^1.85.0",
+        "@vscode/vsce": "^2.22.0",
+        "ovsx": "^0.8.0",
+        "typescript": "^5.3.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vibelab/vibeloop"
+    }
+}
