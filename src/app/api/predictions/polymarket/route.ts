@@ -4,6 +4,11 @@ import { Market, MarketCategory, Platform } from '@/lib/predictionTypes';
 // Polymarket GraphQL endpoint
 const POLYMARKET_API = 'https://gamma-api.polymarket.com';
 
+interface PolymarketEvent {
+    slug: string;
+    ticker: string;
+}
+
 interface PolymarketMarket {
     id: string;
     slug: string;
@@ -19,6 +24,8 @@ interface PolymarketMarket {
     closed: boolean;
     category: string;
     image: string;
+    events?: PolymarketEvent[];  // Parent event for grouped markets
+    groupItemTitle?: string;      // Indicates this is part of a group
 }
 
 // Map Polymarket categories to our categories
@@ -87,7 +94,10 @@ export async function GET(request: Request) {
                 endDate: new Date(m.endDate),
                 createdAt: new Date(m.createdAt),
                 status: m.closed ? 'closed' : 'open',
-                url: `https://polymarket.com/event/${m.slug}`,
+                // Use parent event slug if this is a grouped market
+                url: m.events?.[0]?.slug
+                    ? `https://polymarket.com/event/${m.events[0].slug}`
+                    : `https://polymarket.com/event/${m.slug}`,
                 imageUrl: m.image,
             };
         });
