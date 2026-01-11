@@ -1,0 +1,39 @@
+{
+    "name": "vibeloop",
+    "version": "0.1.0",
+    "description": "Autonomous AI development loop for Cursor, Claude Code, Antigravity, and more",
+    "main": "dist/cli/index.js",
+    "bin": {
+        "vibeloop": "./dist/cli/index.js"
+    },
+    "scripts": {
+        "build": "tsc",
+        "dev": "ts-node cli/index.ts",
+        "start": "node dist/cli/index.js",
+        "test": "jest"
+    },
+    "keywords": [
+        "ai",
+        "autonomous",
+        "claude",
+        "cursor",
+        "antigravity",
+        "vibe-coding"
+    ],
+    "author": "VibeLab",
+    "license": "MIT",
+    "dependencies": {
+        "chalk": "^4.1.2",
+        "commander": "^12.0.0",
+        "ora": "^5.4.1"
+    },
+    "devDependencies": {
+        "@types/blessed": "^0.1.25",
+        "@types/jest": "^29.5.0",
+        "@types/node": "^20.0.0",
+        "@types/ora": "^3.1.0",
+        "jest": "^29.7.0",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.3.0"
+    }
+}
