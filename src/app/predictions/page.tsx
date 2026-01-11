@@ -38,21 +38,33 @@ export default function PredictionsPage() {
     const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis | null>(null);
     const [showAnalysisModal, setShowAnalysisModal] = useState(false);
 
-    // Fetch markets from both platforms
+    // Fetch markets from all platforms
     const fetchMarkets = useCallback(async () => {
         setLoading(true);
         try {
-            const [polyRes, kalshiRes] = await Promise.all([
-                fetch(`/api/predictions/polymarket?limit=30&category=${selectedCategory}`),
-                fetch(`/api/predictions/kalshi?limit=30&category=${selectedCategory}`)
+            // Fetch from all 5 platforms in parallel
+            const [polyRes, kalshiRes, manifoldRes, metaculusRes, predictitRes] = await Promise.all([
+                fetch(`/api/predictions/polymarket?limit=20&category=${selectedCategory}`),
+                fetch(`/api/predictions/kalshi?limit=20&category=${selectedCategory}`),
+                fetch(`/api/predictions/manifold?limit=15`),
+                fetch(`/api/predictions/metaculus?limit=15`),
+                fetch(`/api/predictions/predictit?limit=10`)
             ]);
 
-            const polyData = await polyRes.json();
-            const kalshiData = await kalshiRes.json();
+            const [polyData, kalshiData, manifoldData, metaculusData, predictitData] = await Promise.all([
+                polyRes.json(),
+                kalshiRes.json(),
+                manifoldRes.json(),
+                metaculusRes.json(),
+                predictitRes.json()
+            ]);
 
             const allMarkets = [
                 ...(polyData.markets || []),
-                ...(kalshiData.markets || [])
+                ...(kalshiData.markets || []),
+                ...(manifoldData.markets || []),
+                ...(metaculusData.markets || []),
+                ...(predictitData.markets || [])
             ];
 
             // Sort by volume
@@ -127,7 +139,7 @@ export default function PredictionsPage() {
     };
 
     const categories: (MarketCategory | "all")[] = ["all", "politics", "crypto", "economics", "sports", "entertainment", "science"];
-    const platforms: (Platform | "all")[] = ["all", "polymarket", "kalshi"];
+    const platforms: (Platform | "all")[] = ["all", "polymarket", "kalshi", "manifold", "metaculus", "predictit"];
 
     return (
         <div className="min-h-screen py-24 px-6">
