@@ -1,41 +1,22 @@
 import { NextResponse } from 'next/server';
 import { Market, MarketCategory, Platform } from '@/lib/predictionTypes';
 
-// Kalshi API endpoint
-const KALSHI_API = 'https://trading-api.kalshi.com/trade-api/v2';
+// Kalshi API endpoint (new API as of 2026)
+const KALSHI_API = 'https://api.elections.kalshi.com/trade-api/v2';
 
-interface KalshiEvent {
-    event_ticker: string;
-    title: string;
-    category: string;
-    sub_title?: string;
-    markets: KalshiMarket[];
-}
-
-interface KalshiMarket {
-    ticker: string;
-    title: string;
-    subtitle?: string;
-    yes_bid: number;
-    yes_ask: number;
-    no_bid: number;
-    no_ask: number;
-    volume: number;
-    open_interest: number;
-    close_time: string;
-    status: string;
-}
-
-// Map Kalshi categories
+// Map Kalshi categories to our categories
 function mapCategory(category: string): MarketCategory {
     const categoryMap: Record<string, MarketCategory> = {
         'Politics': 'politics',
         'Economics': 'economics',
+        'Climate and Weather': 'weather',
         'Climate': 'weather',
         'Financials': 'economics',
         'Tech': 'science',
+        'Technology': 'science',
         'Entertainment': 'entertainment',
         'Sports': 'sports',
+        'World': 'politics',
     };
     return categoryMap[category] || 'other';
 }
@@ -47,56 +28,65 @@ export async function GET(request: Request) {
     const search = searchParams.get('search');
 
     try {
-        // Fetch events from Kalshi
-        const response = await fetch(`${KALSHI_API}/events?status=open&limit=${limit}`, {
-            headers: {
-                'Accept': 'application/json',
-            },
-            next: { revalidate: 60 }
-        });
+        // Fetch events from Kalshi with nested markets
+        const response = await fetch(
+            `${KALSHI_API}/events?status=open&limit=${limit}&with_nested_markets=true`,
+            {
+                headers: {
+                    'Accept': 'application/json',
+                },
+                next: { revalidate: 60 } // Cache for 60 seconds
+            }
+        );
 
         if (!response.ok) {
             throw new Error(`Kalshi API error: ${response.status}`);
         }
 
         const data = await response.json();
-        const events: KalshiEvent[] = data.events || [];
+        const events = data.events || [];
 
         // Transform to our format
         let markets: Market[] = [];
 
-        events.forEach(event => {
-            event.markets?.forEach(m => {
-                const yesPrice = (m.yes_bid + m.yes_ask) / 2 / 100;
-                const noPrice = (m.no_bid + m.no_ask) / 2 / 100;
+        for (const event of events) {
+            const eventMarkets = event.markets || [];
+
+            for (const m of eventMarkets) {
+                // Prices are in cents (0-100), convert to 0-1
+                const yesPrice = (m.yes_bid || m.last_price || 50) / 100;
+                const noPrice = (m.no_bid || (100 - (m.last_price || 50))) / 100;
+
+                // Build URL using series_ticker for cleaner URLs
+                const urlSlug = event.series_ticker?.toLowerCase() || m.ticker.toLowerCase();
 
                 markets.push({
                     id: m.ticker,
                     slug: m.ticker.toLowerCase(),
                     title: m.title || event.title,
-                    description: m.subtitle || event.sub_title || '',
+                    description: m.subtitle || event.sub_title || m.rules_primary?.slice(0, 200) || '',
                     platform: 'kalshi' as Platform,
                     category: mapCategory(event.category),
                     outcomes: [
                         { id: `${m.ticker}-yes`, name: 'Yes', price: yesPrice },
                         { id: `${m.ticker}-no`, name: 'No', price: noPrice },
                     ],
-                    volume: m.volume,
-                    liquidity: m.open_interest,
+                    volume: m.volume || 0,
+                    liquidity: m.open_interest || 0,
                     endDate: new Date(m.close_time),
-                    createdAt: new Date(),
+                    createdAt: new Date(m.open_time || m.created_time || Date.now()),
                     status: m.status === 'active' ? 'open' : 'closed',
-                    url: `https://kalshi.com/markets/${m.ticker.toLowerCase()}`,
+                    url: `https://kalshi.com/markets/${urlSlug}`,
                 });
-            });
-        });
+            }
+        }
 
-        // Filter by category
+        // Filter by category if specified
         if (category && category !== 'all') {
             markets = markets.filter(m => m.category === category);
         }
 
-        // Filter by search
+        // Filter by search if provided
         if (search) {
             const searchLower = search.toLowerCase();
             markets = markets.filter(m =>
@@ -105,7 +95,7 @@ export async function GET(request: Request) {
             );
         }
 
-        // Sort by volume
+        // Sort by volume (highest first)
         markets.sort((a, b) => b.volume - a.volume);
 
         return NextResponse.json({
@@ -118,61 +108,43 @@ export async function GET(request: Request) {
     } catch (error) {
         console.error('Kalshi API error:', error);
 
-        // Fallback with REAL markets from Kalshi (verified on 2026-01-11)
+        // Fallback with verified markets from Kalshi
         const mockMarkets: Market[] = [
             {
-                id: 'INX-26-2.6-3',
-                slug: 'inflation-in-2025',
-                title: 'Inflation in 2025 between 2.6% and 3%?',
-                description: 'Resolves Yes if 12-month CPI percentage change falls between 2.6% and 3% in 2025.',
+                id: 'KXELONMARS-99',
+                slug: 'kxelonmars-99',
+                title: 'Will Elon Musk visit Mars before Aug 1, 2099?',
+                description: 'If Elon Musk visits Mars before the earlier of his death or Aug 1, 2099, then the market resolves to Yes.',
                 platform: 'kalshi',
-                category: 'economics',
+                category: 'science',
                 outcomes: [
-                    { id: '1', name: 'Yes', price: 0.91 },
-                    { id: '2', name: 'No', price: 0.09 },
+                    { id: '1', name: 'Yes', price: 0.06 },
+                    { id: '2', name: 'No', price: 0.94 },
                 ],
-                volume: 890000,
-                liquidity: 120000,
-                endDate: new Date('2026-01-13'),
-                createdAt: new Date('2024-11-01'),
+                volume: 34991,
+                liquidity: 13671,
+                endDate: new Date('2099-08-01'),
+                createdAt: new Date('2025-08-28'),
                 status: 'open',
-                url: 'https://kalshi.com/markets/inx/inflation-in-2025',
+                url: 'https://kalshi.com/markets/kxelonmars',
             },
             {
-                id: 'FED-26JAN',
-                slug: 'fed-decision-january-2026',
-                title: 'Fed decision in January 2026?',
-                description: 'Market on the Federal Reserve interest rate decision for January 2026 meeting.',
+                id: 'KXWARMING-50',
+                slug: 'kxwarming-50',
+                title: 'Will the world pass 2 degrees Celsius over pre-industrial levels before 2050?',
+                description: 'Market on global warming temperature thresholds.',
                 platform: 'kalshi',
-                category: 'economics',
+                category: 'weather',
                 outcomes: [
-                    { id: '1', name: 'Cut', price: 0.03 },
-                    { id: '2', name: 'Hold', price: 0.97 },
+                    { id: '1', name: 'Yes', price: 0.77 },
+                    { id: '2', name: 'No', price: 0.23 },
                 ],
-                volume: 1250000,
-                liquidity: 180000,
-                endDate: new Date('2026-01-29'),
-                createdAt: new Date('2025-08-01'),
+                volume: 5315,
+                liquidity: 3886,
+                endDate: new Date('2050-01-01'),
+                createdAt: new Date('2025-06-05'),
                 status: 'open',
-                url: 'https://kalshi.com/markets/fed/fed-decision-in-january',
-            },
-            {
-                id: 'BTCHIGH-26JAN',
-                slug: 'bitcoin-high-january-2026',
-                title: 'How high will Bitcoin get in January 2026?',
-                description: 'Market on the highest price Bitcoin will reach during January 2026.',
-                platform: 'kalshi',
-                category: 'crypto',
-                outcomes: [
-                    { id: '1', name: 'Above $97.5k', price: 0.42 },
-                    { id: '2', name: 'Below $97.5k', price: 0.58 },
-                ],
-                volume: 980000,
-                liquidity: 145000,
-                endDate: new Date('2026-01-31'),
-                createdAt: new Date('2025-12-01'),
-                status: 'open',
-                url: 'https://kalshi.com/markets/btchigh/how-high-will-bitcoin-get-in-january',
+                url: 'https://kalshi.com/markets/kxwarming',
             },
         ];
 
