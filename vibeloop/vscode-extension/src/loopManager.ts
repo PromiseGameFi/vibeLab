@@ -74,9 +74,14 @@ export class LoopManager {
         let args: string[];
 
         switch (adapter) {
+            case 'claude':
             case 'claude-code':
                 command = 'claude';
                 args = ['--print'];
+                break;
+            case 'aider':
+                command = 'aider';
+                args = ['--yes-always', '--message'];
                 break;
             case 'cursor':
                 command = 'cursor';
@@ -86,6 +91,16 @@ export class LoopManager {
                 command = 'opencode';
                 args = ['--non-interactive'];
                 break;
+            case 'antigravity':
+                // Antigravity doesn't have a CLI - show message to use built-in AI
+                vscode.window.showInformationMessage(
+                    'Antigravity: Please use the built-in AI chat to complete tasks. ' +
+                    'Read your PROMPT.md and ask the AI to complete the tasks.'
+                );
+                this.state.status = 'completed';
+                this.state.currentTask = 'Use built-in AI chat';
+                this.emitStateChange();
+                return;
             default:
                 vscode.window.showErrorMessage(`Unsupported adapter: ${adapter}`);
                 this.state.status = 'error';
