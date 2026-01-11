@@ -58,13 +58,16 @@ AI-powered prediction market intelligence.
 | Market Scanner | Aggregate from Polymarket & Kalshi |
 | Arbitrage Finder | Detect guaranteed profit opportunities |
 | AI Research Agent | Deep probability analysis |
-| Cross-Platform | Compare odds across exchanges |
+| Smart Money Tracker | Track whale wallet activity |
+| News Sentiment | AI-powered news sentiment analysis |
+| Market Alerts | Custom price and volume alerts |
 
 **How it helps:**
 - Find mispriced markets
 - Get AI probability estimates
 - Detect arbitrage opportunities
 - Track high-volume markets
+- Follow smart money moves
 
 ### 4. Tool Directory ✅
 Pro blueprints for AI tools: Cursor, Midjourney, Kling, Flux, ElevenLabs, etc.
@@ -97,15 +100,17 @@ Coding rules that work across AI agents.
 - [x] MCP Server (Cursor, Claude Desktop)
 - [x] Universal Skills with export
 - [x] VibeMarket marketing tools
-- [x] Prediction Market Scanner
+- [x] Prediction Market Scanner (Polymarket & Kalshi)
 - [x] Arbitrage Finder
 - [x] AI Market Analysis
+- [x] Smart Money Tracker (`/predictions/whales`)
+- [x] News Sentiment Monitor (`/predictions/sentiment`)
+- [x] Market Alerts (`/predictions/alerts`)
 
 ### 🔮 Planned
-- [ ] Smart money wallet tracking
-- [ ] News sentiment monitor
 - [ ] Portfolio tracker
 - [ ] Service connectors (Notion, Google Drive)
 - [ ] Cloud sync for memories
 - [ ] Raycast extension
 - [ ] VS Code extension
+
