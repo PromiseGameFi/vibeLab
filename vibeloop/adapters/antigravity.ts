@@ -5,12 +5,22 @@ import { IAdapter, AdapterType, ExecuteOptions, ExecuteResult, ExitSignal } from
 /**
  * Antigravity Adapter
  * 
- * Antigravity is Google's AI coding assistant. Integration options:
- * 1. MCP (Model Context Protocol) - preferred for external integration
- * 2. Direct API if available
- * 3. VS Code extension communication
+ * Antigravity is Google's AI coding assistant based on VS Code.
  * 
- * Note: This adapter requires proper authentication with Google Cloud.
+ * Key facts:
+ * - Uses OpenVSX as marketplace (not Microsoft's marketplace)
+ * - Supports standard VS Code extensions
+ * - Can communicate via MCP (Model Context Protocol)
+ * 
+ * Integration approaches:
+ * 1. VS Code Extension - Build extension that works on Antigravity, Cursor, and VS Code
+ * 2. MCP Server - Connect to running Antigravity instance via MCP
+ * 3. Extension API - Use VS Code extension API for direct integration
+ * 
+ * For best cross-IDE support, build a VS Code extension and publish to:
+ * - OpenVSX (open-vsx.org) for Antigravity
+ * - VS Code Marketplace for VS Code
+ * - Cursor's extension system (VS Code compatible)
  */
 export class AntigravityAdapter implements IAdapter {
     name: AdapterType = 'antigravity';
