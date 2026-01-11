@@ -52,6 +52,11 @@
             {
                 "command": "vibeloop.reset",
                 "title": "VibeLab: Reset Session"
+            },
+            {
+                "command": "vibeloop.selectAdapter",
+                "title": "VibeLab: Select AI Adapter",
+                "icon": "$(settings-gear)"
             }
         ],
         "viewsContainers": {
@@ -77,12 +82,20 @@
             "properties": {
                 "vibeloop.adapter": {
                     "type": "string",
-                    "default": "claude-code",
+                    "default": "aider",
                     "enum": [
-                        "claude-code",
+                        "claude",
+                        "aider",
                         "cursor",
                         "opencode",
                         "antigravity"
+                    ],
+                    "enumDescriptions": [
+                        "Claude Code CLI (claude)",
+                        "Aider - AI pair programming (aider)",
+                        "Cursor IDE CLI (cursor)",
+                        "OpenCode CLI (opencode)",
+                        "Antigravity/VS Code (uses built-in AI)"
                     ],
                     "description": "AI adapter to use for the autonomous loop"
                 },
