@@ -1,9 +1,15 @@
 // Adapter registry and exports
 
 export { ClaudeCodeAdapter } from './claude-code';
+export { CursorAdapter } from './cursor';
+export { OpenCodeAdapter } from './opencode';
+export { AntigravityAdapter } from './antigravity';
 
 import { IAdapter, AdapterType } from '../core/types';
 import { ClaudeCodeAdapter } from './claude-code';
+import { CursorAdapter } from './cursor';
+import { OpenCodeAdapter } from './opencode';
+import { AntigravityAdapter } from './antigravity';
 
 // Factory function to get adapter by type
 export function getAdapter(type: AdapterType): IAdapter {
@@ -11,11 +17,11 @@ export function getAdapter(type: AdapterType): IAdapter {
         case 'claude-code':
             return new ClaudeCodeAdapter();
         case 'cursor':
-            throw new Error('Cursor adapter not yet implemented');
-        case 'antigravity':
-            throw new Error('Antigravity adapter not yet implemented');
+            return new CursorAdapter();
         case 'opencode':
-            throw new Error('OpenCode adapter not yet implemented');
+            return new OpenCodeAdapter();
+        case 'antigravity':
+            return new AntigravityAdapter();
         case 'copilot':
             throw new Error('Copilot adapter not yet implemented');
         default:
@@ -32,7 +38,31 @@ export async function getAvailableAdapters(): Promise<AdapterType[]> {
         adapters.push('claude-code');
     }
 
-    // Add more adapters as they're implemented
+    const cursorAdapter = new CursorAdapter();
+    if (await cursorAdapter.isAvailable()) {
+        adapters.push('cursor');
+    }
+
+    const openCodeAdapter = new OpenCodeAdapter();
+    if (await openCodeAdapter.isAvailable()) {
+        adapters.push('opencode');
+    }
+
+    const antigravityAdapter = new AntigravityAdapter();
+    if (await antigravityAdapter.isAvailable()) {
+        adapters.push('antigravity');
+    }
 
     return adapters;
+}
+
+// Get adapter info
+export function getAdapterInfo(): Array<{ type: AdapterType; name: string; status: string }> {
+    return [
+        { type: 'claude-code', name: 'Claude Code', status: '✅ Ready' },
+        { type: 'cursor', name: 'Cursor', status: '⚠️ Experimental' },
+        { type: 'opencode', name: 'OpenCode', status: '⚠️ Experimental' },
+        { type: 'antigravity', name: 'Antigravity', status: '🔜 Coming Soon' },
+        { type: 'copilot', name: 'GitHub Copilot', status: '🔜 Coming Soon' },
+    ];
 }
