@@ -42,7 +42,9 @@ AI-powered prediction market intelligence:
 | **Market Scanner** | Aggregate odds from Polymarket & Kalshi |
 | **Arbitrage Finder** | Detect guaranteed profit opportunities |
 | **AI Research Agent** | Deep probability analysis with edge detection |
-| **Category Filters** | Politics, Crypto, Economics, Sports |
+| **Smart Money** | Track whale wallet activity (`/predictions/whales`) |
+| **News Sentiment** | AI-powered sentiment analysis (`/predictions/sentiment`) |
+| **Market Alerts** | Custom price and volume alerts (`/predictions/alerts`) |
 
 ### 🎯 AI Skills (`/skills`)
 - Pre-built coding rules for Cursor, Claude Code, Windsurf
