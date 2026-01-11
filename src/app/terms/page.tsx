@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, FileText, AlertTriangle, Shield, Scale, Users, Brain, Chrome, Zap } from "lucide-react";
+import { ArrowLeft, FileText, AlertTriangle, Shield, Scale, Users, Brain, Chrome, Zap, RefreshCw } from "lucide-react";
 
 export const metadata = {
     title: "Terms of Service | VibeLab",
@@ -76,6 +76,15 @@ export default function TermsPage() {
                             </h3>
                             <p className="text-sm text-[var(--foreground-secondary)]">
                                 Memory access for Cursor, Claude Desktop, and other MCP clients
+                            </p>
+                        </div>
+                        <div className="p-4 rounded-lg bg-white/5 border border-[var(--border)]">
+                            <h3 className="font-medium text-white flex items-center gap-2">
+                                <RefreshCw className="w-4 h-4 text-cyan-400" />
+                                VibeLab Loop
+                            </h3>
+                            <p className="text-sm text-[var(--foreground-secondary)]">
+                                Autonomous AI development loop CLI and VS Code extension for Cursor, Antigravity, and VS Code
                             </p>
                         </div>
                         <ul className="list-disc list-inside space-y-2 text-[var(--foreground-secondary)]">
@@ -165,6 +174,11 @@ export default function TermsPage() {
                         <p>
                             <strong className="text-orange-400">MCP Integration:</strong> MCP server functionality depends on third-party tools
                             (Cursor, Claude Desktop) which may change without notice.
+                        </p>
+                        <p>
+                            <strong className="text-orange-400">VibeLab Loop:</strong> The autonomous loop executes AI coding agents
+                            which may modify your code. Always review changes before committing. We are not responsible for
+                            unintended code modifications.
                         </p>
                     </div>
                 </section>
