@@ -62,6 +62,27 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('vibeloop.reset', async () => {
             await loopManager.reset();
             vscode.window.showInformationMessage('VibeLab Loop session reset');
+        }),
+
+        vscode.commands.registerCommand('vibeloop.selectAdapter', async () => {
+            const adapters = [
+                { label: '$(rocket) Claude', description: 'Claude Code CLI', detail: 'Uses: claude', value: 'claude' },
+                { label: '$(code) Aider', description: 'AI pair programming', detail: 'Uses: aider', value: 'aider' },
+                { label: '$(window) Cursor', description: 'Cursor IDE CLI', detail: 'Uses: cursor', value: 'cursor' },
+                { label: '$(terminal) OpenCode', description: 'Open-source AI agent', detail: 'Uses: opencode', value: 'opencode' },
+                { label: '$(zap) Antigravity', description: 'Built-in AI (current IDE)', detail: 'Uses VS Code AI features', value: 'antigravity' },
+            ];
+
+            const selected = await vscode.window.showQuickPick(adapters, {
+                placeHolder: 'Select AI adapter for autonomous loop',
+                title: 'VibeLab Loop - Select Adapter',
+            });
+
+            if (selected) {
+                const config = vscode.workspace.getConfiguration('vibeloop');
+                await config.update('adapter', selected.value, vscode.ConfigurationTarget.Workspace);
+                vscode.window.showInformationMessage(`VibeLab Loop: Now using ${selected.label.replace(/\$\([^)]+\)\s*/, '')}`);
+            }
         })
     );
 
@@ -112,7 +133,7 @@ async function startLoop(): Promise<void> {
     await loopManager.start({
         projectRoot: workspaceFolder.uri.fsPath,
         promptFile: promptFile,
-        adapter: config.get('adapter') || 'claude-code',
+        adapter: config.get('adapter') || 'aider',
         timeout: config.get('timeout') || 15,
         maxCalls: config.get('maxCalls') || 100,
     });
