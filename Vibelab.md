@@ -76,6 +76,24 @@ Pro blueprints for AI tools: Cursor, Midjourney, Kling, Flux, ElevenLabs, etc.
 Coding rules that work across AI agents.
 - Export to: Cursor, Claude Code, Windsurf, Antigravity
 
+### 6. VibeLab Loop (`vibeloop/`) ✅
+Autonomous AI development loop inspired by Ralph for Claude Code.
+
+| Feature | Description |
+|---------|-------------|
+| CLI Tool | `vibeloop start` for terminal-based loops |
+| VS Code Extension | Webview dashboard, status bar, commands |
+| Multi-IDE | VS Code, Cursor, Antigravity (OpenVSX) |
+| Exit Detection | Auto-stop when tasks complete |
+| Circuit Breaker | Prevents stuck loops |
+| Session Continuity | Preserves context across iterations |
+
+**Adapters:**
+- Claude Code (✅ Ready)
+- Cursor (⚠️ Experimental)
+- OpenCode (⚠️ Experimental)
+- Antigravity (🔜 Coming)
+
 ---
 
 ## VibeMarket Suite
@@ -112,5 +130,6 @@ Coding rules that work across AI agents.
 - [ ] Service connectors (Notion, Google Drive)
 - [ ] Cloud sync for memories
 - [ ] Raycast extension
-- [ ] VS Code extension
+- [x] VS Code extension (VibeLab Loop)
+- [x] Autonomous loop CLI (vibeloop)
 
