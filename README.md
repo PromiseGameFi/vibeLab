@@ -46,6 +46,17 @@ AI-powered prediction market intelligence:
 | **News Sentiment** | AI-powered sentiment analysis (`/predictions/sentiment`) |
 | **Market Alerts** | Custom price and volume alerts (`/predictions/alerts`) |
 
+### 🔄 VibeLab Loop (`vibeloop/`)
+Autonomous AI development loop for Cursor, Antigravity, and VS Code:
+
+| Feature | Description |
+|---------|-------------|
+| **CLI Tool** | `vibeloop start` - run autonomous loop from terminal |
+| **VS Code Extension** | Dashboard, status bar, commands |
+| **Multi-IDE** | Works on VS Code, Cursor, Antigravity (OpenVSX) |
+| **Exit Detection** | Auto-stop when tasks complete |
+| **Circuit Breaker** | Prevents stuck loops |
+
 ### 🎯 AI Skills (`/skills`)
 - Pre-built coding rules for Cursor, Claude Code, Windsurf
 - One-click export to `.cursorrules`, `CLAUDE.md`, etc.
@@ -96,6 +107,12 @@ extensions/
 
 mcp-server/
 └── index.js               # MCP server for Cursor/Claude
+
+vibeloop/
+├── core/                  # Loop engine, exit detector, circuit breaker
+├── adapters/              # Claude Code, Cursor, OpenCode, Antigravity
+├── cli/                   # CLI tool (vibeloop start)
+└── vscode-extension/      # VS Code extension with webview dashboard
 ```
 
 ## 🛠️ Tech Stack
