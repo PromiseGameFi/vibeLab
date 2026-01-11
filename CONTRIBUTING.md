@@ -34,6 +34,7 @@ GROQ_API_KEY=
 | `/skills` | AI Coding Skills |
 | `/vibeMarket` | Marketing Tools |
 | `/[slug]` | Tool Blueprints |
+| `vibeloop/` | Autonomous Loop CLI & VS Code Extension |
 
 ## API Routes
 
