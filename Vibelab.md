@@ -77,22 +77,26 @@ Coding rules that work across AI agents.
 - Export to: Cursor, Claude Code, Windsurf, Antigravity
 
 ### 6. VibeLab Loop (`vibeloop/`) ✅
-Autonomous AI development loop inspired by Ralph for Claude Code.
+Autonomous AI development loop ported from [Ralph](https://github.com/frankbria/ralph-claude-code).
 
-| Feature | Description |
+| Command | Description |
 |---------|-------------|
-| CLI Tool | `vibeloop start` for terminal-based loops |
-| VS Code Extension | Webview dashboard, status bar, commands |
-| Multi-IDE | VS Code, Cursor, Antigravity (OpenVSX) |
-| Exit Detection | Auto-stop when tasks complete |
-| Circuit Breaker | Prevents stuck loops |
-| Session Continuity | Preserves context across iterations |
+| `vibeloop` | Run autonomous loop |
+| `vibeloop-setup` | Create new project |
+| `vibeloop-import` | Convert PRD/specs |
+| `vibeloop-monitor` | tmux dashboard |
+
+**Features:**
+- Exit Detection (auto-stop when complete)
+- Circuit Breaker (prevents stuck loops)
+- Session Continuity (24h expiring sessions)
+- tmux Dashboard (`--monitor`)
 
 **Adapters:**
-- Claude Code (✅ Ready)
+- Claude Code (✅ Default)
+- Aider (✅ Ready)
 - Cursor (⚠️ Experimental)
 - OpenCode (⚠️ Experimental)
-- Antigravity (🔜 Coming)
 
 ---
 
