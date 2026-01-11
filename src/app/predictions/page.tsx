@@ -81,9 +81,11 @@ export default function PredictionsPage() {
     // Filter markets
     const filteredMarkets = markets.filter(m => {
         const matchesSearch = !search ||
-            m.title.toLowerCase().includes(search.toLowerCase());
+            m.title.toLowerCase().includes(search.toLowerCase()) ||
+            m.description?.toLowerCase().includes(search.toLowerCase());
         const matchesPlatform = selectedPlatform === "all" || m.platform === selectedPlatform;
-        return matchesSearch && matchesPlatform;
+        const matchesCategory = selectedCategory === "all" || m.category === selectedCategory;
+        return matchesSearch && matchesPlatform && matchesCategory;
     });
 
     // AI Analysis
