@@ -7,6 +7,7 @@
 - 🚀 **Command Palette** - Start, stop, and manage loops
 - 📊 **Webview Dashboard** - Real-time stats and file changes
 - 📍 **Status Bar** - Quick status at a glance
+- 🔌 **Multi-Adapter** - CLI and Language Model API support
 - ⚙️ **Configurable** - Adapter, timeout, and more
 
 ## Commands
@@ -15,16 +16,36 @@
 |---------|-------------|
 | `VibeLab: Start Autonomous Loop` | Start the loop |
 | `VibeLab: Stop Loop` | Stop running loop |
+| `VibeLab: Select AI Adapter` | Choose adapter |
 | `VibeLab: Show Loop Status` | Show current status |
 | `VibeLab: Open Dashboard` | Open webview dashboard |
 | `VibeLab: Initialize Project` | Create PROMPT.md |
 | `VibeLab: Reset Session` | Reset session state |
 
+## Adapters
+
+### CLI Adapters
+| Adapter | CLI | Status |
+|---------|-----|--------|
+| `claude` | Claude Code CLI | ✅ |
+| `aider` | Aider | ✅ Recommended |
+| `cursor` | Cursor | ⚠️ Experimental |
+| `opencode` | OpenCode | ⚠️ Experimental |
+
+### Language Model API Adapters
+| Adapter | Provider | Status |
+|---------|----------|--------|
+| `antigravity` | Gemini (vscode.lm) | ✅ |
+| `copilot` | GitHub Copilot | ✅ |
+| `lm-api` | Any LM provider | ✅ |
+
+When using LM API adapters, the extension communicates directly with the AI via VS Code's Language Model API (`vscode.lm`) - no CLI required!
+
 ## Configuration
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `vibeloop.adapter` | `claude-code` | AI adapter (claude-code, cursor, opencode) |
+| `vibeloop.adapter` | `aider` | AI adapter |
 | `vibeloop.timeout` | `15` | Timeout per iteration (minutes) |
 | `vibeloop.maxCalls` | `100` | Max API calls per hour |
 | `vibeloop.promptFile` | `PROMPT.md` | Project requirements file |
@@ -32,38 +53,28 @@
 
 ## Installation
 
+### From VSIX
+```bash
+Cmd+Shift+P → "Install from VSIX" → vibeloop-0.1.0.vsix
+```
+
 ### From OpenVSX (Antigravity)
 ```bash
 ovsx install vibelab.vibeloop
 ```
-
-### From VS Code Marketplace
-Search for "VibeLab Loop" in the extensions panel.
 
 ### From Source
 ```bash
 cd vscode-extension
 npm install
 npm run compile
-# Press F5 to launch Extension Development Host
-```
-
-## Publishing
-
-### To OpenVSX (for Antigravity)
-```bash
-npm run publish:ovsx
-```
-
-### To VS Code Marketplace
-```bash
-npm run publish:vscode
+npm run package  # Creates .vsix file
 ```
 
 ## Requirements
 
-- One of: Claude CLI, Cursor, or OpenCode installed
-- A `PROMPT.md` file in your workspace
+- VS Code 1.90+ (for Language Model API)
+- One of: Aider CLI, Claude CLI, or GitHub Copilot
 
 ## License
 
