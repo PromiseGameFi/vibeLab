@@ -1,7 +1,7 @@
 // VibeLab Memory - Background Service Worker v2.0
 // Handles storage, sync, context menu, and keyboard shortcuts
 
-const VIBELAB_URL = 'http://localhost:3000';
+const VIBELAB_URL = 'https://vibe-lab-henna.vercel.app';
 const STORAGE_KEY = 'vibelab_memories';
 const SETTINGS_KEY = 'vibelab_settings';
 

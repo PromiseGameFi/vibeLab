@@ -17,7 +17,7 @@
         "https://copilot.microsoft.com/*",
         "https://twitter.com/*",
         "https://x.com/*",
-        "http://localhost:3000/*"
+        "https://vibe-lab-henna.vercel.app/*"
     ],
     "action": {
         "default_popup": "popup.html",

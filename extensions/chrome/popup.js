@@ -2,7 +2,7 @@
 
 const STORAGE_KEY = 'vibelab_memories';
 const SETTINGS_KEY = 'vibelab_settings';
-const VIBELAB_URL = 'http://localhost:3000';
+const VIBELAB_URL = 'https://vibe-lab-henna.vercel.app';
 
 // Source icons
 const SOURCE_ICONS = {

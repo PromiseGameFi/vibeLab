@@ -278,7 +278,7 @@ export default function MemoryPage() {
                                 </p>
                             </div>
                             <a
-                                href="https://github.com/your-repo/vibelab/tree/main/extensions/chrome"
+                                href="https://vibe-lab-henna.vercel.app/memory"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="ml-auto text-xs px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 transition-colors"
@@ -299,7 +299,7 @@ export default function MemoryPage() {
                                 </p>
                             </div>
                             <a
-                                href="https://github.com/your-repo/vibelab/tree/main/mcp-server"
+                                href="https://vibe-lab-henna.vercel.app/"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="ml-auto text-xs px-3 py-1.5 rounded-lg bg-green-500/20 text-green-300 hover:bg-green-500/30 transition-colors"
