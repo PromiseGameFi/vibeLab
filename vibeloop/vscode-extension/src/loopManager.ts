@@ -29,10 +29,12 @@ export class LoopManager {
     private state: LoopState;
     private process: ChildProcess | null = null;
     private stateChangeHandlers: Array<(state: LoopState) => void> = [];
+    private outputChannel: vscode.OutputChannel;
 
     constructor(context: vscode.ExtensionContext) {
         this.context = context;
         this.state = this.createInitialState();
+        this.outputChannel = vscode.window.createOutputChannel('VibeLab Loop');
     }
 
     private createInitialState(): LoopState {
@@ -92,15 +94,31 @@ export class LoopManager {
                 args = ['--non-interactive'];
                 break;
             case 'antigravity':
-                // Antigravity doesn't have a CLI - show message to use built-in AI
-                vscode.window.showInformationMessage(
-                    'Antigravity: Please use the built-in AI chat to complete tasks. ' +
-                    'Read your PROMPT.md and ask the AI to complete the tasks.'
-                );
-                this.state.status = 'completed';
-                this.state.currentTask = 'Use built-in AI chat';
-                this.emitStateChange();
-                return;
+            case 'copilot':
+            case 'lm-api':
+                // Try to use VS Code Language Model API
+                if (await this.hasLanguageModelAPI()) {
+                    const promptPath = path.join(config.projectRoot, config.promptFile);
+                    let prompt: string;
+                    try {
+                        prompt = fs.readFileSync(promptPath, 'utf-8');
+                    } catch {
+                        vscode.window.showErrorMessage(`Failed to read ${config.promptFile}`);
+                        this.state.status = 'error';
+                        this.emitStateChange();
+                        return;
+                    }
+                    await this.runWithLanguageModel(prompt, config);
+                    return;
+                } else {
+                    vscode.window.showWarningMessage(
+                        'No Language Model available. Install GitHub Copilot or use a CLI adapter like Aider.'
+                    );
+                    this.state.status = 'error';
+                    this.state.currentTask = 'No LM available';
+                    this.emitStateChange();
+                    return;
+                }
             default:
                 vscode.window.showErrorMessage(`Unsupported adapter: ${adapter}`);
                 this.state.status = 'error';
@@ -277,5 +295,106 @@ export class LoopManager {
 
     private sleep(ms: number): Promise<void> {
         return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // ===== VS Code Language Model API Support =====
+
+    /**
+     * Check if VS Code Language Model API is available
+     */
+    private async hasLanguageModelAPI(): Promise<boolean> {
+        try {
+            // Check if vscode.lm exists (VS Code 1.90+)
+            if (!vscode.lm) {
+                return false;
+            }
+            const models = await vscode.lm.selectChatModels({});
+            return models.length > 0;
+        } catch {
+            return false;
+        }
+    }
+
+    /**
+     * Run the loop using VS Code Language Model API
+     */
+    private async runWithLanguageModel(prompt: string, config: LoopConfig): Promise<void> {
+        this.outputChannel.show();
+        this.outputChannel.appendLine('='.repeat(50));
+        this.outputChannel.appendLine('VibeLab Loop - Using Language Model API');
+        this.outputChannel.appendLine('='.repeat(50));
+
+        try {
+            // Get available models
+            const models = await vscode.lm.selectChatModels({});
+            if (models.length === 0) {
+                throw new Error('No language models available');
+            }
+
+            const model = models[0];
+            this.outputChannel.appendLine(`Using model: ${model.name || model.id}`);
+
+            while (this.state.status === 'running') {
+                this.state.iteration++;
+                this.state.currentTask = `LM Iteration ${this.state.iteration}`;
+                this.emitStateChange();
+
+                this.outputChannel.appendLine(`\n--- Iteration ${this.state.iteration} ---`);
+
+                // Build the message
+                const systemPrompt = `You are an autonomous coding agent. Complete the tasks described below. 
+When all tasks are complete, respond with "All tasks complete."
+Work in the project directory and make necessary code changes.`;
+
+                const messages = [
+                    vscode.LanguageModelChatMessage.User(systemPrompt + '\n\n' + prompt)
+                ];
+
+                // Send request to language model
+                const response = await model.sendRequest(messages, {});
+
+                // Collect response
+                let result = '';
+                for await (const chunk of response.text) {
+                    result += chunk;
+                    this.outputChannel.append(chunk);
+                }
+
+                this.state.totalApiCalls++;
+                this.state.lastExecutionTime = new Date();
+
+                // Check for completion
+                if (this.detectCompletion(result)) {
+                    this.state.status = 'completed';
+                    this.state.currentTask = 'All tasks complete!';
+                    this.outputChannel.appendLine('\n\n✅ Loop completed successfully!');
+                    vscode.window.showInformationMessage('VibeLab Loop completed!');
+                    break;
+                }
+
+                // Check rate limit
+                if (this.state.totalApiCalls >= config.maxCalls) {
+                    this.state.status = 'rate-limited';
+                    this.state.currentTask = 'Rate limited';
+                    this.outputChannel.appendLine('\n\n⚠️ Rate limit reached');
+                    vscode.window.showWarningMessage('Rate limit reached. Loop paused.');
+                    break;
+                }
+
+                this.emitStateChange();
+
+                // Delay between iterations
+                await this.sleep(2000);
+            }
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            this.state.errors.push(message);
+            this.state.status = 'error';
+            this.state.currentTask = 'Error: ' + message;
+            this.outputChannel.appendLine(`\n\n❌ Error: ${message}`);
+            vscode.window.showErrorMessage(`VibeLab Loop error: ${message}`);
+        }
+
+        this.emitStateChange();
     }
 }
