@@ -4,11 +4,11 @@
 
 ## Features
 
-- 🚀 **Command Palette** - Start, stop, and manage loops
-- 📊 **Webview Dashboard** - Real-time stats and file changes
-- 📍 **Status Bar** - Quick status at a glance
-- 🔌 **Multi-Adapter** - CLI and Language Model API support
-- ⚙️ **Configurable** - Adapter, timeout, and more
+-  **Command Palette** - Start, stop, and manage loops
+-  **Webview Dashboard** - Real-time stats and file changes
+-  **Status Bar** - Quick status at a glance
+-  **Multi-Adapter** - CLI and Language Model API support
+-  **Configurable** - Adapter, timeout, and more
 
 ## Commands
 
@@ -27,17 +27,17 @@
 ### CLI Adapters
 | Adapter | CLI | Status |
 |---------|-----|--------|
-| `claude` | Claude Code CLI | ✅ |
-| `aider` | Aider | ✅ Recommended |
-| `cursor` | Cursor | ⚠️ Experimental |
-| `opencode` | OpenCode | ⚠️ Experimental |
+| `claude` | Claude Code CLI |  |
+| `aider` | Aider |  Recommended |
+| `cursor` | Cursor |  Experimental |
+| `opencode` | OpenCode |  Experimental |
 
 ### Language Model API Adapters
 | Adapter | Provider | Status |
 |---------|----------|--------|
-| `antigravity` | Gemini (vscode.lm) | ✅ |
-| `copilot` | GitHub Copilot | ✅ |
-| `lm-api` | Any LM provider | ✅ |
+| `antigravity` | Gemini (vscode.lm) |  |
+| `copilot` | GitHub Copilot |  |
+| `lm-api` | Any LM provider |  |
 
 When using LM API adapters, the extension communicates directly with the AI via VS Code's Language Model API (`vscode.lm`) - no CLI required!
 
