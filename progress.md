@@ -1,6 +1,6 @@
 # Progress - VibeLab
 
-## ✅ Completed
+##  Completed
 
 ### Core Platform
 - [x] Next.js 16 App Router setup
@@ -8,7 +8,7 @@
 - [x] Dynamic tool routing (`/[slug]`)
 - [x] Responsive UI with dark mode
 
-### 🔒 Security Scanner (`/scan`)
+###  Security Scanner (`/scan`)
 - [x] Frontend scanner engine (153 patterns)
 - [x] OSV API integration (open source vulnerabilities)
 - [x] deps.dev API (dependency metadata)
@@ -20,7 +20,7 @@
 - [x] Export: JSON, SARIF, Markdown
 - [x] Scan history with localStorage
 
-### 💰 Token Cost Tools (`/vibeMarket`)
+###  Token Cost Tools (`/vibeMarket`)
 - [x] Token Cost Calculator
   - [x] 7 AI providers comparison
   - [x] Paste text or enter tokens
@@ -30,14 +30,14 @@
   - [x] Token savings calculation
   - [x] Smart optimization tips
 
-### 🎯 AI Skills (`/skills`)
+###  AI Skills (`/skills`)
 - [x] Skills landing page with search
 - [x] Category filtering
 - [x] Skill detail modal
 - [x] Export to Cursor, Claude Code, Antigravity
 - [x] Skills creator page
 
-### 📈 VibeMarket Marketing Tools
+###  VibeMarket Marketing Tools
 - [x] GTM Strategy Generator (AI-powered)
 - [x] Strategy Templates
 - [x] Custom Marketing Builder
@@ -48,13 +48,13 @@
 - [x] Engagement Scorecard
 - [x] Browser Agent scripts
 
-### 🎨 UI/UX
+###  UI/UX
 - [x] Framer-style design
 - [x] Quick Actions grid on homepage
 - [x] Token-saving messaging
 - [x] Interactive tool cards
 
-## 🔮 Planned
+##  Planned
 - [ ] PDF export for scan results
 - [ ] Skills API for programmatic access
 - [ ] Community skill directory
