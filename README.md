@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000
+Open localhost:3000
 
 ## ✨ Features
 
