@@ -17,14 +17,14 @@ VibeLab is the hub for **AI tool optimization**:
 
 ## The 5 Pillars
 
-### 1. Security Scanner (`/scan`) ✅
+### 1. Security Scanner (`/scan`) 
 Enterprise-grade vulnerability scanning.
 - 218+ patterns across 6 categories
 - GitHub OAuth for private repos
 - AI-powered fix suggestions (Gemini)
 - Export: JSON, SARIF, Markdown
 
-### 2. AI Memory (`/memory`) ✅
+### 2. AI Memory (`/memory`) 
 Supermemory-style universal AI memory.
 
 | Feature | Description |
@@ -50,7 +50,7 @@ Supermemory-style universal AI memory.
 - Microsoft Copilot
 - Twitter/X
 
-### 3. Prediction Markets (`/predictions`) ✅
+### 3. Prediction Markets (`/predictions`) 
 AI-powered prediction market intelligence.
 
 | Feature | Description |
@@ -69,14 +69,14 @@ AI-powered prediction market intelligence.
 - Track high-volume markets
 - Follow smart money moves
 
-### 4. Tool Directory ✅
+### 4. Tool Directory 
 Pro blueprints for AI tools: Cursor, Midjourney, Kling, Flux, ElevenLabs, etc.
 
-### 5. Universal Skills (`/skills`) ✅
+### 5. Universal Skills (`/skills`) 
 Coding rules that work across AI agents.
 - Export to: Cursor, Claude Code, Windsurf, Antigravity
 
-### 6. VibeLab Loop (`vibeloop/`) ✅
+### 6. VibeLab Loop (`vibeloop/`) 
 Autonomous AI development loop ported from [Ralph](https://github.com/frankbria/ralph-claude-code).
 
 | Command | Description |
@@ -93,19 +93,19 @@ Autonomous AI development loop ported from [Ralph](https://github.com/frankbria/
 - VS Code Extension with Dashboard
 
 **CLI Adapters:**
-- Aider (✅ Recommended)
-- Claude Code (✅ Ready)
-- Cursor, OpenCode (⚠️ Experimental)
+- Aider ( Recommended)
+- Claude Code ( Ready)
+- Cursor, OpenCode ( Experimental)
 
 **Language Model API (VS Code):**
-- Antigravity (✅ via vscode.lm)
-- GitHub Copilot (✅ via vscode.lm)
+- Antigravity ( via vscode.lm)
+- GitHub Copilot ( via vscode.lm)
 
 ---
 
 ## VibeMarket Suite
 
-### Strategy Tools ✅
+### Strategy Tools 
 - GTM Strategy Generator (AI)
 - Marketing Templates
 - Custom Strategy Builder
@@ -114,7 +114,7 @@ Autonomous AI development loop ported from [Ralph](https://github.com/frankbria/
 
 ## Roadmap
 
-### ✅ Completed
+###  Completed
 - [x] Security Scanner (218+ patterns)
 - [x] AI Memory Dashboard
 - [x] Chat with Memories (RAG)
@@ -132,7 +132,7 @@ Autonomous AI development loop ported from [Ralph](https://github.com/frankbria/
 - [x] News Sentiment Monitor (`/predictions/sentiment`)
 - [x] Market Alerts (`/predictions/alerts`)
 
-### 🔮 Planned
+###  Planned
 - [ ] Portfolio tracker
 - [ ] Service connectors (Notion, Google Drive)
 - [ ] Cloud sync for memories
