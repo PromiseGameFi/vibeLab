@@ -14,19 +14,19 @@ Universal AI memory capture from ChatGPT, Claude, Gemini, Perplexity, Copilot, a
 ### Supported Sites
 | Site | URL | Status |
 |------|-----|--------|
-| ChatGPT | chat.openai.com, chatgpt.com | ✅ |
-| Claude | claude.ai | ✅ |
-| Gemini | gemini.google.com | ✅ |
-| Perplexity | perplexity.ai | ✅ |
-| Copilot | copilot.microsoft.com | ✅ |
-| Twitter/X | twitter.com, x.com | ✅ |
+| ChatGPT | chat.openai.com, chatgpt.com |  |
+| Claude | claude.ai |  |
+| Gemini | gemini.google.com |  |
+| Perplexity | perplexity.ai |  |
+| Copilot | copilot.microsoft.com |  |
+| Twitter/X | twitter.com, x.com |  |
 
 ### Key Features
-- 🧠 **One-click save** - Floating button on all AI sites
-- ⌨️ **Keyboard shortcuts** - Cmd+Shift+S to save, Cmd+Shift+A to toggle auto-save
-- 🔄 **Auto-save** - Optionally save after each conversation
-- 📋 **Context menu** - Right-click any text to save
-- 🏷️ **Auto-tagging** - Detects code, api, debug, design, ideas
+-  **One-click save** - Floating button on all AI sites
+- ⌨ **Keyboard shortcuts** - Cmd+Shift+S to save, Cmd+Shift+A to toggle auto-save
+-  **Auto-save** - Optionally save after each conversation
+-  **Context menu** - Right-click any text to save
+- 🏷 **Auto-tagging** - Detects code, api, debug, design, ideas
 - 🔗 **Sync** - Saves to VibeLab dashboard
 - 🐦 **Twitter threads** - Save tweets and full threads with images
 
@@ -80,4 +80,4 @@ If extraction doesn't work:
 
 ### Twitter-Specific
 - For threads: Navigate to the tweet thread page first
-- Individual tweets can be saved with the 🧠 button that appears on hover
+- Individual tweets can be saved with the  button that appears on hover
