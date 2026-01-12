@@ -6,13 +6,13 @@ Ported from [Ralph for Claude Code](https://github.com/frankbria/ralph-claude-co
 
 ## Features
 
-- 🔄 **Autonomous Loop** - Continuously executes AI with your requirements
-- 🎯 **Exit Detection** - Stops when project is complete
-- ⚡ **Circuit Breaker** - Prevents stuck loops
+-  **Autonomous Loop** - Continuously executes AI with your requirements
+-  **Exit Detection** - Stops when project is complete
+-  **Circuit Breaker** - Prevents stuck loops
 - 💾 **Session Continuity** - Preserves context across iterations
-- 🔌 **Multi-IDE Adapters** - Claude, Cursor, Aider, OpenCode
-- 📊 **Live Dashboard** - tmux-based monitoring
-- 📁 **Project Templates** - Ralph-style structure
+-  **Multi-IDE Adapters** - Claude, Cursor, Aider, OpenCode
+-  **Live Dashboard** - tmux-based monitoring
+-  **Project Templates** - Ralph-style structure
 
 ## Quick Start
 
@@ -50,18 +50,18 @@ vibeloop --adapter aider
 
 | Adapter | CLI | Status |
 |---------|-----|--------|
-| Claude Code | `claude` | ✅ |
-| Aider | `aider` | ✅ Recommended |
-| Cursor | `cursor` | ⚠️ Experimental |
-| OpenCode | `opencode` | ⚠️ Experimental |
+| Claude Code | `claude` |  |
+| Aider | `aider` |  Recommended |
+| Cursor | `cursor` |  Experimental |
+| OpenCode | `opencode` |  Experimental |
 
 ### Language Model API (VS Code Extension)
 
 | Adapter | Provider | Status |
 |---------|----------|--------|
-| `antigravity` | Gemini (Antigravity IDE) | ✅ |
-| `copilot` | GitHub Copilot | ✅ |
-| `lm-api` | Any VS Code LM provider | ✅ |
+| `antigravity` | Gemini (Antigravity IDE) |  |
+| `copilot` | GitHub Copilot |  |
+| `lm-api` | Any VS Code LM provider |  |
 
 ```bash
 # List available adapters
