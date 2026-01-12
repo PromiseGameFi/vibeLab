@@ -4,7 +4,7 @@
 
 VibeLab helps you use AI tools effectively. Security scanners, AI memory, prediction market intelligence, and curated workflows.
 
-## 🚀 Quick Start
+##  Quick Start
 
 ```bash
 npm install
@@ -13,15 +13,15 @@ npm run dev
 
 Open localhost:3000
 
-## ✨ Features
+##  Features
 
-### 🔒 Security Scanner (`/scan`)
+###  Security Scanner (`/scan`)
 - Scan GitHub repos (public & private via OAuth)
 - 218+ vulnerability patterns across 6 categories
 - AI-powered fix suggestions with Gemini
 - Export: JSON, SARIF, Markdown
 
-### 🧠 AI Memory (`/memory`)
+###  AI Memory (`/memory`)
 Universal AI memory system inspired by [supermemory.ai](https://supermemory.ai):
 
 | Feature | Description |
@@ -34,7 +34,7 @@ Universal AI memory system inspired by [supermemory.ai](https://supermemory.ai):
 | **Browser Extension** | Auto-capture from ChatGPT, Claude, Gemini, Twitter, Perplexity, Copilot |
 | **MCP Server** | Access from Cursor/Claude Desktop |
 
-### 📊 Prediction Markets (`/predictions`)
+###  Prediction Markets (`/predictions`)
 AI-powered prediction market intelligence:
 
 | Feature | Description |
@@ -46,7 +46,7 @@ AI-powered prediction market intelligence:
 | **News Sentiment** | AI-powered sentiment analysis (`/predictions/sentiment`) |
 | **Market Alerts** | Custom price and volume alerts (`/predictions/alerts`) |
 
-### 🔄 VibeLab Loop (`vibeloop/`)
+###  VibeLab Loop (`vibeloop/`)
 Autonomous AI development loop ported from [Ralph](https://github.com/frankbria/ralph-claude-code):
 
 | Feature | Description |
@@ -65,16 +65,16 @@ vibeloop-setup my-project     # Create project
 cd my-project && vibeloop     # Run loop
 ```
 
-### 🎯 AI Skills (`/skills`)
+###  AI Skills (`/skills`)
 - Pre-built coding rules for Cursor, Claude Code, Windsurf
 - One-click export to `.cursorrules`, `CLAUDE.md`, etc.
 
-### 📈 VibeMarket (`/vibeMarket`)
+###  VibeMarket (`/vibeMarket`)
 - GTM Strategy Generator
 - Marketing Templates
 - Custom Strategy Builder
 
-## 🔑 Environment Variables
+##  Environment Variables
 
 ```env
 # GitHub OAuth (for private repos)
@@ -88,7 +88,7 @@ NEXT_PUBLIC_GEMINI_API_KEY=  # For embeddings
 GROQ_API_KEY=                 # For chat & analysis
 ```
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 src/
@@ -123,7 +123,7 @@ vibeloop/
 └── vscode-extension/      # VS Code extension with webview dashboard
 ```
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 - **Framework:** Next.js 16 (App Router)
 - **Language:** TypeScript
