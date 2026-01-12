@@ -1,7 +1,7 @@
 {
     "name": "vibeloop",
     "displayName": "VibeLab Loop",
-    "description": "Autonomous AI development loop for Cursor, Antigravity, and VS Code",
+    "description": "Autonomous AI development loop - Native to Antigravity IDE",
     "version": "0.1.0",
     "publisher": "vibelab",
     "engines": {
@@ -82,7 +82,7 @@
             "properties": {
                 "vibeloop.adapter": {
                     "type": "string",
-                    "default": "aider",
+                    "default": "antigravity",
                     "enum": [
                         "claude",
                         "aider",
