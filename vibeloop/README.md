@@ -46,12 +46,22 @@ vibeloop --adapter aider
 
 ## Adapters
 
+### CLI Adapters (Terminal)
+
 | Adapter | CLI | Status |
 |---------|-----|--------|
 | Claude Code | `claude` | ✅ |
+| Aider | `aider` | ✅ Recommended |
 | Cursor | `cursor` | ⚠️ Experimental |
-| Aider | `aider` | ✅ |
 | OpenCode | `opencode` | ⚠️ Experimental |
+
+### Language Model API (VS Code Extension)
+
+| Adapter | Provider | Status |
+|---------|----------|--------|
+| `antigravity` | Gemini (Antigravity IDE) | ✅ |
+| `copilot` | GitHub Copilot | ✅ |
+| `lm-api` | Any VS Code LM provider | ✅ |
 
 ```bash
 # List available adapters
@@ -61,12 +71,36 @@ vibeloop --list-adapters
 vibeloop --adapter aider
 ```
 
-## Commands
+## VS Code Extension
+
+Install the extension for GUI-based loop control:
+
+```bash
+# Install from VSIX
+Cmd+Shift+P → "Install from VSIX" → vibeloop/vscode-extension/vibeloop-0.1.0.vsix
+```
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `VibeLab: Start Autonomous Loop` | Start the loop |
+| `VibeLab: Stop Loop` | Stop running loop |
+| `VibeLab: Select AI Adapter` | Choose adapter |
+| `VibeLab: Open Dashboard` | View dashboard |
+| `VibeLab: Initialize Project` | Create PROMPT.md |
+
+### Language Model Integration
+
+When using `antigravity`, `copilot`, or `lm-api` adapters, the extension uses VS Code's native Language Model API (`vscode.lm`) to communicate directly with AI providers - no CLI required!
+
+## CLI Commands
 
 ```bash
 vibeloop              # Run autonomous loop
 vibeloop-setup        # Create new project
 vibeloop-monitor      # Live dashboard
+vibeloop-import       # Import PRD/specs
 ```
 
 ## Options
