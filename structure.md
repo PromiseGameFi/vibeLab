@@ -5,7 +5,7 @@ VibeLab is built using **Next.js 16 (App Router)** with TypeScript and Tailwind 
 
 ---
 
-## 📁 Root Directory
+##  Root Directory
 ```
 vibelab/
 ├── src/                 # Application source code
@@ -20,7 +20,7 @@ vibelab/
 
 ---
 
-## 📁 `src/app/` (Routes)
+##  `src/app/` (Routes)
 
 ### Core Pages
 | Route | File | Description |
@@ -57,7 +57,7 @@ vibelab/
 
 ---
 
-## 📁 `src/lib/` (Data & Logic)
+##  `src/lib/` (Data & Logic)
 
 | File | Purpose |
 |------|---------|
@@ -70,7 +70,7 @@ vibelab/
 
 ---
 
-## 📁 `src/components/`
+##  `src/components/`
 
 | Component | Purpose |
 |-----------|---------|
@@ -81,7 +81,7 @@ vibelab/
 
 ---
 
-## 🔑 Environment Variables
+##  Environment Variables
 
 ```env
 # GitHub OAuth
@@ -100,7 +100,7 @@ GITHUB_TOKEN=
 
 ---
 
-## 📊 Information Architecture
+##  Information Architecture
 
 ```
 VibeLab
