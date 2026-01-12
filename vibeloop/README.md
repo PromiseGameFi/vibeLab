@@ -1,18 +1,32 @@
 # VibeLab Loop
 
-> **Autonomous AI development loop with multi-IDE support**
+> **Autonomous AI development loop - Native to Antigravity IDE**
 
-Ported from [Ralph for Claude Code](https://github.com/frankbria/ralph-claude-code) with support for multiple AI coding tools.
+VibeLab Loop runs natively in [Antigravity IDE](https://antigravity.google) using Gemini. Also supports CLI adapters for other environments.
+
+## Native Antigravity Usage
+
+In Antigravity, the AI chat IS your loop. Just say:
+
+```
+"VibeLab Loop mode - read PROMPT.md and complete all tasks autonomously"
+```
+
+The AI will:
+1. Read your requirements from PROMPT.md
+2. Create an implementation plan
+3. Execute tasks iteratively
+4. Show artifacts (task.md, walkthrough.md)
+5. Continue until complete
 
 ## Features
 
--  **Autonomous Loop** - Continuously executes AI with your requirements
--  **Exit Detection** - Stops when project is complete
--  **Circuit Breaker** - Prevents stuck loops
-- 💾 **Session Continuity** - Preserves context across iterations
--  **Multi-IDE Adapters** - Claude, Cursor, Aider, OpenCode
--  **Live Dashboard** - tmux-based monitoring
--  **Project Templates** - Ralph-style structure
+- **Native Antigravity** - Use Gemini directly as your loop
+- **Autonomous Loop** - Continuously executes AI with your requirements
+- **Exit Detection** - Stops when project is complete
+- **Circuit Breaker** - Prevents stuck loops
+- **Multi-IDE Adapters** - Claude, Cursor, Aider, OpenCode
+- **Project Templates** - Ralph-style structure
 
 ## Quick Start
 
