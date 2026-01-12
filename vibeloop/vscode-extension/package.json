@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "publisher": "vibelab",
     "engines": {
-        "vscode": "^1.85.0"
+        "vscode": "^1.90.0"
     },
     "categories": [
         "Machine Learning",
@@ -156,7 +156,7 @@
     },
     "devDependencies": {
         "@types/node": "^20.0.0",
-        "@types/vscode": "^1.85.0",
+        "@types/vscode": "^1.90.0",
         "@vscode/vsce": "^2.22.0",
         "ovsx": "^0.8.0",
         "typescript": "^5.3.0"
