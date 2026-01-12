@@ -39,7 +39,7 @@ Managing social media on X (formerly Twitter) effectively involves:
 ### 3. Evergreen Vault
 - Stores high-performing posts
 - AI refreshes hooks, updates stats, ties to current events
-- Performance tags: 🔥 High / ⚡ Solid / 📝 Archive
+- Performance tags:  High /  Solid /  Archive
 - Usage tracking (use count, last used date)
 - Search and filter functionality
 
