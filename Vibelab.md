@@ -90,13 +90,16 @@ Autonomous AI development loop ported from [Ralph](https://github.com/frankbria/
 - Exit Detection (auto-stop when complete)
 - Circuit Breaker (prevents stuck loops)
 - Session Continuity (24h expiring sessions)
-- tmux Dashboard (`--monitor`)
+- VS Code Extension with Dashboard
 
-**Adapters:**
-- Claude Code (✅ Default)
-- Aider (✅ Ready)
-- Cursor (⚠️ Experimental)
-- OpenCode (⚠️ Experimental)
+**CLI Adapters:**
+- Aider (✅ Recommended)
+- Claude Code (✅ Ready)
+- Cursor, OpenCode (⚠️ Experimental)
+
+**Language Model API (VS Code):**
+- Antigravity (✅ via vscode.lm)
+- GitHub Copilot (✅ via vscode.lm)
 
 ---
 
