@@ -9,7 +9,8 @@ import {
     ChevronRight, FileCode, Lock, Package, Clock, DollarSign,
     History, Trash2, X, Code2, Database, Zap, Eye,
     FileJson, FileType, Blocks, Sparkles, Terminal, Bug,
-    LogOut, User, FileText, GitBranch, Star, Folder
+    LogOut, User, FileText, GitBranch, Star, Folder,
+    Search, Activity, BookOpen
 } from "lucide-react";
 import {
     ScanResult, ScanSummary, severityConfig, scannerInfo,
@@ -79,6 +80,9 @@ export default function ScanPage() {
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [severityFilter, setSeverityFilter] = useState<Severity | 'all'>('all');
     const [scannerFilter, setScannerFilter] = useState<Scanner | 'all'>('all');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('all');
+    const [sortBy, setSortBy] = useState<'severity' | 'cvss' | 'category'>('severity');
     const [history, setHistory] = useState<ScanHistoryItem[]>([]);
     const [showHistory, setShowHistory] = useState(false);
     const [scanStats, setScanStats] = useState<{
@@ -246,14 +250,18 @@ ${aiExploitationPath[r.id] ? `- **Exploitation Path:** ${aiExploitationPath[r.id
                     scanner: f.scanner || 'vibelab-patterns',
                     severity: f.severity as Severity,
                     title: f.title,
-                    description: f.message,
+                    description: f.description,
                     file: f.file,
                     line: f.line,
                     code: f.code,
                     cwe: f.cwe,
                     owasp: f.owasp,
+                    swc: f.swc,
                     category: f.category,
                     compliance: f.compliance,
+                    cvss: f.cvss,
+                    impact: f.impact,
+                    remediation: f.remediation,
                 })),
                 ...result.dependencies.map(d => ({
                     id: d.id,
@@ -329,12 +337,29 @@ ${aiExploitationPath[r.id] ? `- **Exploitation Path:** ${aiExploitationPath[r.id
     };
 
     const filteredResults = results.filter(r => {
-        if (severityFilter !== 'all' && r.severity !== severityFilter) return false;
-        if (scannerFilter !== 'all' && r.scanner !== scannerFilter) return false;
-        return true;
+        const matchesSeverity = severityFilter === 'all' || r.severity === severityFilter;
+        const matchesCategory = categoryFilter === 'all' || r.category === categoryFilter;
+        const matchesSearch = searchQuery === '' ||
+            r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            r.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (r.file && r.file.toLowerCase().includes(searchQuery.toLowerCase()));
+        const matchesScanner = scannerFilter === 'all' || r.scanner === scannerFilter;
+        return matchesSeverity && matchesCategory && matchesSearch && matchesScanner;
     });
 
-    const fixEstimate = results.length > 0 ? estimateFixCost(results) : null;
+    const sortedResults = [...filteredResults].sort((a, b) => {
+        if (sortBy === 'severity') {
+            const weights = { critical: 4, high: 3, medium: 2, low: 1, info: 0 };
+            return weights[b.severity] - weights[a.severity];
+        }
+        if (sortBy === 'cvss') {
+            return (b.cvss || 0) - (a.cvss || 0);
+        }
+        if (sortBy === 'category') {
+            return (a.category || '').localeCompare(b.category || '');
+        }
+        return 0;
+    });
 
     const formatDate = (iso: string) => {
         const date = new Date(iso);
@@ -1013,101 +1038,250 @@ ${aiExploitationPath[r.id] ? `- **Exploitation Path:** ${aiExploitationPath[r.id
                 </div>
             )}
 
-            {/* Results List */}
-            {filteredResults.length > 0 && (
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <h2 className="font-semibold text-white">
-                            {filteredResults.length} {severityFilter !== 'all' ? severityFilter : ''} Findings
-                        </h2>
-                        {severityFilter !== 'all' && (
-                            <button onClick={() => setSeverityFilter('all')} className="btn-ghost text-sm">
-                                Clear Filter <X className="w-4 h-4" />
+            {results.length > 0 && (
+                <div className="space-y-6">
+                    {/* Professional Filter Bar */}
+                    <div className="flex flex-col md:flex-row gap-4 p-4 rounded-2xl bg-[var(--background-card)] border border-[var(--border)] sticky top-4 z-40 backdrop-blur-md shadow-lg">
+                        <div className="flex-1 relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--foreground-muted)]" />
+                            <input
+                                type="text"
+                                placeholder="Search by title, description or file..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 bg-black/20 border border-white/5 rounded-xl text-sm focus:border-[var(--accent)] outline-none transition-all"
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                            <select
+                                value={categoryFilter}
+                                onChange={(e) => setCategoryFilter(e.target.value)}
+                                className="px-4 py-2 bg-black/20 border border-white/5 rounded-xl text-sm focus:border-[var(--accent)] outline-none cursor-pointer"
+                            >
+                                <option value="all">All Categories</option>
+                                <option value="secrets">Secrets</option>
+                                <option value="sast">SAST</option>
+                                <option value="smart-contract">Smart Contracts</option>
+                                <option value="dependency">Dependencies</option>
+                                <option value="malicious">Malicious</option>
+                            </select>
+                            <select
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value as any)}
+                                className="px-4 py-2 bg-black/20 border border-white/5 rounded-xl text-sm focus:border-[var(--accent)] outline-none cursor-pointer"
+                            >
+                                <option value="severity">Sort: Severity</option>
+                                <option value="cvss">Sort: CVSS Score</option>
+                                <option value="category">Sort: Category</option>
+                            </select>
+                            <button
+                                onClick={() => {
+                                    setSearchQuery('');
+                                    setCategoryFilter('all');
+                                    setSeverityFilter('all');
+                                }}
+                                className="btn-secondary px-3"
+                                title="Clear all filters"
+                            >
+                                <X className="w-4 h-4" />
                             </button>
-                        )}
+                        </div>
                     </div>
 
-                    {filteredResults.map((result) => (
-                        <div key={result.id} className="card overflow-hidden">
-                            <button
-                                onClick={() => setExpandedId(expandedId === result.id ? null : result.id)}
-                                className="w-full p-4 flex items-center gap-4 text-left"
-                            >
-                                <div className={`w-3 h-3 rounded-full ${severityConfig[result.severity].color}`} />
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="font-medium text-white truncate">{result.title}</span>
-                                        <span className={`px-2 py-0.5 rounded text-xs ${severityConfig[result.severity].color} ${severityConfig[result.severity].text}`}>
-                                            {result.severity}
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                            <Activity className="w-5 h-5 text-[var(--accent)]" />
+                            Expert Analysis Details
+                            <span className="text-sm font-normal text-[var(--foreground-muted)] ml-2">
+                                ({filteredResults.length} / {results.length} findings)
+                            </span>
+                        </h2>
+                    </div>
+                    <div className="space-y-4">
+                        {sortedResults.map((result) => (
+                            <div key={result.id} className={`card overflow-hidden transition-all duration-300 ${expandedId === result.id ? 'ring-2 ring-[var(--accent)]/50 shadow-2xl scale-[1.005]' : 'hover:border-[var(--accent)]/30'}`}>
+                                <button
+                                    onClick={() => setExpandedId(expandedId === result.id ? null : result.id)}
+                                    className="w-full p-5 flex items-center gap-4 text-left group"
+                                >
+                                    <div className={`flex flex-col items-center justify-center p-2 rounded-xl border ${severityConfig[result.severity].color} bg-opacity-10 min-w-[50px]`}>
+                                        <span className={`text-[10px] font-bold uppercase tracking-tighter ${severityConfig[result.severity].text}`}>CVSS</span>
+                                        <span className={`text-lg font-mono font-black ${severityConfig[result.severity].text}`}>
+                                            {result.cvss?.toFixed(1) || (result.severity === 'critical' ? '9.0' : result.severity === 'high' ? '7.5' : '5.0')}
                                         </span>
                                     </div>
-                                    {result.file && (
-                                        <p className="text-sm text-[var(--foreground-muted)] truncate font-mono">
-                                            {result.file}{result.line ? `:${result.line}` : ''}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    {result.cwe && <span className="badge text-xs">{result.cwe}</span>}
-                                    <ChevronDown className={`w-5 h-5 text-[var(--foreground-muted)] transition-transform ${expandedId === result.id ? 'rotate-180' : ''}`} />
-                                </div>
-                            </button>
 
-                            {expandedId === result.id && (
-                                <div className="px-4 pb-4 border-t border-[var(--border)]">
-                                    <div className="pt-4 space-y-4">
-                                        <p className="text-sm text-[var(--foreground-secondary)]">{result.description}</p>
-
-                                        {result.code && (
-                                            <div className="relative">
-                                                <pre className="p-4 rounded-xl bg-black/30 border border-white/10 text-sm font-mono text-white overflow-x-auto">
-                                                    {result.code}
-                                                </pre>
-                                                <button
-                                                    onClick={() => copyToClipboard(result.code || '', result.id)}
-                                                    className="absolute top-2 right-2 p-2 rounded-lg bg-white/10 hover:bg-white/20"
-                                                >
-                                                    {copiedId === result.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                                                </button>
-                                            </div>
-                                        )}
-
-                                        <div className="flex flex-wrap gap-2">
-                                            {result.owasp && <span className="badge text-[10px] bg-purple-500/10 text-purple-400 border-purple-500/30">OWASP {result.owasp}</span>}
-                                            {result.category === 'malicious' && <span className="badge text-[10px] bg-red-500/10 text-red-400 border-red-500/30">NIST PR.DS: Malicious Detection</span>}
-                                            {(result.category === 'cloud' || result.category === 'infra') && <span className="badge text-[10px] bg-blue-500/10 text-blue-400 border-blue-500/30">NIST PR.IP: Infra Protection</span>}
-                                            {result.category === 'pentest' && <span className="badge text-[10px] bg-orange-500/10 text-orange-400 border-orange-500/30">NIST DE.CM: Threat Detection</span>}
-                                            {result.category === 'sast' && <span className="badge text-[10px] bg-green-500/10 text-green-400 border-green-500/30">NIST PR.DS: Secure Coding</span>}
-                                            <span className="badge text-[10px] bg-white/5 text-[var(--foreground-muted)]">{scannerInfo[result.scanner]?.name || result.scanner}</span>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1.5">
+                                            <h3 className="font-bold text-white truncate text-base">{result.title}</h3>
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-tight border ${severityConfig[result.severity].color} ${severityConfig[result.severity].text} bg-opacity-10`}>
+                                                {result.severity}
+                                            </span>
+                                            {result.category && (
+                                                <span className="px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-tight bg-white/5 text-[var(--foreground-muted)] border border-white/10">
+                                                    {result.category}
+                                                </span>
+                                            )}
                                         </div>
-
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => generateAIPath(result)}
-                                                disabled={aiFixLoading === result.id}
-                                                className="btn-expert py-2 px-4 rounded-xl flex items-center gap-2 text-xs"
-                                            >
-                                                {aiFixLoading === result.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldAlert className="w-3.5 h-3.5" />}
-                                                Exploitation Path
-                                            </button>
-                                        </div>
-
-                                        {aiExploitationPath[result.id] && (
-                                            <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/20 animate-in fade-in slide-in-from-top-2">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <Zap className="w-3.5 h-3.5 text-red-400" />
-                                                    <span className="text-xs font-bold text-red-400 uppercase tracking-wider">Attack Scenario (VibeAI)</span>
-                                                </div>
-                                                <div className="text-xs text-[var(--foreground-secondary)] font-mono leading-relaxed whitespace-pre-line">
-                                                    {aiExploitationPath[result.id]}
-                                                </div>
+                                        <div className="flex items-center gap-3 text-xs text-[var(--foreground-muted)] font-mono">
+                                            <div className="flex items-center gap-1">
+                                                <Folder className="w-3 h-3" />
+                                                {result.file && result.file.split('/').slice(-2).join('/')}
+                                                {result.line ? `:${result.line}` : ''}
                                             </div>
-                                        )}
+                                            {result.scanner && (
+                                                <div className="flex items-center gap-1 opacity-60">
+                                                    <Shield className="w-3 h-3" />
+                                                    {scannerInfo[result.scanner as Scanner]?.name || result.scanner}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                                    <div className="flex items-center gap-4">
+                                        {result.compliance && result.compliance.length > 0 && (
+                                            <div className="hidden md:flex -space-x-1">
+                                                {result.compliance.slice(0, 3).map(c => (
+                                                    <div key={c} className="w-6 h-6 rounded-full bg-[var(--background-card)] border border-[var(--border)] flex items-center justify-center" title={c}>
+                                                        <span className="text-[8px] font-bold text-[var(--accent)]">{c.charAt(0)}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        <ChevronDown className={`w-5 h-5 text-[var(--foreground-muted)] transition-transform duration-300 ${expandedId === result.id ? 'rotate-180 text-[var(--accent)]' : 'group-hover:text-white'}`} />
+                                    </div>
+                                </button>
+
+                                {expandedId === result.id && (
+                                    <div className="px-6 pb-6 border-t border-[var(--border)] bg-black/10 animate-in fade-in slide-in-from-top-4 duration-300">
+                                        {/* Sub-tabs */}
+                                        <div className="flex border-b border-white/5 mb-6">
+                                            {['overview', 'evidence', 'remediation', 'compliance'].map((tab) => (
+                                                <button
+                                                    key={tab}
+                                                    className="px-4 py-3 text-xs font-bold uppercase tracking-widest text-[var(--foreground-muted)] hover:text-white border-b-2 border-transparent transition-all"
+                                                >
+                                                    {tab}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                            <div className="lg:col-span-2 space-y-8">
+                                                <section>
+                                                    <div className="flex items-center gap-2 mb-3">
+                                                        <BookOpen className="w-4 h-4 text-[var(--accent)]" />
+                                                        <h4 className="text-xs font-black uppercase text-white tracking-wider">Vulnerability Overview</h4>
+                                                    </div>
+                                                    <p className="text-sm text-[var(--foreground-secondary)] leading-relaxed">
+                                                        {result.description}
+                                                    </p>
+                                                    {result.impact && (
+                                                        <div className="mt-4 p-3 rounded-lg bg-red-500/5 border border-red-500/10">
+                                                            <span className="text-[10px] font-black text-red-400 uppercase tracking-tighter block mb-1">Impact Analysis</span>
+                                                            <p className="text-xs text-[var(--foreground-secondary)]">{result.impact}</p>
+                                                        </div>
+                                                    )}
+                                                </section>
+
+                                                {result.code && (
+                                                    <section>
+                                                        <div className="flex items-center gap-2 mb-3">
+                                                            <Terminal className="w-4 h-4 text-[var(--accent)]" />
+                                                            <h4 className="text-xs font-black uppercase text-white tracking-wider">Code Evidence</h4>
+                                                        </div>
+                                                        <div className="relative group/code">
+                                                            <pre className="p-5 rounded-xl bg-black/40 border border-white/5 text-sm font-mono text-white overflow-x-auto">
+                                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--accent)]/30" />
+                                                                {result.code}
+                                                            </pre>
+                                                            <button
+                                                                onClick={() => copyToClipboard(result.code || '', result.id)}
+                                                                className="absolute top-3 right-3 p-2 rounded-lg bg-white/5 hover:bg-white/10 opacity-0 group-hover/code:opacity-100 transition-opacity"
+                                                            >
+                                                                {copiedId === result.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                                            </button>
+                                                        </div>
+                                                    </section>
+                                                )}
+
+                                                <section>
+                                                    <div className="flex items-center gap-2 mb-3">
+                                                        <ShieldCheck className="w-4 h-4 text-green-400" />
+                                                        <h4 className="text-xs font-black uppercase text-white tracking-wider">Expert Remediation</h4>
+                                                    </div>
+                                                    <div className="p-4 rounded-xl bg-green-500/5 border border-green-500/10">
+                                                        <p className="text-sm text-[var(--foreground-secondary)] mb-4">
+                                                            {result.remediation || result.fix || "Refer to security best practices for this vulnerability type."}
+                                                        </p>
+                                                        <div className="flex gap-3">
+                                                            <button
+                                                                onClick={() => generateAIPath(result)}
+                                                                className="btn-expert py-2 px-5 rounded-xl text-xs flex items-center gap-2"
+                                                            >
+                                                                <Sparkles className="w-3.5 h-3.5" />
+                                                                Generate AI Fix Scenario
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </section>
+                                            </div>
+
+                                            <div className="space-y-6">
+                                                <div className="p-5 rounded-2xl bg-white/5 border border-white/10 space-y-4">
+                                                    <h4 className="text-xs font-black uppercase text-white tracking-wider">Standard References</h4>
+                                                    <div className="space-y-3">
+                                                        {result.cwe && (
+                                                            <div className="flex items-center justify-between py-2 border-b border-white/5">
+                                                                <span className="text-xs text-[var(--foreground-muted)]">CWE Identifier</span>
+                                                                <span className="text-xs font-mono text-[var(--accent)]">{result.cwe}</span>
+                                                            </div>
+                                                        )}
+                                                        {result.owasp && (
+                                                            <div className="flex items-center justify-between py-2 border-b border-white/5">
+                                                                <span className="text-xs text-[var(--foreground-muted)]">OWASP Category</span>
+                                                                <span className="text-xs font-mono text-purple-400">{result.owasp}</span>
+                                                            </div>
+                                                        )}
+                                                        {result.swc && (
+                                                            <div className="flex items-center justify-between py-2 border-b border-white/5">
+                                                                <span className="text-xs text-[var(--foreground-muted)]">SWC Registry</span>
+                                                                <span className="text-xs font-mono text-blue-400">{result.swc}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {result.compliance && result.compliance.length > 0 && (
+                                                    <div className="p-5 rounded-2xl bg-white/5 border border-white/10 space-y-4">
+                                                        <h4 className="text-xs font-black uppercase text-white tracking-wider">Compliance Impact</h4>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {result.compliance.map(c => (
+                                                                <span key={c} className="px-3 py-1 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/20 text-[10px] font-bold text-[var(--accent)] uppercase">
+                                                                    {c} Violated
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {aiExploitationPath[result.id] && (
+                                                    <div className="p-5 rounded-2xl bg-red-500/5 border border-red-500/20 space-y-3 animate-in fade-in zoom-in-95 duration-500">
+                                                        <div className="flex items-center gap-2">
+                                                            <Zap className="w-4 h-4 text-red-400" />
+                                                            <h4 className="text-[10px] font-black uppercase text-red-400 tracking-wider">Exploitation Insight</h4>
+                                                        </div>
+                                                        <p className="text-[11px] font-mono text-[var(--foreground-secondary)] leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5">
+                                                            {aiExploitationPath[result.id]}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
