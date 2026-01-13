@@ -934,6 +934,17 @@ export const infraPatterns: VulnPattern[] = [
         id: 'infra-cicd-unpinned', title: 'Unpinned GitHub Action', severity: 'low', category: 'infra',
         pattern: /uses\s*:\s*[^@\s]+(?![@\s])/gi,
         message: 'GitHub Action used without version pinning'
+    },
+    // Container Extended
+    {
+        id: 'docker-latest-tag', title: 'Using Latest Tag', severity: 'medium', category: 'infra',
+        pattern: /FROM\s+[^\s:]+:latest/gi,
+        message: 'Using :latest tag makes builds non-reproducible', cwe: 'CWE-1104'
+    },
+    {
+        id: 'docker-add-copy', title: 'Using ADD Instead of COPY', severity: 'low', category: 'infra',
+        pattern: /^ADD\s+(?!https?:)/gmi,
+        message: 'ADD has auto-extraction which can be risky; use COPY instead', cwe: 'CWE-829'
     }
 ];
 
@@ -1228,6 +1239,34 @@ export const wstgAdvancedPatterns: VulnPattern[] = [
     },
 ];
 
+// ==================== GRAPHQL SECURITY ====================
+export const graphqlPatterns: VulnPattern[] = [
+    {
+        id: 'graphql-introspection', title: 'Introspection Enabled', severity: 'high', category: 'api',
+        pattern: /introspection\s*:\s*true|__schema|__type\s*\{/gi,
+        message: 'GraphQL introspection allows schema discovery', cwe: 'CWE-200'
+    },
+    {
+        id: 'graphql-depth-limit', title: 'Missing Query Depth Limit', severity: 'high', category: 'api',
+        pattern: /new\s+ApolloServer\s*\(\s*\{(?![\s\S]*depthLimit)/gi,
+        message: 'Nested queries can cause DoS without depth limits', cwe: 'CWE-400'
+    }
+];
+
+// ==================== JWT SECURITY ====================
+export const jwtPatterns: VulnPattern[] = [
+    {
+        id: 'jwt-none-algo', title: 'JWT None Algorithm', severity: 'critical', category: 'auth',
+        pattern: /algorithms?\s*:\s*\[[^\]]*['"]none['"][^\]]*\]/gi,
+        message: 'JWT with none algorithm bypasses verification', cwe: 'CWE-327'
+    },
+    {
+        id: 'jwt-localstorage', title: 'JWT in localStorage', severity: 'medium', category: 'auth',
+        pattern: /localStorage\.setItem\s*\([^,]*(?:token|jwt|auth)/gi,
+        message: 'Tokens in localStorage are vulnerable to XSS', cwe: 'CWE-922'
+    }
+];
+
 // ==================== ALL PATTERNS COMBINED ====================
 export const allPatterns: VulnPattern[] = [
     ...secretPatterns,
@@ -1263,6 +1302,8 @@ export const allPatterns: VulnPattern[] = [
     ...compliancePatterns,
     ...advancedTestPatterns,
     ...wstgAdvancedPatterns,
+    ...graphqlPatterns,
+    ...jwtPatterns,
 ];
 
 // Pattern count for UI display
@@ -1273,7 +1314,7 @@ export const patternStats = {
     xss: xssPatterns.length,
     cmdi: commandInjectionPatterns.length,
     path: pathTraversalPatterns.length,
-    auth: authPatterns.length,
+    auth: authPatterns.length + jwtPatterns.length,
     crypto: cryptoPatterns.length,
     ssrf: ssrfPatterns.length,
     solidity: solidityPatterns.length,
@@ -1288,7 +1329,7 @@ export const patternStats = {
     express: expressPatterns.length,
     django: djangoPatterns.length,
     flask: flaskPatterns.length,
-    owaspApi: owaspApiPatterns.length,
+    owaspApi: owaspApiPatterns.length + graphqlPatterns.length,
     config: configPatterns.length,
     malicious: maliciousPatterns.length + expertMaliciousPatterns.length,
     infra: infraPatterns.length + cloudInfraPatterns.length,
