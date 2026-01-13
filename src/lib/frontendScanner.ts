@@ -617,25 +617,28 @@ export async function scanRepository(repoUrl: string, options?: ScanOptions): Pr
     // Fetch repo contents
     const { files, packageJson } = await fetchRepoContents(repoUrl);
 
-    // Scan all files with all pattern types
-    const allFindings: ScanFinding[] = [];
-    for (const file of files) {
+    // Scan all files with all pattern types in parallel for performance
+    const scanPromises = files.map(async (file) => {
+        const fileFindings: ScanFinding[] = [];
+
         // Standard security patterns
-        const findings = scanFileContent(file.content, file.path);
-        allFindings.push(...findings);
+        fileFindings.push(...scanFileContent(file.content, file.path));
 
-        // Web3/blockchain patterns (Solidity, Rust, Move, FunC, JS/TS dApp patterns)
-        const web3Findings = scanWeb3Content(file.content, file.path);
-        allFindings.push(...web3Findings);
+        // Web3/blockchain patterns
+        fileFindings.push(...scanWeb3Content(file.content, file.path));
 
-        // API/Backend patterns (GraphQL, JWT, REST, Node.js, Python)
-        const apiFindings = scanApiContent(file.content, file.path);
-        allFindings.push(...apiFindings);
+        // API/Backend patterns
+        fileFindings.push(...scanApiContent(file.content, file.path));
 
-        // Additional patterns (Docker, CI/CD, React, Next.js, Auth)
-        const additionalFindings = scanAdditionalContent(file.content, file.path);
-        allFindings.push(...additionalFindings);
-    }
+        // Additional patterns
+        fileFindings.push(...scanAdditionalContent(file.content, file.path));
+
+        return fileFindings;
+    });
+
+    const results = await Promise.all(scanPromises);
+    const allFindings: ScanFinding[] = [];
+    results.forEach(findings => allFindings.push(...findings));
 
     // Scan dependencies with multiple APIs
     const dependencyVulns = packageJson ? await scanDependencies(packageJson) : [];
