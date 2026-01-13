@@ -11,12 +11,17 @@ export interface ScanResult {
     fix?: string;
     cwe?: string;
     owasp?: string;
+    swc?: string;
     fixPrompt?: string;
     category?: string;
     package?: string;
     version?: string;
     fixedVersion?: string;
     cve?: string;
+    compliance?: string[];
+    cvss?: number;
+    impact?: string;
+    remediation?: string;
 }
 
 export interface ScanSummary {
