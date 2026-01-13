@@ -58,7 +58,7 @@ export const severityConfig = {
 export const scannerInfo = {
     'vibelab-patterns': {
         name: 'VibeLab Patterns',
-        description: '150+ Security Patterns (Secrets, SQLi, XSS, etc.)',
+        description: '350+ Security Patterns (Secrets, Malicious Code, Pentest, Infra)',
         icon: '',
     },
     'osv-api': {
