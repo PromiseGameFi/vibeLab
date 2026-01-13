@@ -248,49 +248,48 @@ export async function scanRepository(repoUrl: string, options?: ScanOptions): Pr
     for (let i = 0; i < files.length; i += batchSize) {
         const batch = files.slice(i, i + batchSize);
         await Promise.all(batch.map(async (file) => {
-            engines[0].status = 'scanning';
+            // SINGLE PASS: All applicable patterns for this level
             const sast = scanFileContent(file.content, file.path, applicablePatterns);
-            engines[0].findings += sast.length; allFindings.push(...sast);
+            allFindings.push(...sast);
 
-            // Deep Scan specialized engines
+            // Update individual engine counts from the results
+            engines[0].findings += sast.filter(f => f.category === 'sast' || f.category === 'secrets').length;
+            engines[0].status = 'complete';
+
+            // Deep Scan specialized logic (non-regex engines)
             if (scanLevel === 'deep') {
-                // 1. Entropy Analysis for unknown secrets
-                const highEntropyStrings = detectHighEntropyStrings(file.content);
+                // 1. Entropy Analysis (Indicator only, not absolute proof)
+                const highEntropyStrings = detectHighEntropyStrings(file.content, 5.2, 30); // Higher threshold
                 highEntropyStrings.forEach(s => {
                     const strength = getSecretStrength(s.entropy, s.string.length);
                     allFindings.push({
                         id: generateId(),
                         ruleId: 'expert-entropy-secret',
-                        severity: strength === 'expert' ? 'critical' : 'high',
+                        severity: strength === 'expert' ? 'high' : 'medium', // Downgraded
                         category: 'secrets',
                         title: `High Entropy String (${strength})`,
-                        message: `Potential unknown secret detected with entropy: ${s.entropy.toFixed(2)}`,
+                        message: `High randomness string detected (${s.entropy.toFixed(2)}). Potential secret indicator.`,
                         file: file.path,
                         line: s.line,
-                        code: s.string.substring(0, 100),
+                        code: s.string.substring(0, 50),
                         scanner: 'vibelab-patterns'
                     });
                 });
 
-                // 2. Pentest Engine
-                engines[1].status = 'scanning';
-                const pentest = scanFileContent(file.content, file.path, allPatterns.filter(p => p.category === 'pentest'));
-                engines[1].findings += pentest.length; allFindings.push(...pentest);
-
-                // 3. Unit Test Guard
-                engines[2].status = 'scanning';
-                const ut = (file.path.includes('test') || file.path.includes('spec'))
-                    ? scanFileContent(file.content, file.path, allPatterns.filter(p => p.category === 'test-security')) : [];
-                engines[2].findings += ut.length; allFindings.push(...ut);
-
-                // 4. Semantic Heuristics (Taint Analysis)
+                // 2. Semantic Heuristics (Taint Analysis)
                 const heuristics = scanSemanticHeuristics(file.content, file.path);
                 allFindings.push(...heuristics);
             }
 
-            engines[3].status = 'scanning';
-            const infra = scanFileContent(file.content, file.path, applicablePatterns.filter(p => p.category === 'infra' || p.category === 'cloud'));
-            engines[3].findings += infra.length; allFindings.push(...infra);
+            // Update other engine statuses
+            engines[1].status = 'complete';
+            engines[1].findings += sast.filter(f => f.category === 'pentest').length;
+
+            engines[2].status = 'complete';
+            engines[2].findings += sast.filter(f => f.category === 'test-security').length;
+
+            engines[3].status = 'complete';
+            engines[3].findings += sast.filter(f => f.category === 'infra' || f.category === 'cloud').length;
 
             allFindings.push(...scanWeb3Content(file.content, file.path));
         }));
