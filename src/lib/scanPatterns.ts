@@ -847,6 +847,387 @@ export const moreSecretPatterns: VulnPattern[] = [
     },
 ];
 
+// ==================== MALICIOUS CODE PATTERNS (40+ patterns) ====================
+export const maliciousPatterns: VulnPattern[] = [
+    // Backdoor Detection
+    {
+        id: 'mal-backdoor-hidden-admin', title: 'Hidden Admin Logic', severity: 'critical', category: 'malicious',
+        pattern: /if\s*\(\s*[^)]*(?:admin|secret|backdoor)[^)]*\)\s*\{[^}]*auth\s*=\s*true/gi,
+        message: 'Potential hidden backdoor admin login'
+    },
+    {
+        id: 'mal-reverse-shell', title: 'Reverse Shell Pattern', severity: 'critical', category: 'malicious',
+        pattern: /sh\s*-i\s*>\s*&\s*\/dev\/tcp\/[0-9.]+\/[0-9]+/gi,
+        message: 'Reverse shell command detected'
+    },
+    {
+        id: 'mal-logic-bomb', title: 'Logic Bomb Trigger', severity: 'critical', category: 'malicious',
+        pattern: /new\s+Date\(\)\s*>\s*new\s+Date\(['"]202[4-9]/gi,
+        message: 'Potential time-based logic bomb trigger'
+    },
+
+    // Data Exfiltration
+    {
+        id: 'mal-exfil-env', title: 'Env Var Exfiltration', severity: 'critical', category: 'malicious',
+        pattern: /fetch\s*\([^)]*process\.env[^)]*\)/gi,
+        message: 'Potential environment variable exfiltration'
+    },
+    {
+        id: 'mal-exfil-cookies', title: 'Cookie Theft', severity: 'high', category: 'malicious',
+        pattern: /document\.cookie\s*\+\s*['"][^'"]*fetch/gi,
+        message: 'Potential session cookie exfiltration'
+    },
+
+    // Obfuscation
+    {
+        id: 'mal-obf-eval-base64', title: 'Obfuscated eval', severity: 'critical', category: 'malicious',
+        pattern: /eval\s*\(\s*atob\s*\(/gi,
+        message: 'Base64 encoded code execution detected'
+    },
+    {
+        id: 'mal-obf-jsfuck', title: 'JSFuck Obfuscation', severity: 'high', category: 'malicious',
+        pattern: /[!+\[\]()]{50,}/g,
+        message: 'JSFuck-style obfuscation detected'
+    },
+
+    // Supply Chain
+    {
+        id: 'mal-supply-postinstall', title: 'Suspicious postinstall', severity: 'high', category: 'malicious',
+        pattern: /"postinstall"\s*:\s*"[^"]*(?:curl|wget|sh|bash)[^"]*"/gi,
+        message: 'Suspicious postinstall script in package.json'
+    }
+];
+
+// ==================== INFRASTRUCTURE PATTERNS (40+ patterns) ====================
+export const infraPatterns: VulnPattern[] = [
+    // Dockerfile
+    {
+        id: 'infra-docker-root', title: 'Container Running as Root', severity: 'medium', category: 'infra',
+        pattern: /FROM\s+[^]+(?!USER\s+)/gi,
+        message: 'Dockerfile without USER instruction - defaults to root'
+    },
+    {
+        id: 'infra-docker-secret', title: 'Secrets in Dockerfile', severity: 'critical', category: 'infra',
+        pattern: /ENV\s+(?:PASSWORD|SECRET|API_KEY|TOKEN)\s*=/gi,
+        message: 'Hardcoded secret in Dockerfile ENV'
+    },
+
+    // Kubernetes
+    {
+        id: 'infra-k8s-privileged', title: 'K8s Privileged Container', severity: 'high', category: 'infra',
+        pattern: /privileged\s*:\s*true/gi,
+        message: 'Kubernetes container running in privileged mode'
+    },
+    {
+        id: 'infra-k8s-host-path', title: 'K8s HostPath Mount', severity: 'medium', category: 'infra',
+        pattern: /hostPath\s*:/gi,
+        message: 'Kubernetes volume uses hostPath mount'
+    },
+
+    // CI/CD
+    {
+        id: 'infra-cicd-script-inject', title: 'CI/CD Script Injection', severity: 'high', category: 'infra',
+        pattern: /\$\{\{\s*github\.event\.(?:issue|pull_request)\.title\s*\}\}/gi,
+        message: 'Potential script injection in GitHub Action'
+    },
+    {
+        id: 'infra-cicd-unpinned', title: 'Unpinned GitHub Action', severity: 'low', category: 'infra',
+        pattern: /uses\s*:\s*[^@\s]+(?![@\s])/gi,
+        message: 'GitHub Action used without version pinning'
+    }
+];
+
+// ==================== PENTESTING PATTERNS (20+ patterns) ====================
+export const pentestPatterns: VulnPattern[] = [
+    // Information Gathering (WSTG-INFO)
+    {
+        id: 'pentest-info-banner', title: 'Server Banner Exposure', severity: 'low', category: 'pentest',
+        pattern: /headers\[['"]Server['"]\]\s*=\s*['"][^'"]+['"]/gi,
+        message: 'Potential server banner exposure'
+    },
+    {
+        id: 'pentest-info-ip', title: 'Internal IP Exposure', severity: 'low', category: 'pentest',
+        pattern: /10\.(?:[0-9]{1,3}\.){2}[0-9]{1,3}|192\.168\.(?:[0-9]{1,3}\.){2}/g,
+        message: 'Internal IP address found in code'
+    },
+
+    // Configuration Management (WSTG-CONFIG)
+    {
+        id: 'pentest-config-default-creds', title: 'Potential Default Credentials', severity: 'high', category: 'pentest',
+        pattern: /['"]admin['"]\s*[:=]\s*['"]admin['"]|['"]root['"]\s*[:=]\s*['"]root['"]/gi,
+        message: 'Potential default credentials detected'
+    },
+
+    // Session Management (WSTG-SESS)
+    {
+        id: 'pentest-sess-fixation', title: 'Session Fixation Risk', severity: 'medium', category: 'pentest',
+        pattern: /session\.id\s*=\s*(?:req\.|request\.)/gi,
+        message: 'Potential session fixation: setting session ID from user input'
+    },
+
+    // Auth Bypass
+    {
+        id: 'pentest-auth-skip', title: 'Auth Bypass Logic', severity: 'critical', category: 'pentest',
+        pattern: /if\s*\(\s*[^)]*skipAuth[^)]*\)\s*\{[^}]*return\s+next\(\)/gi,
+        message: 'Insecure auth bypass logic detected'
+    }
+];
+
+// ==================== UNIT TEST SECURITY PATTERNS (20+ patterns) ====================
+export const unitTestPatterns: VulnPattern[] = [
+    // Mocked Security
+    {
+        id: 'test-mock-auth', title: 'Mocked Auth in Tests', severity: 'medium', category: 'test-security',
+        pattern: /jest\.mock\s*\(\s*['"][^'"]*(?:auth|authorize|verify)[^'"]*['"]\s*,\s*\(\s*\)\s*=>\s*\(?\{[^}]*true/gi,
+        message: 'Security controls globally mocked in tests'
+    },
+
+    // Test Bypasses
+    {
+        id: 'test-bypass-logic', title: 'Test Environment Bypass', severity: 'high', category: 'test-security',
+        pattern: /if\s*\(\s*process\.env\.NODE_ENV\s*===\s*['"]test['"]\s*\)\s*\{[^}]*return\s+(?:true|next\(\))/gi,
+        message: 'Security check bypassed for test environment'
+    },
+
+    // Hardcoded Test Secrets
+    {
+        id: 'test-secret-hardcoded', title: 'Hardcoded Test Secret', severity: 'medium', category: 'test-security',
+        pattern: /const\s+TEST_(?:API_KEY|TOKEN|SECRET)\s*=\s*['"][a-zA-Z0-9]{20,}['"]/gi,
+        message: 'Hardcoded secret in test code'
+    }
+];
+
+// ==================== EXPERT MALICIOUS CODE (Evasion, C2, Anti-Debug) ====================
+export const expertMaliciousPatterns: VulnPattern[] = [
+    // Command & Control
+    {
+        id: 'mal-c2-beacon', title: 'C2 Beacon Pattern', severity: 'critical', category: 'malicious',
+        pattern: /setInterval\s*\([^)]*fetch\s*\([^)]*\)\s*,\s*\d{4,}/gi,
+        message: 'Potential C2 beacon: periodic network requests'
+    },
+    {
+        id: 'mal-c2-websocket', title: 'WebSocket C2 Channel', severity: 'critical', category: 'malicious',
+        pattern: /new\s+WebSocket\s*\([^)]*\)\s*\.on(?:message|open)\s*=\s*[^;]*eval/gi,
+        message: 'WebSocket connection with code execution - potential C2'
+    },
+    {
+        id: 'mal-c2-dns', title: 'DNS Tunneling Indicator', severity: 'high', category: 'malicious',
+        pattern: /dns\.resolve\s*\([^)]*base64|atob\s*\([^)]*\.split\s*\(['"][.]['"]\)/gi,
+        message: 'Potential DNS tunneling for data exfiltration'
+    },
+    // Anti-Debugging
+    {
+        id: 'mal-antidebug-devtools', title: 'Anti-DevTools Detection', severity: 'high', category: 'malicious',
+        pattern: /console\.log\s*\([^)]*\)\s*;\s*debugger|window\.outerWidth\s*-\s*window\.innerWidth\s*>\s*\d+/gi,
+        message: 'Anti-debugging/DevTools detection code'
+    },
+    {
+        id: 'mal-antidebug-timing', title: 'Timing-Based Anti-Debug', severity: 'medium', category: 'malicious',
+        pattern: /performance\.now\s*\(\s*\)\s*-\s*\w+\s*>\s*\d{2,}/gi,
+        message: 'Timing-based anti-debugging technique'
+    },
+    // Evasion Techniques
+    {
+        id: 'mal-evasion-vm-detect', title: 'VM Detection', severity: 'high', category: 'malicious',
+        pattern: /navigator\.(?:hardwareConcurrency|deviceMemory)\s*[<>=]+\s*[12]|\bVMware\b|\bVirtualBox\b/gi,
+        message: 'Virtual machine/sandbox detection code'
+    },
+    {
+        id: 'mal-evasion-user-agent', title: 'Bot/Crawler Evasion', severity: 'medium', category: 'malicious',
+        pattern: /navigator\.userAgent\.(?:includes|match)\s*\([^)]*(?:bot|crawler|spider|headless)/gi,
+        message: 'Bot/crawler detection for potential evasion'
+    },
+    // Cryptojacking
+    {
+        id: 'mal-cryptojack', title: 'Cryptojacking Indicator', severity: 'critical', category: 'malicious',
+        pattern: /(?:coinhive|cryptonight|webminer|mineralt)|wasm.*miner/gi,
+        message: 'Potential cryptocurrency mining code detected'
+    },
+    // Persistence
+    {
+        id: 'mal-persist-sw', title: 'Malicious Service Worker', severity: 'high', category: 'malicious',
+        pattern: /serviceWorker\.register\s*\([^)]*\).*fetch\s*\([^)]*(?:eval|Function)/gi,
+        message: 'Service worker with suspicious execution patterns'
+    },
+    {
+        id: 'mal-persist-storage', title: 'Persistent Payload Storage', severity: 'medium', category: 'malicious',
+        pattern: /localStorage\.setItem\s*\([^)]*,\s*(?:atob|btoa)\s*\(/gi,
+        message: 'Encoded payload stored in localStorage'
+    },
+];
+
+// ==================== CLOUD INFRASTRUCTURE PATTERNS (AWS, GCP, Azure, Terraform) ====================
+export const cloudInfraPatterns: VulnPattern[] = [
+    // AWS
+    {
+        id: 'cloud-aws-public-s3', title: 'Public S3 Bucket', severity: 'critical', category: 'cloud',
+        pattern: /acl\s*=\s*['"]public-read['"]|BlockPublicAcls\s*=\s*false/gi,
+        message: 'S3 bucket configured with public access'
+    },
+    {
+        id: 'cloud-aws-wildcard-iam', title: 'Wildcard IAM Policy', severity: 'critical', category: 'cloud',
+        pattern: /"Action"\s*:\s*"\*"|"Resource"\s*:\s*"\*"/g,
+        message: 'IAM policy with wildcard permissions'
+    },
+    {
+        id: 'cloud-aws-unencrypted-rds', title: 'Unencrypted RDS', severity: 'high', category: 'cloud',
+        pattern: /storage_encrypted\s*=\s*false|StorageEncrypted:\s*false/gi,
+        message: 'RDS instance without encryption at rest'
+    },
+    {
+        id: 'cloud-aws-open-sg', title: 'Open Security Group', severity: 'critical', category: 'cloud',
+        pattern: /cidr_blocks\s*=\s*\[\s*['"]0\.0\.0\.0\/0['"]\s*\]|CidrIp:\s*0\.0\.0\.0\/0/gi,
+        message: 'Security group open to all IP addresses'
+    },
+    // GCP
+    {
+        id: 'cloud-gcp-public-storage', title: 'Public GCS Bucket', severity: 'critical', category: 'cloud',
+        pattern: /allUsers|allAuthenticatedUsers/g,
+        message: 'GCS bucket with public access'
+    },
+    // Azure
+    {
+        id: 'cloud-azure-public-blob', title: 'Public Azure Blob', severity: 'critical', category: 'cloud',
+        pattern: /PublicAccess\s*=\s*['"](?:Container|Blob)['"]/gi,
+        message: 'Azure blob storage with public access'
+    },
+    // Terraform General
+    {
+        id: 'cloud-tf-hardcoded-secret', title: 'Hardcoded Secret in Terraform', severity: 'critical', category: 'cloud',
+        pattern: /(?:password|secret_key|api_key)\s*=\s*"[^"]{8,}"/gi,
+        message: 'Hardcoded secret in Terraform config'
+    },
+    {
+        id: 'cloud-tf-no-logging', title: 'Missing Logging', severity: 'medium', category: 'cloud',
+        pattern: /enable_logging\s*=\s*false|logging_config\s*\{\s*\}/gi,
+        message: 'Cloud resource without logging enabled'
+    },
+];
+
+// ==================== ADVANCED SAST (Taint, Data Flow) ====================
+export const advancedSastPatterns: VulnPattern[] = [
+    // Taint Sources to Sinks
+    {
+        id: 'sast-taint-query-to-html', title: 'Query Param to HTML', severity: 'critical', category: 'sast',
+        pattern: /(?:req\.query|searchParams\.get)\s*\([^)]+\)[^;]*(?:innerHTML|outerHTML|document\.write)/gi,
+        message: 'User input flows directly to HTML output (XSS)'
+    },
+    {
+        id: 'sast-taint-body-to-sql', title: 'Request Body to SQL', severity: 'critical', category: 'sast',
+        pattern: /(?:req\.body|request\.json)\s*\.[^;]*(?:query|execute|raw)\s*\(/gi,
+        message: 'Request body flows to SQL query'
+    },
+    {
+        id: 'sast-taint-header-to-log', title: 'Header to Log Injection', severity: 'medium', category: 'sast',
+        pattern: /(?:req\.headers|request\.headers)\[[^\]]+\][^;]*(?:console\.log|logger)/gi,
+        message: 'User-controlled header logged without sanitization'
+    },
+    // Unsafe Deserialization
+    {
+        id: 'sast-deser-json-proto', title: 'JSON Parse Prototype', severity: 'high', category: 'sast',
+        pattern: /JSON\.parse\s*\([^)]+\)\s*\.(?:__proto__|constructor)/gi,
+        message: 'JSON parse result accessing prototype chain'
+    },
+    // Insecure Randomness in Security Context
+    {
+        id: 'sast-weak-token', title: 'Weak Token Generation', severity: 'high', category: 'sast',
+        pattern: /(?:token|session|csrf)\s*=\s*(?:Math\.random|Date\.now)/gi,
+        message: 'Security token generated with weak randomness'
+    },
+];
+
+// ==================== NIST/OWASP COMPLIANCE PATTERNS ====================
+export const compliancePatterns: VulnPattern[] = [
+    // NIST CSF 2.0 - Protect (PR)
+    {
+        id: 'compliance-no-input-validation', title: 'Missing Input Validation', severity: 'high', category: 'compliance',
+        pattern: /app\.(?:post|put|patch)\s*\([^)]+,\s*(?:async\s*)?\([^)]*\)\s*=>\s*\{(?![^}]*(?:validate|sanitize|joi|zod|yup))/gi,
+        message: 'API endpoint without input validation (NIST PR.DS)',
+        owasp: 'A03:2021'
+    },
+    // OWASP A01 - Broken Access Control
+    {
+        id: 'compliance-missing-authz', title: 'Missing Authorization Check', severity: 'critical', category: 'compliance',
+        pattern: /router\.(?:delete|put)\s*\([^)]*\/:id[^)]*,\s*(?:async\s*)?\([^)]*\)\s*=>\s*\{(?![^}]*(?:authorize|isOwner|checkPermission))/gi,
+        message: 'Resource modification without authorization (OWASP A01)',
+        owasp: 'A01:2021'
+    },
+    // OWASP A07 - Identification and Auth Failures
+    {
+        id: 'compliance-weak-password-policy', title: 'Weak Password Policy', severity: 'medium', category: 'compliance',
+        pattern: /password\.length\s*[<>=]+\s*[1-7][^0-9]|minLength\s*:\s*[1-7][^0-9]/gi,
+        message: 'Password policy allows weak passwords (OWASP A07)',
+        owasp: 'A07:2021'
+    },
+    // OWASP A09 - Security Logging Failures
+    {
+        id: 'compliance-no-security-logging', title: 'Missing Security Logging', severity: 'medium', category: 'compliance',
+        pattern: /catch\s*\([^)]*\)\s*\{\s*(?:return|res\.status)(?![^}]*(?:log|audit|sentry|datadog))/gi,
+        message: 'Security event not logged (OWASP A09)',
+        owasp: 'A09:2021'
+    },
+];
+
+// ==================== ADVANCED UNIT TEST SECURITY ====================
+export const advancedTestPatterns: VulnPattern[] = [
+    // Malicious Test Patterns
+    {
+        id: 'test-malicious-network', title: 'Test Makes External Requests', severity: 'high', category: 'test-security',
+        pattern: /(?:it|test|describe)\s*\([^)]+,\s*(?:async\s*)?\([^)]*\)\s*=>\s*\{[^}]*fetch\s*\(['"]https?:\/\/(?!localhost|127\.0\.0\.1)/gi,
+        message: 'Unit test makes external network requests'
+    },
+    {
+        id: 'test-malicious-fs', title: 'Test Modifies Filesystem', severity: 'high', category: 'test-security',
+        pattern: /(?:it|test)\s*\([^)]+,\s*(?:async\s*)?\([^)]*\)\s*=>\s*\{[^}]*(?:writeFileSync|unlinkSync|rmSync)\s*\(/gi,
+        message: 'Unit test modifies filesystem outside of setup/teardown'
+    },
+    // Security Logic in Tests
+    {
+        id: 'test-security-skip', title: 'Security Test Skipped', severity: 'medium', category: 'test-security',
+        pattern: /(?:it|test)\.skip\s*\([^)]*(?:security|auth|permission|access)/gi,
+        message: 'Security-related test is skipped'
+    },
+    {
+        id: 'test-expect-any', title: 'Overly Permissive Test Assertion', severity: 'low', category: 'test-security',
+        pattern: /expect\s*\([^)]+\)\.toBe\s*\(\s*expect\.any\s*\(/gi,
+        message: 'Test uses overly permissive assertion for security-sensitive value'
+    },
+];
+
+// ==================== WSTG ADVANCED PENTEST PATTERNS ====================
+export const wstgAdvancedPatterns: VulnPattern[] = [
+    // WSTG-ATHN (Authentication)
+    {
+        id: 'wstg-athn-lockout', title: 'No Account Lockout', severity: 'high', category: 'pentest',
+        pattern: /login|authenticate(?![^}]*(?:lockout|attempts|maxRetries|rateLimit))/gi,
+        message: 'Login function without account lockout mechanism (WSTG-ATHN-03)'
+    },
+    // WSTG-AUTHZ (Authorization)
+    {
+        id: 'wstg-authz-idor', title: 'IDOR Vulnerability', severity: 'critical', category: 'pentest',
+        pattern: /findById\s*\(\s*(?:req\.params|req\.query|request\.args)\.[^)]+\)(?![^;]*(?:ownerId|userId|checkOwner))/gi,
+        message: 'Direct object reference without ownership check (WSTG-AUTHZ-04)'
+    },
+    // WSTG-BUSL (Business Logic)
+    {
+        id: 'wstg-busl-race', title: 'Race Condition in Transaction', severity: 'high', category: 'pentest',
+        pattern: /async\s+function\s+\w*(?:transfer|withdraw|purchase)[^}]*await\s+[^;]+;\s*await/gi,
+        message: 'Multiple async operations without transaction lock (WSTG-BUSL-07)'
+    },
+    // WSTG-INPV (Input Validation)
+    {
+        id: 'wstg-inpv-file-upload', title: 'Unsafe File Upload', severity: 'critical', category: 'pentest',
+        pattern: /multer|formidable|busboy(?![^}]*(?:fileFilter|mimetype|allowedTypes))/gi,
+        message: 'File upload without type validation (WSTG-INPV-12)'
+    },
+    // WSTG-SESS (Session)
+    {
+        id: 'wstg-sess-no-rotate', title: 'Session Not Rotated', severity: 'medium', category: 'pentest',
+        pattern: /login|authenticate(?![^}]*(?:regenerate|rotate|newSession))/gi,
+        message: 'Session not regenerated after login (WSTG-SESS-03)'
+    },
+];
+
 // ==================== ALL PATTERNS COMBINED ====================
 export const allPatterns: VulnPattern[] = [
     ...secretPatterns,
@@ -872,6 +1253,16 @@ export const allPatterns: VulnPattern[] = [
     ...flaskPatterns,
     ...owaspApiPatterns,
     ...configPatterns,
+    ...maliciousPatterns,
+    ...infraPatterns,
+    ...pentestPatterns,
+    ...unitTestPatterns,
+    ...expertMaliciousPatterns,
+    ...cloudInfraPatterns,
+    ...advancedSastPatterns,
+    ...compliancePatterns,
+    ...advancedTestPatterns,
+    ...wstgAdvancedPatterns,
 ];
 
 // Pattern count for UI display
@@ -899,4 +1290,10 @@ export const patternStats = {
     flask: flaskPatterns.length,
     owaspApi: owaspApiPatterns.length,
     config: configPatterns.length,
+    malicious: maliciousPatterns.length + expertMaliciousPatterns.length,
+    infra: infraPatterns.length + cloudInfraPatterns.length,
+    pentest: pentestPatterns.length + wstgAdvancedPatterns.length,
+    unitTest: unitTestPatterns.length + advancedTestPatterns.length,
+    sast: advancedSastPatterns.length,
+    compliance: compliancePatterns.length,
 };
