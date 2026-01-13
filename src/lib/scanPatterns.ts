@@ -12,6 +12,7 @@ export interface VulnPattern {
     owasp?: string;
     fix?: string;
     languages?: string[];
+    compliance?: string[];
 }
 
 // ==================== SECRETS DETECTION (50+ patterns) ====================
@@ -1239,6 +1240,52 @@ export const wstgAdvancedPatterns: VulnPattern[] = [
     },
 ];
 
+// ==================== LICENSE AUDITOR ====================
+export const licensePatterns: VulnPattern[] = [
+    {
+        id: 'license-gpl', title: 'GPL License Detected', severity: 'info', category: 'compliance',
+        pattern: /GNU General Public License|GPL-2\.0|GPL-3\.0/gi,
+        message: 'GPL license detected (copyleft risk)', owasp: 'A06:2021'
+    },
+    {
+        id: 'license-agpl', title: 'AGPL License Detected', severity: 'low', category: 'compliance',
+        pattern: /GNU Affero General Public License|AGPL-3\.0/gi,
+        message: 'AGPL license detected (network copyleft risk)', owasp: 'A06:2021'
+    }
+];
+
+// ==================== HIPAA (Healthcare) ====================
+export const hipaaPatterns: VulnPattern[] = [
+    {
+        id: 'hipaa-phi-logging', title: 'PHI Case Logging', severity: 'high', category: 'compliance',
+        pattern: /(?:console\.(?:log|debug|info)|logger\.(?:info|debug))\s*\(.*(?:patient|phi|mrn|ssn|health|medical).*\)/gi,
+        message: 'Potential PHI leak in application logs (HIPAA violation)',
+        compliance: ['HIPAA']
+    },
+    {
+        id: 'hipaa-unencrypted-phi', title: 'Unencrypted PHI Storage', severity: 'critical', category: 'compliance',
+        pattern: /(?:localStorage|sessionStorage|cookie)\.set\([^,]+,.*(?:patient|health|ssn).*\)/gi,
+        message: 'PHI stored in unencrypted browser storage (HIPAA violation)',
+        compliance: ['HIPAA']
+    }
+];
+
+// ==================== PCI-DSS (Fintech) ====================
+export const pciDssPatterns: VulnPattern[] = [
+    {
+        id: 'pci-card-number', title: 'Card Number Pattern', severity: 'critical', category: 'compliance',
+        pattern: /['"]\d{4}[ -]?\d{4}[ -]?\d{4}[ -]?\d{4}['"]/gi,
+        message: 'Potential hardcoded credit card number detected (PCI-DSS violation)',
+        compliance: ['PCI-DSS']
+    },
+    {
+        id: 'pci-cvv', title: 'Hardcoded CVV', severity: 'critical', category: 'compliance',
+        pattern: /(?:cvv|cvc|security_code)\s*[:=]\s*['"]\d{3,4}['"]/gi,
+        message: 'Hardcoded CVV/Security code detected (PCI-DSS violation)',
+        compliance: ['PCI-DSS']
+    }
+];
+
 // ==================== GRAPHQL SECURITY ====================
 export const graphqlPatterns: VulnPattern[] = [
     {
@@ -1264,6 +1311,28 @@ export const jwtPatterns: VulnPattern[] = [
         id: 'jwt-localstorage', title: 'JWT in localStorage', severity: 'medium', category: 'auth',
         pattern: /localStorage\.setItem\s*\([^,]*(?:token|jwt|auth)/gi,
         message: 'Tokens in localStorage are vulnerable to XSS', cwe: 'CWE-922'
+    }
+];
+
+// ==================== SUPPLY CHAIN (SCA) ====================
+export const typosquattingPatterns: VulnPattern[] = [
+    {
+        id: 'sca-typosquat-react', title: 'Potential React Typosquat', severity: 'high', category: 'supply-chain',
+        pattern: /['"](?:reacct|raect|react-dom-server|reactjs-dom)['"]/gi,
+        message: 'Suspicious dependency name detected (potential typosquatting)',
+        owasp: 'A06:2021'
+    },
+    {
+        id: 'sca-typosquat-lodash', title: 'Potential Lodash Typosquat', severity: 'high', category: 'high',
+        pattern: /['"](?:lodesh|loadsh|lodas)['"]/gi,
+        message: 'Suspicious dependency name detected (potential typosquatting)',
+        owasp: 'A06:2021'
+    },
+    {
+        id: 'sca-suspicious-install', title: 'Suspicious Preinstall Script', severity: 'critical', category: 'supply-chain',
+        pattern: /"preinstall"\s*:\s*"[^"]*(?:curl|wget|bash|sh|python|perl|nc)[^"]*"/gi,
+        message: 'Malicious preinstall script detected in package.json',
+        owasp: 'A06:2021'
     }
 ];
 
@@ -1304,6 +1373,10 @@ export const allPatterns: VulnPattern[] = [
     ...wstgAdvancedPatterns,
     ...graphqlPatterns,
     ...jwtPatterns,
+    ...licensePatterns,
+    ...hipaaPatterns,
+    ...pciDssPatterns,
+    ...typosquattingPatterns,
 ];
 
 // Pattern count for UI display
@@ -1331,10 +1404,10 @@ export const patternStats = {
     flask: flaskPatterns.length,
     owaspApi: owaspApiPatterns.length + graphqlPatterns.length,
     config: configPatterns.length,
-    malicious: maliciousPatterns.length + expertMaliciousPatterns.length,
+    malicious: maliciousPatterns.length + expertMaliciousPatterns.length + typosquattingPatterns.length,
     infra: infraPatterns.length + cloudInfraPatterns.length,
     pentest: pentestPatterns.length + wstgAdvancedPatterns.length,
     unitTest: unitTestPatterns.length + advancedTestPatterns.length,
     sast: advancedSastPatterns.length,
-    compliance: compliancePatterns.length,
+    compliance: compliancePatterns.length + licensePatterns.length + hipaaPatterns.length + pciDssPatterns.length,
 };
