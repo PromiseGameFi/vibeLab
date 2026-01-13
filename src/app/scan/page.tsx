@@ -720,7 +720,7 @@ ${aiExploitationPath[r.id] ? `- **Exploitation Path:** ${aiExploitationPath[r.id
                                     />
                                 </svg>
                                 <span className="absolute text-3xl font-bold text-white">
-                                    {Math.max(0, 100 - (summary?.critical || 0) * 30 - (summary?.high || 0) * 10)}
+                                    {Math.max(0, 100 - (summary?.critical || 0) * 25 - (summary?.high || 0) * 10 - (summary?.medium || 0) * 5)}
                                 </span>
                             </div>
                             <span className="text-[10px] uppercase tracking-[0.2em] font-bold mt-4 text-[var(--foreground-muted)]">Cyber Risk Score</span>
@@ -733,9 +733,12 @@ ${aiExploitationPath[r.id] ? `- **Exploitation Path:** ${aiExploitationPath[r.id
                             <p className="text-sm text-[var(--foreground-secondary)] mb-6 leading-relaxed">
                                 Our expert intelligence engine detected <strong>{summary?.critical} critical</strong> and <strong>{summary?.high} high</strong> level risks.
                                 Based on the <strong>{scanLevel.toUpperCase()}</strong> audit, the overall security posture is
-                                <span className={`ml-1 font-bold ${summary?.critical && summary.critical > 0 ? 'text-red-500' : 'text-green-500'}`}>
-                                    {summary?.critical && summary.critical > 0 ? 'COMPROMISED' : 'STABLE'}.
-                                </span>
+                                {(() => {
+                                    const score = Math.max(0, 100 - (summary?.critical || 0) * 25 - (summary?.high || 0) * 10 - (summary?.medium || 0) * 5);
+                                    if (score >= 80) return <span className="ml-1 font-bold text-green-500">STABLE</span>;
+                                    if (score >= 50) return <span className="ml-1 font-bold text-yellow-500">CAUTION</span>;
+                                    return <span className="ml-1 font-bold text-red-500">COMPROMISED</span>;
+                                })()}.
                             </p>
 
                             {/* VibeSecure Badge Preview */}
@@ -746,7 +749,17 @@ ${aiExploitationPath[r.id] ? `- **Exploitation Path:** ${aiExploitationPath[r.id
                                     </div>
                                     <div>
                                         <div className="text-[10px] text-green-400 font-bold uppercase tracking-wider">VibeSecure Certified</div>
-                                        <div className="text-xs text-white font-mono">Grade: {Math.max(0, 100 - (summary?.critical || 0) * 30 - (summary?.high || 0) * 10) > 80 ? 'A+' : 'B'}</div>
+                                        <div className="text-xs text-white font-mono">
+                                            Grade: {(() => {
+                                                const score = Math.max(0, 100 - (summary?.critical || 0) * 25 - (summary?.high || 0) * 10 - (summary?.medium || 0) * 5);
+                                                if (score >= 90) return 'A+';
+                                                if (score >= 80) return 'A';
+                                                if (score >= 70) return 'B';
+                                                if (score >= 60) return 'C';
+                                                if (score >= 40) return 'D';
+                                                return 'F';
+                                            })()}
+                                        </div>
                                     </div>
                                 </div>
                                 <button
@@ -760,11 +773,19 @@ ${aiExploitationPath[r.id] ? `- **Exploitation Path:** ${aiExploitationPath[r.id
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="p-3 rounded-xl bg-white/5 border border-white/10">
                                     <div className="text-[10px] text-[var(--foreground-muted)] uppercase mb-1">Max Blast Radius</div>
-                                    <div className="text-sm font-bold text-white">Full System Takeover</div>
+                                    <div className="text-sm font-bold text-white">
+                                        {summary?.critical && summary.critical > 0 ? 'Full System Takeover' :
+                                            summary?.high && summary.high > 0 ? 'Account Compromise' :
+                                                'Limited Data Leak'}
+                                    </div>
                                 </div>
                                 <div className="p-3 rounded-xl bg-white/5 border border-white/10">
                                     <div className="text-[10px] text-[var(--foreground-muted)] uppercase mb-1">Remediation Priority</div>
-                                    <div className="text-sm font-bold text-[var(--accent)]">Immediate (Phase 1)</div>
+                                    <div className="text-sm font-bold text-[var(--accent)]">
+                                        {summary?.critical && summary.critical > 0 ? 'Immediate (Phase 1)' :
+                                            summary?.high && summary.high > 0 ? 'High Priority (Phase 2)' :
+                                                'Scheduled (Phase 3)'}
+                                    </div>
                                 </div>
                             </div>
                         </div>
