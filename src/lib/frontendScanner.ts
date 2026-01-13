@@ -1,7 +1,5 @@
 import { allPatterns, VulnPattern, patternStats } from './scanPatterns';
 import { allWeb3Patterns, detectWeb3Language } from './web3Patterns';
-import { allApiPatterns } from './apiSecurityPatterns';
-import { allAdditionalPatterns } from './additionalPatterns';
 
 export interface ScanFinding {
     id: string;
@@ -159,50 +157,6 @@ export function scanWeb3Content(content: string, filename: string): ScanFinding[
     return findings;
 }
 
-export function scanApiContent(content: string, filename: string): ScanFinding[] {
-    return scanFileContent(content, filename, allPatterns.filter(p => p.category === 'api'));
-}
-
-export function scanAdditionalContent(content: string, filename: string): ScanFinding[] {
-    const lowerName = filename.toLowerCase();
-    const isDockerfile = lowerName.includes('dockerfile');
-    const isCICD = lowerName.includes('.github/workflows') || lowerName.includes('.gitlab-ci');
-    const ext = filename.split('.').pop()?.toLowerCase() || '';
-    const isReactFile = ['js', 'jsx', 'ts', 'tsx'].includes(ext);
-
-    const applicablePatterns = allAdditionalPatterns.filter(p => {
-        if (p.category === 'container' && !isDockerfile) return false;
-        if (p.category === 'cicd' && !isCICD) return false;
-        if (p.category === 'react' && !isReactFile) return false;
-        return true;
-    });
-
-    const findings: ScanFinding[] = [];
-    const lines = content.split('\n');
-    for (const pattern of applicablePatterns) {
-        const regex = new RegExp(pattern.pattern.source, pattern.pattern.flags);
-        let match;
-        while ((match = regex.exec(content)) !== null) {
-            const beforeMatch = content.substring(0, match.index);
-            const lineNumber = (beforeMatch.match(/\n/g) || []).length + 1;
-            findings.push({
-                id: generateId(),
-                ruleId: pattern.id,
-                severity: pattern.severity,
-                category: pattern.category,
-                title: pattern.name,
-                message: pattern.description,
-                file: filename,
-                line: lineNumber,
-                code: (lines[lineNumber - 1] || '').trim().substring(0, 200),
-                fix: pattern.fix,
-                scanner: 'vibelab-patterns',
-            });
-            if (!regex.global) break;
-        }
-    }
-    return findings;
-}
 
 // GitHub API Helpers
 const getGitHubHeaders = () => {
