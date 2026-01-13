@@ -10,9 +10,13 @@ export interface VulnPattern {
     message: string;
     cwe?: string;
     owasp?: string;
+    swc?: string;
     fix?: string;
     languages?: string[];
     compliance?: string[];
+    cvss?: number;
+    impact?: string;
+    remediation?: string;
 }
 
 // ==================== SECRETS DETECTION (50+ patterns) ====================
@@ -20,7 +24,9 @@ export const secretPatterns: VulnPattern[] = [
     // OpenAI
     {
         id: 'secret-openai', title: 'OpenAI API Key', severity: 'critical', category: 'secrets',
-        pattern: /sk-[a-zA-Z0-9]{48}/g, message: 'OpenAI API key exposed', cwe: 'CWE-798'
+        pattern: /sk-[a-zA-Z0-9]{48}/g, message: 'OpenAI API key exposed', cwe: 'CWE-798',
+        cvss: 9.8, impact: 'Total compromise of associated AI services and potential data exfiltration.',
+        remediation: 'Immediately revoke the key in OpenAI dashboard and rotate all production secrets.'
     },
 
     // Anthropic
@@ -421,8 +427,19 @@ export const ssrfPatterns: VulnPattern[] = [
 // ==================== SOLIDITY PATTERNS (for Web3) ====================
 export const solidityPatterns: VulnPattern[] = [
     {
-        id: 'sol-reentrancy', title: 'Reentrancy Vulnerability', severity: 'critical', category: 'solidity',
-        pattern: /\.call\s*\{[^}]*value\s*:/gi, message: 'External call with value - check for reentrancy', cwe: 'CWE-841'
+        id: 'sol-reentrancy',
+        title: 'Reentrancy Vulnerability',
+        message: 'State changes occur after external calls, allowing attackers to re-enter the function before state is updated.',
+        severity: 'critical',
+        languages: ['solidity'],
+        category: 'smart-contract',
+        pattern: /\.call\{.*value.*\}|\.send\(|\.transfer\([^;]*\);[^}]*[a-zA-Z_][a-zA-Z0-9_]*\s*[+\-*/]?=/,
+        fix: 'Apply the Checks-Effects-Interactions pattern: update state before making external calls. Use ReentrancyGuard from OpenZeppelin.',
+        cwe: 'CWE-841',
+        swc: 'SWC-107',
+        cvss: 8.8,
+        impact: 'Attacker can drain the entire contract balance through recursive calls.',
+        remediation: 'Update state variables BEFORE making external calls. Implement OpenZeppelin ReentrancyGuard.'
     },
     {
         id: 'sol-tx-origin', title: 'tx.origin Authentication', severity: 'high', category: 'solidity',
