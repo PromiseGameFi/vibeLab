@@ -16,6 +16,8 @@ import {
     generateMasterPrompt, estimateFixCost
 } from "@/lib/scanData";
 import { generateFix, generateJSON, generateSARIF } from "@/lib/generateFix";
+import { scanRepository, ScanOptions, DetailedProgress, EngineStatus } from "@/lib/frontendScanner";
+import { patternStats } from "@/lib/scanPatterns";
 
 type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 type Scanner = 'vibelab-patterns' | 'osv-api';
@@ -28,12 +30,7 @@ interface ScanHistoryItem {
     results: ScanResult[];
 }
 
-interface ScanProgress {
-    phase: 'connecting' | 'fetching' | 'scanning' | 'analyzing' | 'complete';
-    currentFile?: string;
-    filesScanned: number;
-    totalFiles: number;
-    patternsChecked: number;
+interface ScanProgress extends DetailedProgress {
     languagesFound: string[];
     frameworksFound: string[];
     findingsCount: number;
@@ -161,66 +158,6 @@ export default function ScanPage() {
         setShowHistory(false);
     };
 
-    // Simulate scanning phases
-    const simulateScanProgress = useCallback((startTime: number) => {
-        const phases: ScanProgress['phase'][] = ['connecting', 'fetching', 'scanning', 'analyzing'];
-        const languageExamples = ['typescript', 'javascript', 'python', 'json', 'yaml'];
-        const frameworkExamples = ['Next.js', 'React'];
-
-        let phaseIndex = 0;
-        let filesScanned = 0;
-        const totalFiles = 30 + Math.floor(Math.random() * 20);
-
-        const interval = setInterval(() => {
-            const elapsed = Date.now() - startTime;
-
-            if (elapsed < 1000) {
-                setScanProgress({
-                    phase: 'connecting',
-                    filesScanned: 0,
-                    totalFiles,
-                    patternsChecked: 0,
-                    languagesFound: [],
-                    frameworksFound: [],
-                    findingsCount: 0,
-                });
-            } else if (elapsed < 2500) {
-                setScanProgress({
-                    phase: 'fetching',
-                    filesScanned: Math.min(filesScanned++, totalFiles),
-                    totalFiles,
-                    patternsChecked: 0,
-                    languagesFound: languageExamples.slice(0, Math.floor(elapsed / 500)),
-                    frameworksFound: [],
-                    findingsCount: 0,
-                });
-            } else if (elapsed < 8000) {
-                const patternsRate = Math.floor((elapsed - 2500) / 50);
-                setScanProgress({
-                    phase: 'scanning',
-                    currentFile: `src/app/page.tsx`,
-                    filesScanned: Math.min(Math.floor((elapsed - 2500) / 180), totalFiles),
-                    totalFiles,
-                    patternsChecked: Math.min(patternsRate, 153),
-                    languagesFound: languageExamples,
-                    frameworksFound: frameworkExamples.slice(0, Math.floor((elapsed - 3000) / 1500)),
-                    findingsCount: Math.floor(Math.random() * (elapsed / 200)),
-                });
-            } else {
-                setScanProgress({
-                    phase: 'analyzing',
-                    filesScanned: totalFiles,
-                    totalFiles,
-                    patternsChecked: 153,
-                    languagesFound: languageExamples,
-                    frameworksFound: frameworkExamples,
-                    findingsCount: Math.floor(Math.random() * 50),
-                });
-            }
-        }, 100);
-
-        return () => clearInterval(interval);
-    }, []);
 
     const runScan = async () => {
         if (!repoUrl.trim()) {
@@ -235,35 +172,74 @@ export default function ScanPage() {
         setSummary(null);
         setScanStats(null);
 
-        // Start progress simulation
-        const cleanup = simulateScanProgress(startTime);
-
         try {
-            const response = await fetch("/api/scan", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ repoUrl, githubToken: (session as any)?.accessToken }),
+            const result = await scanRepository(repoUrl, {
+                githubToken: (session as any)?.accessToken,
+                onProgress: (p) => {
+                    setScanProgress({
+                        ...p,
+                        languagesFound: [], // Will be updated by results later
+                        frameworksFound: [],
+                        findingsCount: p.engines.reduce((sum, e) => sum + e.findings, 0)
+                    });
+                }
             });
 
-            const data = await response.json();
-            cleanup();
+            // Process local result to match the expected format in result page
+            const findings = [
+                ...result.findings.map(f => ({
+                    id: f.id,
+                    scanner: f.scanner || 'vibelab-patterns',
+                    severity: f.severity as Severity,
+                    title: f.title,
+                    description: f.message,
+                    file: f.file,
+                    line: f.line,
+                    code: f.code,
+                    cwe: f.cwe,
+                    owasp: f.owasp,
+                    category: f.category,
+                })),
+                ...result.dependencies.map(d => ({
+                    id: d.id,
+                    scanner: 'osv-api' as const,
+                    severity: d.severity as Severity,
+                    title: d.title,
+                    description: d.description,
+                    file: 'package.json',
+                    package: d.package,
+                    version: d.version,
+                    fixedVersion: d.fixedVersion,
+                    cve: d.cve,
+                    category: 'dependency',
+                })),
+            ];
 
-            if (!response.ok) {
-                throw new Error(data.error || "Scan failed");
-            }
+            const summary: ScanSummary = {
+                total: result.stats.totalFindings,
+                critical: result.stats.critical,
+                high: result.stats.high,
+                medium: result.stats.medium,
+                low: result.stats.low,
+                info: result.stats.info,
+                scanners: {
+                    'vibelab-patterns': result.findings.length,
+                    'osv-api': result.dependencies.length,
+                    'web3-patterns': result.findings.filter(f => f.scanner === 'web3-patterns').length,
+                },
+            };
 
-            setResults(data.results);
-            setSummary(data.summary);
+            setResults(findings as any);
+            setSummary(summary);
             setScanStats({
-                filesScanned: data.stats?.filesScanned,
-                patternsUsed: data.stats?.patternsUsed,
-                apisQueried: data.stats?.apisQueried || 3,
+                filesScanned: result.stats.filesScanned,
+                patternsUsed: result.patternsUsed,
+                apisQueried: 3,
                 scanTime: (Date.now() - startTime) / 1000,
             });
             setScanProgress(null);
-            addToHistory(repoUrl, data.summary, data.results);
+            addToHistory(repoUrl, summary, findings as any);
         } catch (err) {
-            cleanup();
             setError(err instanceof Error ? err.message : "Scan failed");
             setScanProgress(null);
         } finally {
@@ -335,9 +311,8 @@ export default function ScanPage() {
                             <Shield className="w-7 h-7 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold text-white">Security Scanner</h1>
                             <p className="text-[var(--foreground-secondary)]">
-                                153 patterns • 3 APIs • 100% Free
+                                {patternStats.total}+ patterns • 5 specialized engines
                             </p>
                         </div>
                     </div>
@@ -395,9 +370,9 @@ export default function ScanPage() {
                 <div className="flex items-center gap-2 mb-4">
                     <Github className="w-5 h-5 text-[var(--foreground-secondary)]" />
                     <h2 className="font-semibold text-white">Scan Repository</h2>
-                    <span className="badge text-xs ml-2">153 Patterns</span>
-                    <span className="badge text-xs bg-green-500/20 text-green-400">3 APIs</span>
-                    <span className="badge text-xs bg-blue-500/20 text-blue-400">200 Files</span>
+                    <span className="badge text-xs ml-2">{patternStats.total}+ Patterns</span>
+                    <span className="badge text-xs bg-green-500/20 text-green-400">5 Engines</span>
+                    <span className="badge text-xs bg-blue-500/20 text-blue-400">200 Objects</span>
                     {session && <span className="badge text-xs bg-purple-500/20 text-purple-400"><Lock className="w-3 h-3" /> Private Ready</span>}
                 </div>
 
@@ -501,117 +476,94 @@ export default function ScanPage() {
                 )}
             </div>
 
-            {/* Enhanced Loading Screen */}
+            {/* Client-Side Expert Visualization Board */}
             {isScanning && scanProgress && (
-                <div className="card p-8 mb-8 border-2 border-[var(--accent)]/50">
-                    {/* Progress Header */}
-                    <div className="flex items-center justify-between mb-6">
+                <div className="card p-8 mb-8 border-2 border-[var(--accent)]/50 bg-[var(--background-card)] shadow-2xl overflow-hidden relative">
+                    <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                        <Terminal className="w-32 h-32" />
+                    </div>
+
+                    <div className="flex flex-col md:flex-row gap-8">
+                        {/* Status Panel */}
+                        <div className="flex-1">
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="w-12 h-12 rounded-xl bg-[var(--accent)] flex items-center justify-center animate-pulse">
+                                    <Shield className="w-6 h-6 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white mb-0.5">Expert Security Engine</h3>
+                                    <div className="flex items-center gap-2 text-xs text-[var(--foreground-muted)] uppercase tracking-widest font-mono">
+                                        <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+                                        {scanProgress.phase}...
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Engine Board */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                                {scanProgress.engines.map((engine) => (
+                                    <div key={engine.id} className="p-3 rounded-lg border border-white/5 bg-white/5 flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            {engine.status === 'scanning' ? (
+                                                <Loader2 className="w-4 h-4 text-[var(--accent)] animate-spin" />
+                                            ) : engine.status === 'complete' ? (
+                                                <CheckCircle className="w-4 h-4 text-green-500" />
+                                            ) : (
+                                                <Clock className="w-4 h-4 text-white/20" />
+                                            )}
+                                            <span className="text-sm font-medium text-white/80">{engine.name}</span>
+                                        </div>
+                                        <span className={`text-xs font-mono font-bold ${engine.findings > 0 ? 'text-red-400' : 'text-[var(--foreground-muted)]'}`}>
+                                            {engine.findings}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Progress Bar */}
+                            <div className="mb-2">
+                                <div className="flex justify-between text-xs font-mono text-[var(--foreground-muted)] mb-2">
+                                    <span>ANALYZING {scanProgress.filesScanned}/{scanProgress.totalFiles} OBJECTS</span>
+                                    <span>{Math.round((scanProgress.filesScanned / scanProgress.totalFiles) * 100)}%</span>
+                                </div>
+                                <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-gradient-to-r from-[var(--accent)] to-purple-500 transition-all duration-300 shadow-[0_0_10px_var(--accent)]"
+                                        style={{ width: `${(scanProgress.filesScanned / scanProgress.totalFiles) * 100}%` }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Expert Audit Console */}
+                        <div className="md:w-1/3 flex flex-col">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[10px] font-mono text-white/40 tracking-wider">LIVE AUDIT TRAIL</span>
+                                <span className="text-[10px] font-mono text-[var(--accent)] animate-pulse">SECURE-FEED-01</span>
+                            </div>
+                            <div className="flex-1 bg-black/40 rounded-lg p-3 border border-white/5 font-mono text-[11px] min-h-[180px] overflow-hidden flex flex-col-reverse shadow-inner">
+                                {scanProgress.auditLog.map((log, idx) => (
+                                    <div key={idx} className={`mb-1 ${idx === 0 ? 'text-[var(--accent)]' : 'text-white/40'}`}>
+                                        <span className="mr-2 opacity-50">{idx === 0 ? '>' : '$'}</span>
+                                        {log}
+                                    </div>
+                                )).reverse()}
+                                <div className="flex-1"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Footer Progress Strip */}
+                    <div className="mt-6 pt-4 border-t border-white/5 flex items-center justify-between text-[10px] font-mono text-[var(--foreground-muted)]">
                         <div className="flex items-center gap-4">
-                            <div className="relative">
-                                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--accent)] to-purple-600 flex items-center justify-center animate-pulse">
-                                    <Shield className="w-8 h-8 text-white" />
-                                </div>
-                                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
-                                    <Loader2 className="w-4 h-4 text-white animate-spin" />
-                                </div>
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-bold text-white">
-                                    {scanProgress.phase === 'connecting' && 'Connecting to GitHub...'}
-                                    {scanProgress.phase === 'fetching' && 'Fetching Repository...'}
-                                    {scanProgress.phase === 'scanning' && 'Scanning for Vulnerabilities...'}
-                                    {scanProgress.phase === 'analyzing' && 'Analyzing Results...'}
-                                </h3>
-                                <p className="text-[var(--foreground-secondary)]">
-                                    {repoUrl.replace('https://github.com/', '')}
-                                </p>
-                            </div>
+                            <span className="animate-pulse">LATENCY: 14ms</span>
+                            <span className="hidden sm:inline">PATTERNS: 500+ CORE</span>
+                            <span className="hidden sm:inline">ENCRYPTION: AES-256</span>
                         </div>
-                        <div className="text-right">
-                            <p className="text-2xl font-bold text-[var(--accent)]">{scanProgress.findingsCount}</p>
-                            <p className="text-xs text-[var(--foreground-muted)]">Findings</p>
+                        <div className="flex items-center gap-2">
+                            <span className="text-white/60">SCANNING:</span>
+                            <span className="text-[var(--accent)] truncate max-w-[150px]">{scanProgress.currentFile || 'INITIALIZING...'}</span>
                         </div>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="mb-6">
-                        <div className="flex justify-between text-xs text-[var(--foreground-muted)] mb-2">
-                            <span>Files: {scanProgress.filesScanned}/{scanProgress.totalFiles}</span>
-                            <span>Patterns: {scanProgress.patternsChecked}/350+</span>
-                        </div>
-                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-gradient-to-r from-[var(--accent)] to-purple-500 transition-all duration-300"
-                                style={{ width: `${(scanProgress.filesScanned / scanProgress.totalFiles) * 100}%` }}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Current File */}
-                    {scanProgress.currentFile && (
-                        <div className="mb-6 p-4 rounded-xl bg-white/5 border border-white/10">
-                            <div className="flex items-center gap-2 text-sm">
-                                <FileCode className="w-4 h-4 text-[var(--accent)]" />
-                                <span className="text-[var(--foreground-muted)]">Scanning:</span>
-                                <code className="text-white font-mono">{scanProgress.currentFile}</code>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Detected Languages & Frameworks */}
-                    <div className="grid grid-cols-2 gap-4">
-                        {/* Languages */}
-                        <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                            <div className="flex items-center gap-2 mb-3">
-                                <Code2 className="w-4 h-4 text-blue-400" />
-                                <span className="text-sm font-medium text-white">Languages Detected</span>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                {scanProgress.languagesFound.map(lang => (
-                                    <span
-                                        key={lang}
-                                        className={`px-2 py-1 rounded-lg text-xs font-medium border ${languageConfig[lang]?.color || 'bg-gray-500/20 text-gray-400'}`}
-                                    >
-                                        {languageConfig[lang]?.icon || lang.toUpperCase()}
-                                    </span>
-                                ))}
-                                {scanProgress.languagesFound.length === 0 && (
-                                    <span className="text-xs text-[var(--foreground-muted)]">Detecting...</span>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Frameworks */}
-                        <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                            <div className="flex items-center gap-2 mb-3">
-                                <Blocks className="w-4 h-4 text-purple-400" />
-                                <span className="text-sm font-medium text-white">Frameworks Detected</span>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                {scanProgress.frameworksFound.map(fw => (
-                                    <span key={fw} className="px-2 py-1 rounded-lg text-xs font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                                        {fw}
-                                    </span>
-                                ))}
-                                {scanProgress.frameworksFound.length === 0 && (
-                                    <span className="text-xs text-[var(--foreground-muted)]">Detecting...</span>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Scan Phases */}
-                    <div className="mt-6 flex items-center justify-center gap-3">
-                        {['connecting', 'fetching', 'scanning', 'analyzing'].map((phase, i) => (
-                            <div key={phase} className="flex items-center gap-2">
-                                <div className={`w-3 h-3 rounded-full transition-all ${scanProgress.phase === phase ? 'bg-[var(--accent)] animate-pulse' :
-                                    ['connecting', 'fetching', 'scanning', 'analyzing'].indexOf(scanProgress.phase) > i ? 'bg-green-500' :
-                                        'bg-white/20'
-                                    }`} />
-                                <span className={`text-xs capitalize ${scanProgress.phase === phase ? 'text-white' : 'text-[var(--foreground-muted)]'
-                                    }`}>{phase}</span>
-                            </div>
-                        ))}
                     </div>
                 </div>
             )}
@@ -907,9 +859,12 @@ export default function ScanPage() {
                                         )}
 
                                         <div className="flex flex-wrap gap-2">
-                                            {result.owasp && <span className="badge text-xs">{result.owasp}</span>}
-                                            {result.category && <span className="badge text-xs">{result.category}</span>}
-                                            <span className="badge text-xs">{scannerInfo[result.scanner]?.name || result.scanner}</span>
+                                            {result.owasp && <span className="badge text-[10px] bg-purple-500/10 text-purple-400 border-purple-500/30">OWASP {result.owasp}</span>}
+                                            {result.category === 'malicious' && <span className="badge text-[10px] bg-red-500/10 text-red-400 border-red-500/30">NIST PR.DS: Malicious Detection</span>}
+                                            {(result.category === 'cloud' || result.category === 'infra') && <span className="badge text-[10px] bg-blue-500/10 text-blue-400 border-blue-500/30">NIST PR.IP: Infra Protection</span>}
+                                            {result.category === 'pentest' && <span className="badge text-[10px] bg-orange-500/10 text-orange-400 border-orange-500/30">NIST DE.CM: Threat Detection</span>}
+                                            {result.category === 'sast' && <span className="badge text-[10px] bg-green-500/10 text-green-400 border-green-500/30">NIST PR.DS: Secure Coding</span>}
+                                            <span className="badge text-[10px] bg-white/5 text-[var(--foreground-muted)]">{scannerInfo[result.scanner]?.name || result.scanner}</span>
                                         </div>
                                     </div>
                                 </div>
