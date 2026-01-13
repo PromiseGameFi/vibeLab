@@ -537,7 +537,7 @@ export default function ScanPage() {
                     <div className="mb-6">
                         <div className="flex justify-between text-xs text-[var(--foreground-muted)] mb-2">
                             <span>Files: {scanProgress.filesScanned}/{scanProgress.totalFiles}</span>
-                            <span>Patterns: {scanProgress.patternsChecked}/153</span>
+                            <span>Patterns: {scanProgress.patternsChecked}/350+</span>
                         </div>
                         <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                             <div
