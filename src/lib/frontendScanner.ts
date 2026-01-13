@@ -1,5 +1,6 @@
 import { allPatterns, VulnPattern, patternStats } from './scanPatterns';
 import { allWeb3Patterns, detectWeb3Language } from './web3Patterns';
+import { detectHighEntropyStrings, getSecretStrength } from './entropyScanner';
 
 export interface ScanFinding {
     id: string;
@@ -14,6 +15,7 @@ export interface ScanFinding {
     cwe?: string;
     owasp?: string;
     fix?: string;
+    compliance?: string[];
     scanner?: 'vibelab-patterns' | 'web3-patterns';
 }
 
@@ -63,11 +65,13 @@ export interface ScanResult {
         maliciousFindings: number;
     };
     patternsUsed: number;
+    level: 'quick' | 'standard' | 'deep';
 }
 
 export interface ScanOptions {
     githubToken?: string;
     maxFiles?: number;
+    level?: 'quick' | 'standard' | 'deep';
     onProgress?: (progress: DetailedProgress) => void;
 }
 
@@ -114,6 +118,7 @@ export function scanFileContent(
                 cwe: pattern.cwe,
                 owasp: pattern.owasp,
                 fix: pattern.fix,
+                compliance: pattern.compliance,
                 scanner: 'vibelab-patterns',
             });
             if (!pattern.pattern.global) break;
@@ -232,6 +237,10 @@ export async function scanRepository(repoUrl: string, options?: ScanOptions): Pr
     updateProgress('fetching');
     const { files, packageJson } = await fetchRepoContents(repoUrl);
 
+    const scanLevel = options?.level || 'standard';
+    const applicablePatterns = getPatternsForLevel(scanLevel);
+    addLog(`Running ${scanLevel.toUpperCase()} scan with ${applicablePatterns.length} patterns...`);
+
     updateProgress('scanning', undefined, 0, files.length);
     const allFindings: ScanFinding[] = [];
     const batchSize = 5;
@@ -240,20 +249,47 @@ export async function scanRepository(repoUrl: string, options?: ScanOptions): Pr
         const batch = files.slice(i, i + batchSize);
         await Promise.all(batch.map(async (file) => {
             engines[0].status = 'scanning';
-            const sast = scanFileContent(file.content, file.path);
+            const sast = scanFileContent(file.content, file.path, applicablePatterns);
             engines[0].findings += sast.length; allFindings.push(...sast);
 
-            engines[1].status = 'scanning';
-            const pentest = scanFileContent(file.content, file.path, allPatterns.filter(p => p.category === 'pentest'));
-            engines[1].findings += pentest.length; allFindings.push(...pentest);
+            // Deep Scan specialized engines
+            if (scanLevel === 'deep') {
+                // 1. Entropy Analysis for unknown secrets
+                const highEntropyStrings = detectHighEntropyStrings(file.content);
+                highEntropyStrings.forEach(s => {
+                    const strength = getSecretStrength(s.entropy, s.string.length);
+                    allFindings.push({
+                        id: generateId(),
+                        ruleId: 'expert-entropy-secret',
+                        severity: strength === 'expert' ? 'critical' : 'high',
+                        category: 'secrets',
+                        title: `High Entropy String (${strength})`,
+                        message: `Potential unknown secret detected with entropy: ${s.entropy.toFixed(2)}`,
+                        file: file.path,
+                        line: s.line,
+                        code: s.string.substring(0, 100),
+                        scanner: 'vibelab-patterns'
+                    });
+                });
 
-            engines[2].status = 'scanning';
-            const ut = (file.path.includes('test') || file.path.includes('spec'))
-                ? scanFileContent(file.content, file.path, allPatterns.filter(p => p.category === 'test-security')) : [];
-            engines[2].findings += ut.length; allFindings.push(...ut);
+                // 2. Pentest Engine
+                engines[1].status = 'scanning';
+                const pentest = scanFileContent(file.content, file.path, allPatterns.filter(p => p.category === 'pentest'));
+                engines[1].findings += pentest.length; allFindings.push(...pentest);
+
+                // 3. Unit Test Guard
+                engines[2].status = 'scanning';
+                const ut = (file.path.includes('test') || file.path.includes('spec'))
+                    ? scanFileContent(file.content, file.path, allPatterns.filter(p => p.category === 'test-security')) : [];
+                engines[2].findings += ut.length; allFindings.push(...ut);
+
+                // 4. Semantic Heuristics (Taint Analysis)
+                const heuristics = scanSemanticHeuristics(file.content, file.path);
+                allFindings.push(...heuristics);
+            }
 
             engines[3].status = 'scanning';
-            const infra = scanFileContent(file.content, file.path, allPatterns.filter(p => p.category === 'infra' || p.category === 'cloud'));
+            const infra = scanFileContent(file.content, file.path, applicablePatterns.filter(p => p.category === 'infra' || p.category === 'cloud'));
             engines[3].findings += infra.length; allFindings.push(...infra);
 
             allFindings.push(...scanWeb3Content(file.content, file.path));
@@ -282,7 +318,75 @@ export async function scanRepository(repoUrl: string, options?: ScanOptions): Pr
     };
 
     updateProgress('complete');
-    return { findings: allFindings, dependencies: dependencyVulns, stats, patternsUsed: patternStats.total };
+    return { findings: allFindings, dependencies: dependencyVulns, stats, patternsUsed: applicablePatterns.length, level: scanLevel };
+}
+
+/**
+ * Basic Semantic Heuristics (Taint Analysis)
+ * Tracks user input sources (sources) to dangerous execution points (sinks).
+ */
+function scanSemanticHeuristics(content: string, filePath: string): ScanFinding[] {
+    const findings: ScanFinding[] = [];
+    const lines = content.split('\n');
+
+    // 1. Find potential sources (user input assignments)
+    // Example: const data = req.query.id;
+    const sourceRegex = /(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*(?:req\.(?:query|params|body)|process\.env|window\.location|URLSearchParams)/g;
+    const sources: Set<string> = new Set();
+
+    lines.forEach(line => {
+        let match;
+        while ((match = sourceRegex.exec(line)) !== null) {
+            sources.add(match[1]);
+        }
+    });
+
+    if (sources.size === 0) return [];
+
+    // 2. Scan for sinks using these sources
+    // Example: eval(data);
+    sources.forEach(source => {
+        const sinkRegex = new RegExp(`(?:eval|innerHTML|outerHTML|document\\.write|exec|spawn|query|send)\\s*\\([^)]*${source}[^)]*\\)`, 'g');
+        lines.forEach((lineText, index) => {
+            let match;
+            while ((match = sinkRegex.exec(lineText)) !== null) {
+                findings.push({
+                    id: generateId(),
+                    ruleId: 'expert-semantic-taint',
+                    severity: 'critical',
+                    category: 'sast',
+                    title: 'Insecure Data Flow (Taint)',
+                    message: `User-controlled variable '${source}' flows into a dangerous sink: ${match[0].split('(')[0]}()`,
+                    file: filePath,
+                    line: index + 1,
+                    code: lineText.trim(),
+                    scanner: 'vibelab-patterns'
+                });
+            }
+        });
+    });
+
+    return findings;
+}
+
+/**
+ * Filter patterns based on scan level
+ */
+function getPatternsForLevel(level: 'quick' | 'standard' | 'deep'): VulnPattern[] {
+    if (level === 'quick') {
+        // Quick Scan: Secrets, Malicious, and Critical SAST
+        return allPatterns.filter(p =>
+            p.category === 'secrets' ||
+            p.category === 'malicious' ||
+            p.severity === 'critical'
+        );
+    }
+    if (level === 'standard') {
+        // Standard: Quick + most SAST + SCA
+        return allPatterns.filter(p => p.category !== 'pentest' && p.category !== 'test-security');
+    }
+    // Deep: Everything
+    return allPatterns;
 }
 
 // Scan dependencies using OSV API (Google's Open Source Vulnerabilities)
