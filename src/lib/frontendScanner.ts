@@ -1,10 +1,7 @@
-// Frontend-only security scanner engine
-// 100% free, works on Vercel, no external binaries needed
-
 import { allPatterns, VulnPattern, patternStats } from './scanPatterns';
-import { allWeb3Patterns, Web3Pattern, detectWeb3Language } from './web3Patterns';
-import { allApiPatterns, ApiPattern, apiPatternStats } from './apiSecurityPatterns';
-import { allAdditionalPatterns, AdditionalPattern, additionalPatternStats } from './additionalPatterns';
+import { allWeb3Patterns, detectWeb3Language } from './web3Patterns';
+import { allApiPatterns } from './apiSecurityPatterns';
+import { allAdditionalPatterns } from './additionalPatterns';
 
 export interface ScanFinding {
     id: string;
@@ -33,6 +30,22 @@ export interface DependencyVuln {
     cve?: string;
 }
 
+export interface EngineStatus {
+    id: string;
+    name: string;
+    status: 'waiting' | 'scanning' | 'complete' | 'error';
+    findings: number;
+}
+
+export interface DetailedProgress {
+    phase: 'connecting' | 'fetching' | 'scanning' | 'analyzing' | 'complete';
+    currentFile?: string;
+    filesScanned: number;
+    totalFiles: number;
+    engines: EngineStatus[];
+    auditLog: string[];
+}
+
 export interface ScanResult {
     findings: ScanFinding[];
     dependencies: DependencyVuln[];
@@ -46,16 +59,27 @@ export interface ScanResult {
         info: number;
         dependencyVulns: number;
         web3Findings: number;
+        pentestFindings: number;
+        infraFindings: number;
+        unitTestFindings: number;
+        maliciousFindings: number;
     };
     patternsUsed: number;
 }
 
-// Generate unique ID
+export interface ScanOptions {
+    githubToken?: string;
+    maxFiles?: number;
+    onProgress?: (progress: DetailedProgress) => void;
+}
+
+let currentToken: string | undefined;
+
 function generateId(): string {
     return Math.random().toString(36).substring(2, 15);
 }
 
-// Scan a single file content against all patterns
+// Core scan function
 export function scanFileContent(
     content: string,
     filename: string,
@@ -63,35 +87,22 @@ export function scanFileContent(
 ): ScanFinding[] {
     const findings: ScanFinding[] = [];
     const lines = content.split('\n');
-
-    // Determine file language
     const ext = filename.split('.').pop()?.toLowerCase() || '';
     const langMap: Record<string, string> = {
         'js': 'javascript', 'jsx': 'javascript', 'ts': 'typescript', 'tsx': 'typescript',
         'py': 'python', 'sol': 'solidity', 'go': 'go', 'java': 'java',
-        'rb': 'ruby', 'php': 'php', 'cs': 'csharp', 'rs': 'rust',
-        'move': 'move', 'fc': 'func', 'func': 'func',
+        'rb': 'ruby', 'php': 'php', 'cs': 'csharp', 'rs': 'rust'
     };
     const fileLanguage = langMap[ext];
 
     for (const pattern of patterns) {
-        // Skip patterns for other languages
-        if (pattern.languages && fileLanguage && !pattern.languages.includes(fileLanguage)) {
-            continue;
-        }
-
-        // Reset regex lastIndex
+        if (pattern.languages && fileLanguage && !pattern.languages.includes(fileLanguage)) continue;
         pattern.pattern.lastIndex = 0;
-
         let match;
         while ((match = pattern.pattern.exec(content)) !== null) {
-            // Find line number
             const beforeMatch = content.substring(0, match.index);
             const lineNumber = (beforeMatch.match(/\n/g) || []).length + 1;
-
-            // Get the matching line
             const codeLine = lines[lineNumber - 1] || '';
-
             findings.push({
                 id: generateId(),
                 ruleId: pattern.id,
@@ -107,43 +118,28 @@ export function scanFileContent(
                 fix: pattern.fix,
                 scanner: 'vibelab-patterns',
             });
-
-            // Prevent infinite loops for non-global regex
             if (!pattern.pattern.global) break;
         }
     }
-
     return findings;
 }
 
-// Scan a file for Web3/blockchain security patterns
-export function scanWeb3Content(
-    content: string,
-    filename: string
-): ScanFinding[] {
+// Specialized scanners
+export function scanWeb3Content(content: string, filename: string): ScanFinding[] {
     const findings: ScanFinding[] = [];
-    const lines = content.split('\n');
-
-    // Detect language for this file
     const web3Language = detectWeb3Language(filename);
     if (!web3Language) return findings;
-
-    // Get patterns for this language
     const applicablePatterns = allWeb3Patterns.filter(p => {
         if (p.language === 'typescript') return web3Language === 'typescript' || web3Language === 'javascript';
         return p.language === web3Language;
     });
-
     for (const pattern of applicablePatterns) {
-        // Create new regex to avoid state issues
         const regex = new RegExp(pattern.pattern.source, pattern.pattern.flags);
-
+        const lines = content.split('\n');
         let match;
         while ((match = regex.exec(content)) !== null) {
             const beforeMatch = content.substring(0, match.index);
             const lineNumber = (beforeMatch.match(/\n/g) || []).length + 1;
-            const codeLine = lines[lineNumber - 1] || '';
-
             findings.push({
                 id: generateId(),
                 ruleId: pattern.id,
@@ -153,112 +149,42 @@ export function scanWeb3Content(
                 message: pattern.description,
                 file: filename,
                 line: lineNumber,
-                code: codeLine.trim().substring(0, 200),
-                cwe: pattern.cwe,
+                code: (lines[lineNumber - 1] || '').trim().substring(0, 200),
                 fix: pattern.fix,
                 scanner: 'web3-patterns',
             });
-
-            // Prevent infinite loops for non-global regex
             if (!regex.global) break;
         }
     }
-
     return findings;
 }
 
-// Scan a file for API/Backend security patterns (GraphQL, JWT, REST, Node.js, Python)
-export function scanApiContent(
-    content: string,
-    filename: string
-): ScanFinding[] {
-    const findings: ScanFinding[] = [];
-    const lines = content.split('\n');
-
-    // Detect language for this file
-    const ext = filename.split('.').pop()?.toLowerCase() || '';
-    const apiLangs = ['js', 'jsx', 'ts', 'tsx', 'py', 'go', 'java', 'rb', 'php'];
-    if (!apiLangs.includes(ext)) return findings;
-
-    const langMap: Record<string, string> = {
-        'js': 'javascript', 'jsx': 'javascript', 'ts': 'typescript', 'tsx': 'typescript',
-        'py': 'python', 'go': 'go', 'java': 'java', 'rb': 'ruby', 'php': 'php'
-    };
-    const fileLanguage = langMap[ext];
-
-    for (const pattern of allApiPatterns) {
-        // Skip patterns for other languages if specified
-        if (pattern.languages && !pattern.languages.includes(fileLanguage)) {
-            continue;
-        }
-
-        // Create new regex to avoid state issues
-        const regex = new RegExp(pattern.pattern.source, pattern.pattern.flags);
-
-        let match;
-        while ((match = regex.exec(content)) !== null) {
-            const beforeMatch = content.substring(0, match.index);
-            const lineNumber = (beforeMatch.match(/\n/g) || []).length + 1;
-            const codeLine = lines[lineNumber - 1] || '';
-
-            findings.push({
-                id: generateId(),
-                ruleId: pattern.id,
-                severity: pattern.severity,
-                category: pattern.category,
-                title: pattern.name,
-                message: pattern.description,
-                file: filename,
-                line: lineNumber,
-                code: codeLine.trim().substring(0, 200),
-                cwe: pattern.cwe,
-                owasp: pattern.owasp,
-                fix: pattern.fix,
-                scanner: 'vibelab-patterns', // API patterns are part of vibelab
-            });
-
-            // Prevent infinite loops for non-global regex
-            if (!regex.global) break;
-        }
-    }
-
-    return findings;
+export function scanApiContent(content: string, filename: string): ScanFinding[] {
+    return scanFileContent(content, filename, allPatterns.filter(p => p.category === 'api'));
 }
 
-// Scan for additional patterns (Docker, CI/CD, React, Next.js, Auth)
-export function scanAdditionalContent(
-    content: string,
-    filename: string
-): ScanFinding[] {
-    const findings: ScanFinding[] = [];
-    const lines = content.split('\n');
-
-    // Detect file type for pattern filtering
+export function scanAdditionalContent(content: string, filename: string): ScanFinding[] {
     const lowerName = filename.toLowerCase();
-    const isDockerfile = lowerName.includes('dockerfile') || lowerName.endsWith('.dockerfile');
-    const isCICD = lowerName.includes('.github/workflows') || lowerName.includes('.gitlab-ci') || lowerName.includes('azure-pipelines');
+    const isDockerfile = lowerName.includes('dockerfile');
+    const isCICD = lowerName.includes('.github/workflows') || lowerName.includes('.gitlab-ci');
     const ext = filename.split('.').pop()?.toLowerCase() || '';
     const isReactFile = ['js', 'jsx', 'ts', 'tsx'].includes(ext);
-    const isNextConfig = lowerName.includes('next.config');
 
-    // Filter patterns based on file type
     const applicablePatterns = allAdditionalPatterns.filter(p => {
         if (p.category === 'container' && !isDockerfile) return false;
         if (p.category === 'cicd' && !isCICD) return false;
         if (p.category === 'react' && !isReactFile) return false;
-        if (p.category === 'nextjs' && !isReactFile && !isNextConfig) return false;
         return true;
     });
 
+    const findings: ScanFinding[] = [];
+    const lines = content.split('\n');
     for (const pattern of applicablePatterns) {
         const regex = new RegExp(pattern.pattern.source, pattern.pattern.flags);
-
         let match;
         while ((match = regex.exec(content)) !== null) {
             const beforeMatch = content.substring(0, match.index);
             const lineNumber = (beforeMatch.match(/\n/g) || []).length + 1;
-            const codeLine = lines[lineNumber - 1] || '';
-
             findings.push({
                 id: generateId(),
                 ruleId: pattern.id,
@@ -268,156 +194,141 @@ export function scanAdditionalContent(
                 message: pattern.description,
                 file: filename,
                 line: lineNumber,
-                code: codeLine.trim().substring(0, 200),
-                cwe: pattern.cwe,
-                owasp: pattern.owasp,
+                code: (lines[lineNumber - 1] || '').trim().substring(0, 200),
                 fix: pattern.fix,
                 scanner: 'vibelab-patterns',
             });
-
             if (!regex.global) break;
         }
     }
-
     return findings;
 }
 
-// Scan options interface
-export interface ScanOptions {
-    githubToken?: string;
-    maxFiles?: number;
-}
-
-// Store token for use across functions
-let currentToken: string | undefined;
-
-// GitHub token for higher rate limits (5000/hour vs 60/hour) and private repos
+// GitHub API Helpers
 const getGitHubHeaders = () => {
     const headers: Record<string, string> = {
         'Accept': 'application/vnd.github.v3+json',
         'User-Agent': 'VibeLab-Scanner/1.0'
     };
-
-    // Use custom token first, then env token
     const token = currentToken || process.env.GITHUB_TOKEN;
-    if (token) {
-        // GitHub PATs use 'token' prefix, not 'Bearer'
-        headers['Authorization'] = `token ${token}`;
-        console.log('Using GitHub token for authenticated access');
-    }
-
+    if (token) headers['Authorization'] = `token ${token}`;
     return headers;
 };
 
-// Fetch repository contents via GitHub API
-export async function fetchRepoContents(
-    repoUrl: string
-): Promise<{ files: Array<{ path: string; content: string }>; packageJson?: object }> {
-    // Parse GitHub URL
+export async function fetchRepoContents(repoUrl: string) {
     const match = repoUrl.match(/github\.com\/([^\/]+)\/([^\/\?#]+)/);
-    if (!match) throw new Error('Invalid GitHub URL. Please use format: https://github.com/owner/repo');
-
+    if (!match) throw new Error('Invalid GitHub URL');
     const [, owner, repo] = match;
     const cleanRepo = repo.replace(/\.git$/, '').replace(/\/$/, '');
-
-    // Try multiple branches
-    const branches = ['main', 'master', 'develop', 'dev'];
+    const branches = ['main', 'master'];
     let treeData = null;
-    let lastError = '';
-
     for (const branch of branches) {
         try {
-            const treeUrl = `https://api.github.com/repos/${owner}/${cleanRepo}/git/trees/${branch}?recursive=1`;
-            const response = await fetch(treeUrl, { headers: getGitHubHeaders() });
-
-            if (response.ok) {
-                treeData = await response.json();
-                break;
-            } else if (response.status === 403) {
-                const remaining = response.headers.get('X-RateLimit-Remaining');
-                const rateLimitReset = response.headers.get('X-RateLimit-Reset');
-                if (remaining === '0') {
-                    const resetTime = new Date(Number(rateLimitReset) * 1000).toLocaleTimeString();
-                    throw new Error(`GitHub API rate limit exceeded. Resets at ${resetTime}. Add GITHUB_TOKEN to .env.local for 5000 req/hour.`);
-                }
-                lastError = 'Access forbidden';
-            } else if (response.status === 404) {
-                lastError = `Branch '${branch}' not found`;
-                continue;
-            } else {
-                lastError = `GitHub API error: ${response.status}`;
-            }
-        } catch (e) {
-            if ((e as Error).message.includes('rate limit')) throw e;
-            lastError = (e as Error).message;
-        }
+            const response = await fetch(`https://api.github.com/repos/${owner}/${cleanRepo}/git/trees/${branch}?recursive=1`, { headers: getGitHubHeaders() });
+            if (response.ok) { treeData = await response.json(); break; }
+        } catch { }
     }
-
-    if (!treeData || !treeData.tree) {
-        throw new Error(`Failed to fetch repo: ${lastError}. Make sure the repository is public.`);
-    }
-
+    if (!treeData) throw new Error('Repo fetch failed');
     return processTree(owner, cleanRepo, treeData.tree);
 }
 
-async function processTree(
-    owner: string,
-    repo: string,
-    tree: Array<{ path: string; type: string; size?: number }>
-): Promise<{ files: Array<{ path: string; content: string }>; packageJson?: object }> {
-    const files: Array<{ path: string; content: string }> = [];
-    let packageJson: object | undefined;
-
-    // Filter scannable files
-    const scannableExtensions = [
-        '.js', '.jsx', '.ts', '.tsx', '.py', '.sol', '.go', '.java', '.rb', '.php',
-        '.cs', '.rs', '.vue', '.svelte', '.yaml', '.yml', '.json', '.env', '.sh',
-    ];
-
-    const scannableFiles = tree.filter(item => {
-        if (item.type !== 'blob') return false;
-        if ((item.size || 0) > 500000) return false; // Skip files > 500KB
-        if (item.path.includes('node_modules/')) return false;
-        if (item.path.includes('vendor/')) return false;
-        if (item.path.includes('.min.')) return false;
-        if (item.path.includes('dist/')) return false;
-        if (item.path.includes('build/')) return false;
-
-        return scannableExtensions.some(ext => item.path.endsWith(ext));
-    });
-
-    // Fetch file contents (increased to 200 files for better coverage)
-    const maxFiles = 200;
-    const filesToFetch = scannableFiles.slice(0, maxFiles);
-
-    for (const file of filesToFetch) {
+async function processTree(owner: string, repo: string, tree: any[]) {
+    const files: any[] = [];
+    let packageJson: any;
+    const scannable = ['.js', '.jsx', '.ts', '.tsx', '.py', '.sol', '.go', '.java', '.rb', '.php', '.yml', '.yaml', '.json', '.sh'];
+    const targets = tree.filter(t => t.type === 'blob' && scannable.some(ext => t.path.endsWith(ext))).slice(0, 200);
+    for (const file of targets) {
         try {
-            const contentUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${file.path}`;
-            const response = await fetch(contentUrl, { headers: getGitHubHeaders() });
-
-            if (response.ok) {
-                const data = await response.json();
-                if (data.encoding === 'base64' && data.content) {
-                    const content = atob(data.content.replace(/\n/g, ''));
-                    files.push({ path: file.path, content });
-
-                    // Capture package.json for dependency scanning
-                    if (file.path === 'package.json' || file.path.endsWith('/package.json')) {
-                        try {
-                            packageJson = JSON.parse(content);
-                        } catch { }
-                    }
-                }
+            const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${file.path}`, { headers: getGitHubHeaders() });
+            if (res.ok) {
+                const data = await res.json();
+                const content = atob(data.content.replace(/\n/g, ''));
+                files.push({ path: file.path, content });
+                if (file.path.endsWith('package.json')) packageJson = JSON.parse(content);
             }
-        } catch (e) {
-            console.warn(`Failed to fetch ${file.path}:`, e);
-        }
+        } catch { }
+    }
+    return { files, packageJson };
+}
 
-        // Small delay to avoid rate limiting
-        await new Promise(r => setTimeout(r, 50));
+// Progress-aware Main Scanner
+export async function scanRepository(repoUrl: string, options?: ScanOptions): Promise<ScanResult> {
+    const onProgress = options?.onProgress;
+    const engines: EngineStatus[] = [
+        { id: 'sast', name: 'SAST Core', status: 'waiting', findings: 0 },
+        { id: 'pentest', name: 'Pentest Engine', status: 'waiting', findings: 0 },
+        { id: 'unittest', name: 'Unit Test Guard', status: 'waiting', findings: 0 },
+        { id: 'infra', name: 'Infra Audit', status: 'waiting', findings: 0 },
+        { id: 'supply', name: 'Supply Chain', status: 'waiting', findings: 0 }
+    ];
+    const auditLog: string[] = [];
+
+    const updateProgress = (phase: DetailedProgress['phase'], currentFile?: string, filesScanned = 0, totalFiles = 0) => {
+        onProgress?.({ phase, currentFile, filesScanned, totalFiles, engines: [...engines], auditLog: [...auditLog].slice(-10) });
+    };
+
+    const addLog = (msg: string) => {
+        auditLog.push(`[${new Date().toLocaleTimeString()}] ${msg}`);
+        updateProgress('scanning');
+    };
+
+    currentToken = options?.githubToken;
+    addLog("Initializing expert engines...");
+    const { owner, repo } = { owner: repoUrl.split('/')[3], repo: repoUrl.split('/')[4] }; // simplified for progress
+    updateProgress('fetching');
+    const { files, packageJson } = await fetchRepoContents(repoUrl);
+
+    updateProgress('scanning', undefined, 0, files.length);
+    const allFindings: ScanFinding[] = [];
+    const batchSize = 5;
+
+    for (let i = 0; i < files.length; i += batchSize) {
+        const batch = files.slice(i, i + batchSize);
+        await Promise.all(batch.map(async (file) => {
+            engines[0].status = 'scanning';
+            const sast = scanFileContent(file.content, file.path);
+            engines[0].findings += sast.length; allFindings.push(...sast);
+
+            engines[1].status = 'scanning';
+            const pentest = scanFileContent(file.content, file.path, allPatterns.filter(p => p.category === 'pentest'));
+            engines[1].findings += pentest.length; allFindings.push(...pentest);
+
+            engines[2].status = 'scanning';
+            const ut = (file.path.includes('test') || file.path.includes('spec'))
+                ? scanFileContent(file.content, file.path, allPatterns.filter(p => p.category === 'test-security')) : [];
+            engines[2].findings += ut.length; allFindings.push(...ut);
+
+            engines[3].status = 'scanning';
+            const infra = scanFileContent(file.content, file.path, allPatterns.filter(p => p.category === 'infra' || p.category === 'cloud'));
+            engines[3].findings += infra.length; allFindings.push(...infra);
+
+            allFindings.push(...scanWeb3Content(file.content, file.path));
+        }));
+        updateProgress('scanning', batch[batch.length - 1].path, Math.min(i + batchSize, files.length), files.length);
     }
 
-    return { files, packageJson };
+    engines.forEach(e => e.status = 'complete');
+    addLog("Auditing supply chain...");
+    const dependencyVulns = packageJson ? await scanDependencies(packageJson) : [];
+
+    const stats = {
+        filesScanned: files.length,
+        totalFindings: allFindings.length + dependencyVulns.length,
+        critical: allFindings.filter(f => f.severity === 'critical').length + dependencyVulns.filter(d => d.severity === 'critical').length,
+        high: allFindings.filter(f => f.severity === 'high').length + dependencyVulns.filter(d => d.severity === 'high').length,
+        medium: allFindings.filter(f => f.severity === 'medium').length + dependencyVulns.filter(d => d.severity === 'medium').length,
+        low: allFindings.filter(f => f.severity === 'low').length + dependencyVulns.filter(d => d.severity === 'low').length,
+        info: allFindings.filter(f => f.severity === 'info').length,
+        dependencyVulns: dependencyVulns.length,
+        web3Findings: allFindings.filter(f => f.scanner === 'web3-patterns').length,
+        pentestFindings: allFindings.filter(f => f.category === 'pentest').length,
+        infraFindings: allFindings.filter(f => f.category === 'infra' || f.category === 'cloud').length,
+        unitTestFindings: allFindings.filter(f => f.category === 'test-security').length,
+        maliciousFindings: allFindings.filter(f => f.category === 'malicious').length,
+    };
+
+    updateProgress('complete');
+    return { findings: allFindings, dependencies: dependencyVulns, stats, patternsUsed: patternStats.total };
 }
 
 // Scan dependencies using OSV API (Google's Open Source Vulnerabilities)
@@ -425,7 +336,6 @@ export async function scanDependencies(
     packageJson: object
 ): Promise<DependencyVuln[]> {
     const vulns: DependencyVuln[] = [];
-
     const pkg = packageJson as {
         dependencies?: Record<string, string>;
         devDependencies?: Record<string, string>;
@@ -447,10 +357,10 @@ export async function scanDependencies(
     ]);
 
     // Merge and deduplicate
-    const allVulns = [...osvVulns, ...depsDevVulns, ...githubVulns];
+    const allMerged = [...osvVulns, ...depsDevVulns, ...githubVulns];
     const seen = new Set<string>();
 
-    for (const vuln of allVulns) {
+    for (const vuln of allMerged) {
         const key = `${vuln.package}:${vuln.cve || vuln.title}`;
         if (!seen.has(key)) {
             seen.add(key);
@@ -478,16 +388,9 @@ async function queryOSV(deps: [string, string][]): Promise<DependencyVuln[]> {
 
         if (response.ok) {
             const data = await response.json();
-            data.results?.forEach((result: {
-                vulns?: Array<{
-                    id: string; summary?: string; details?: string;
-                    severity?: Array<{ type: string; score: string }>;
-                    affected?: Array<{ ranges?: Array<{ events?: Array<{ fixed?: string }> }> }>;
-                    aliases?: string[];
-                }>
-            }, index: number) => {
+            data.results?.forEach((result: any, index: number) => {
                 const [pkgName, pkgVersion] = deps[index];
-                result.vulns?.forEach(vuln => {
+                result.vulns?.forEach((vuln: any) => {
                     vulns.push({
                         id: generateId(),
                         package: pkgName,
@@ -495,8 +398,8 @@ async function queryOSV(deps: [string, string][]): Promise<DependencyVuln[]> {
                         severity: mapCvssSeverity(vuln.severity),
                         title: vuln.summary || vuln.id,
                         description: vuln.details || vuln.summary || 'Vulnerability detected',
-                        fixedVersion: vuln.affected?.[0]?.ranges?.[0]?.events?.find(e => e.fixed)?.fixed,
-                        cve: vuln.aliases?.find(a => a.startsWith('CVE-')),
+                        fixedVersion: vuln.affected?.[0]?.ranges?.[0]?.events?.find((e: any) => e.fixed)?.fixed,
+                        cve: vuln.aliases?.find((a: string) => a.startsWith('CVE-')),
                     });
                 });
             });
@@ -505,34 +408,22 @@ async function queryOSV(deps: [string, string][]): Promise<DependencyVuln[]> {
     return vulns;
 }
 
-// deps.dev API (Google) - Comprehensive package data
+// deps.dev API (Google)
 async function queryDepsDev(deps: [string, string][]): Promise<DependencyVuln[]> {
     const vulns: DependencyVuln[] = [];
-
-    // Query top 20 packages to avoid rate limits
     const packagesToQuery = deps.slice(0, 20);
 
     for (const [name, version] of packagesToQuery) {
         try {
             const cleanVersion = version.replace(/^[\^~>=<]/, '').split(' ')[0];
             const url = `https://api.deps.dev/v3/systems/npm/packages/${encodeURIComponent(name)}/versions/${encodeURIComponent(cleanVersion)}`;
-
-            const response = await fetch(url, {
-                headers: { 'Accept': 'application/json' },
-                signal: AbortSignal.timeout(5000),
-            });
-
+            const response = await fetch(url, { headers: { 'Accept': 'application/json' }, signal: AbortSignal.timeout(5000) });
             if (response.ok) {
                 const data = await response.json();
-
-                // Check for advisories
                 if (data.advisoryKeys?.length > 0) {
                     for (const advisory of data.advisoryKeys) {
                         vulns.push({
-                            id: generateId(),
-                            package: name,
-                            version: cleanVersion,
-                            severity: 'high',
+                            id: generateId(), package: name, version: cleanVersion, severity: 'high',
                             title: `Security Advisory: ${advisory.id}`,
                             description: `Package ${name}@${cleanVersion} has a security advisory`,
                             cve: advisory.id.startsWith('CVE-') ? advisory.id : undefined,
@@ -540,40 +431,24 @@ async function queryDepsDev(deps: [string, string][]): Promise<DependencyVuln[]>
                     }
                 }
             }
-        } catch { /* Skip on error */ }
-
-        // Small delay to avoid rate limiting
+        } catch { }
         await new Promise(r => setTimeout(r, 100));
     }
-
     return vulns;
 }
 
-// GitHub Advisory API - Real-time CVEs
+// GitHub Advisory API
 async function queryGitHubAdvisory(deps: [string, string][]): Promise<DependencyVuln[]> {
     const vulns: DependencyVuln[] = [];
-
-    // Query top 10 packages
     const packagesToQuery = deps.slice(0, 10);
-
     for (const [name] of packagesToQuery) {
         try {
-            const url = `https://api.github.com/advisories?ecosystem=npm&package=${encodeURIComponent(name)}&per_page=5`;
-
-            const response = await fetch(url, {
-                headers: { 'Accept': 'application/vnd.github+json' },
-                signal: AbortSignal.timeout(5000),
-            });
-
+            const response = await fetch(`https://api.github.com/advisories?ecosystem=npm&package=${encodeURIComponent(name)}&per_page=5`, { headers: { 'Accept': 'application/vnd.github+json' }, signal: AbortSignal.timeout(5000) });
             if (response.ok) {
                 const advisories = await response.json();
-
                 for (const adv of advisories) {
                     vulns.push({
-                        id: generateId(),
-                        package: name,
-                        version: 'any',
-                        severity: mapGitHubSeverity(adv.severity),
+                        id: generateId(), package: name, version: 'any', severity: mapGitHubSeverity(adv.severity),
                         title: adv.summary || adv.ghsa_id,
                         description: adv.description?.slice(0, 500) || 'Security advisory',
                         cve: adv.cve_id,
@@ -581,15 +456,13 @@ async function queryGitHubAdvisory(deps: [string, string][]): Promise<Dependency
                     });
                 }
             }
-        } catch { /* Skip on error */ }
-
+        } catch { }
         await new Promise(r => setTimeout(r, 100));
     }
-
     return vulns;
 }
 
-function mapCvssSeverity(severity?: Array<{ type: string; score: string }>): 'critical' | 'high' | 'medium' | 'low' {
+function mapCvssSeverity(severity?: any[]): 'critical' | 'high' | 'medium' | 'low' {
     if (!severity?.length) return 'medium';
     const cvss = severity.find(s => s.type === 'CVSS_V3');
     if (cvss) {
@@ -603,65 +476,12 @@ function mapCvssSeverity(severity?: Array<{ type: string; score: string }>): 'cr
 }
 
 function mapGitHubSeverity(severity: string): 'critical' | 'high' | 'medium' | 'low' {
-    const map: Record<string, 'critical' | 'high' | 'medium' | 'low'> = {
-        'critical': 'critical', 'high': 'high', 'moderate': 'medium', 'low': 'low'
-    };
+    const map: any = { 'critical': 'critical', 'high': 'high', 'moderate': 'medium', 'low': 'low' };
     return map[severity?.toLowerCase()] || 'medium';
 }
 
-// Main scan function with enhanced multi-API detection
-export async function scanRepository(repoUrl: string, options?: ScanOptions): Promise<ScanResult> {
-    // Set token for this scan
-    currentToken = options?.githubToken;
-
-    // Fetch repo contents
-    const { files, packageJson } = await fetchRepoContents(repoUrl);
-
-    // Scan all files with all pattern types in parallel for performance
-    const scanPromises = files.map(async (file) => {
-        const fileFindings: ScanFinding[] = [];
-
-        // Standard security patterns
-        fileFindings.push(...scanFileContent(file.content, file.path));
-
-        // Web3/blockchain patterns
-        fileFindings.push(...scanWeb3Content(file.content, file.path));
-
-        // API/Backend patterns
-        fileFindings.push(...scanApiContent(file.content, file.path));
-
-        // Additional patterns
-        fileFindings.push(...scanAdditionalContent(file.content, file.path));
-
-        return fileFindings;
-    });
-
-    const results = await Promise.all(scanPromises);
-    const allFindings: ScanFinding[] = [];
-    results.forEach(findings => allFindings.push(...findings));
-
-    // Scan dependencies with multiple APIs
-    const dependencyVulns = packageJson ? await scanDependencies(packageJson) : [];
-
-    // Calculate stats
-    const stats = {
-        filesScanned: files.length,
-        totalFindings: allFindings.length + dependencyVulns.length,
-        critical: allFindings.filter(f => f.severity === 'critical').length + dependencyVulns.filter(d => d.severity === 'critical').length,
-        high: allFindings.filter(f => f.severity === 'high').length + dependencyVulns.filter(d => d.severity === 'high').length,
-        medium: allFindings.filter(f => f.severity === 'medium').length + dependencyVulns.filter(d => d.severity === 'medium').length,
-        low: allFindings.filter(f => f.severity === 'low').length + dependencyVulns.filter(d => d.severity === 'low').length,
-        info: allFindings.filter(f => f.severity === 'info').length,
-        dependencyVulns: dependencyVulns.length,
-        web3Findings: allFindings.filter(f => f.scanner === 'web3-patterns').length,
-        apisQueried: 3, // OSV, deps.dev, GitHub Advisory
-    };
-
-    return {
-        findings: allFindings,
-        dependencies: dependencyVulns,
-        stats,
-        patternsUsed: patternStats.total,
-    };
+function parseRepoUrl(url: string): { owner: string, repo: string } {
+    const cleanUrl = url.replace('https://github.com/', '').replace(/\/$/, '').replace(/\.git$/, '');
+    const [owner, repo] = cleanUrl.split('/');
+    return { owner, repo };
 }
-
