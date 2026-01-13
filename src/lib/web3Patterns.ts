@@ -13,6 +13,10 @@ export interface Web3Pattern {
     cwe?: string;
     swc?: string;
     references?: string[];
+    compliance?: string[];
+    cvss?: number;
+    impact?: string;
+    remediation?: string;
 }
 
 // ============================================
