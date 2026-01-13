@@ -8,14 +8,18 @@ export interface ScanFinding {
     severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
     category: string;
     title: string;
-    message: string;
+    description: string;
     file: string;
     line: number;
     code: string;
     cwe?: string;
     owasp?: string;
+    swc?: string;
     fix?: string;
     compliance?: string[];
+    cvss?: number;
+    impact?: string;
+    remediation?: string;
     scanner?: 'vibelab-patterns' | 'web3-patterns';
 }
 
@@ -111,14 +115,18 @@ export function scanFileContent(
                 severity: pattern.severity,
                 category: pattern.category,
                 title: pattern.title,
-                message: pattern.message,
+                description: pattern.message,
                 file: filename,
                 line: lineNumber,
                 code: codeLine.trim().substring(0, 200),
                 cwe: pattern.cwe,
                 owasp: pattern.owasp,
+                swc: pattern.swc,
                 fix: pattern.fix,
                 compliance: pattern.compliance,
+                cvss: pattern.cvss,
+                impact: pattern.impact,
+                remediation: pattern.remediation,
                 scanner: 'vibelab-patterns',
             });
             if (!pattern.pattern.global) break;
@@ -149,11 +157,17 @@ export function scanWeb3Content(content: string, filename: string): ScanFinding[
                 severity: pattern.severity,
                 category: pattern.category,
                 title: pattern.name,
-                message: pattern.description,
+                description: pattern.description,
                 file: filename,
                 line: lineNumber,
                 code: (lines[lineNumber - 1] || '').trim().substring(0, 200),
                 fix: pattern.fix,
+                cwe: pattern.cwe,
+                swc: pattern.swc,
+                compliance: pattern.compliance,
+                cvss: pattern.cvss,
+                impact: pattern.impact || pattern.description,
+                remediation: pattern.remediation || pattern.fix,
                 scanner: 'web3-patterns',
             });
             if (!regex.global) break;
@@ -267,8 +281,8 @@ export async function scanRepository(repoUrl: string, options?: ScanOptions): Pr
                         ruleId: 'expert-entropy-secret',
                         severity: strength === 'expert' ? 'high' : 'medium', // Downgraded
                         category: 'secrets',
-                        title: `High Entropy String (${strength})`,
-                        message: `High randomness string detected (${s.entropy.toFixed(2)}). Potential secret indicator.`,
+                        title: `High Entropy Secret (${s.entropy.toFixed(1)})`,
+                        description: `Potential secret or API key found with ${s.entropy.toFixed(1)} bits of entropy.`,
                         file: file.path,
                         line: s.line,
                         code: s.string.substring(0, 50),
@@ -355,7 +369,7 @@ function scanSemanticHeuristics(content: string, filePath: string): ScanFinding[
                     severity: 'critical',
                     category: 'sast',
                     title: 'Insecure Data Flow (Taint)',
-                    message: `User-controlled variable '${source}' flows into a dangerous sink: ${match[0].split('(')[0]}()`,
+                    description: `User-controlled variable '${source}' flows into a dangerous sink: ${match[0].split('(')[0]}()`,
                     file: filePath,
                     line: index + 1,
                     code: lineText.trim(),
