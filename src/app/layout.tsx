@@ -58,7 +58,7 @@ export default function RootLayout({
             <div className="max-w-7xl mx-auto">
               <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                 <p className="text-white/30 text-sm">
-                  © {new Date().getFullYear()} VibeLab. Built for the AI era.
+                  © {new Date().getFullYear()} VibeLab. <a href="https://promiseresearch.web3ium.space/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors underline decoration-white/30 underline-offset-4">Built by Promise</a>.
                 </p>
                 <div className="flex items-center gap-6 text-sm">
                   <a href="/terms" className="text-white/30 hover:text-white transition-colors">
