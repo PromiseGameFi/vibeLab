@@ -74,7 +74,7 @@ export default function SkillsPage() {
                     </p>
 
                     {/* Quick Stats */}
-                    <div className="flex items-center justify-center gap-8 mb-10">
+                    <div className="flex flex-wrap items-center justify-center gap-8 mb-10">
                         <div className="text-center">
                             <p className="text-2xl font-bold text-[var(--accent)]">{skillsData.length}</p>
                             <p className="text-sm text-[var(--foreground-muted)]">Skills</p>
@@ -135,11 +135,11 @@ export default function SkillsPage() {
             {/* Skills Grid */}
             <section className="px-6 pb-24">
                 <div className="max-w-7xl mx-auto">
-                    <div className="flex items-center justify-between mb-8">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
                         <p className="text-[var(--foreground-secondary)]">
                             {filteredSkills.length} skill{filteredSkills.length !== 1 ? 's' : ''} found
                         </p>
-                        <Link href="/skills/create" className="btn-primary">
+                        <Link href="/skills/create" className="btn-primary w-full sm:w-auto text-center justify-center">
                             <Plus className="w-4 h-4" />
                             Create Skill
                         </Link>
