@@ -48,12 +48,12 @@ export default function VibeMarketPage() {
                         Marketing strategy generators, SMM tools, and content templates for your next launch.
                     </p>
 
-                    <div className="flex items-center justify-center gap-4">
-                        <Link href="/vibeMarket/gtm" className="btn-primary">
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <Link href="/vibeMarket/gtm" className="btn-primary w-full sm:w-auto">
                             <Rocket className="w-4 h-4" />
                             Generate GTM Strategy
                         </Link>
-                        <Link href="/vibeMarket/templates" className="btn-secondary">
+                        <Link href="/vibeMarket/templates" className="btn-secondary w-full sm:w-auto">
                             <TrendingUp className="w-4 h-4" />
                             Strategy Templates
                         </Link>
@@ -111,7 +111,7 @@ export default function VibeMarketPage() {
                 <div className="max-w-4xl mx-auto">
                     <div className="card p-12 text-center">
                         <h2 className="section-title text-white mb-12">Why VibeMarket?</h2>
-                        <div className="grid grid-cols-3 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                             <div>
                                 <div className="text-4xl font-bold text-[var(--accent)] mb-2">0</div>
                                 <p className="text-[var(--foreground-secondary)] text-sm">API Keys Required</p>
