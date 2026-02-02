@@ -224,14 +224,14 @@ export default function PredictionsPage() {
                         </div>
                         <div className="space-y-2">
                             {arbitrageOpps.map(opp => (
-                                <div key={opp.marketId} className="flex items-center justify-between p-3 rounded-lg bg-black/30">
+                                <div key={opp.marketId} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 rounded-lg bg-black/30">
                                     <div>
                                         <p className="text-sm text-white">{opp.title.slice(0, 60)}...</p>
                                         <p className="text-xs text-[var(--foreground-muted)]">
                                             {PLATFORM_CONFIG[opp.platform].icon} YES: {(opp.yesPrice * 100).toFixed(1)}% | NO: {(opp.noPrice * 100).toFixed(1)}%
                                         </p>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="text-right w-full sm:w-auto flex flex-row sm:flex-col justify-between sm:justify-end items-center sm:items-end">
                                         <p className="text-green-400 font-bold">+{(opp.profitMargin * 100).toFixed(1)}%</p>
                                         <a
                                             href={opp.url}
@@ -276,7 +276,7 @@ export default function PredictionsPage() {
                         </select>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         {platforms.map(p => (
                             <button
                                 key={p}
