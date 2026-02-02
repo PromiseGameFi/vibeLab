@@ -225,7 +225,7 @@ export default function MemoryPage() {
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                         <Link
                             href="/memory/chat"
                             className="btn-secondary"
@@ -311,8 +311,8 @@ export default function MemoryPage() {
                 </div>
 
                 {/* Search & Filters */}
-                <div className="flex items-center gap-4 mb-6">
-                    <div className="relative flex-1">
+                <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
+                    <div className="relative w-full md:flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--foreground-muted)]" />
                         <input
                             type="text"
@@ -329,49 +329,51 @@ export default function MemoryPage() {
                         )}
                     </div>
 
-                    {/* AI Search Toggle */}
-                    <button
-                        onClick={() => {
-                            setUseSemanticSearch(!useSemanticSearch);
-                            setSemanticResults([]);
-                        }}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${useSemanticSearch
-                            ? "bg-purple-500/20 text-purple-400 ring-1 ring-purple-500/50"
-                            : "bg-white/5 text-[var(--foreground-secondary)] hover:bg-white/10"
-                            }`}
-                    >
-                        <Zap className="w-4 h-4" />
-                        AI
-                    </button>
-
-                    {useSemanticSearch && search.trim() && (
+                    <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+                        {/* AI Search Toggle */}
                         <button
-                            onClick={handleSemanticSearch}
-                            disabled={searchLoading}
-                            className="btn-primary"
+                            onClick={() => {
+                                setUseSemanticSearch(!useSemanticSearch);
+                                setSemanticResults([]);
+                            }}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${useSemanticSearch
+                                ? "bg-purple-500/20 text-purple-400 ring-1 ring-purple-500/50"
+                                : "bg-white/5 text-[var(--foreground-secondary)] hover:bg-white/10"
+                                }`}
                         >
-                            Search
+                            <Zap className="w-4 h-4" />
+                            AI
                         </button>
-                    )}
 
-                    <div className="flex items-center gap-2">
-                        <Filter className="w-4 h-4 text-[var(--foreground-muted)]" />
-                        {allTags.slice(0, 5).map(tag => (
+                        {useSemanticSearch && search.trim() && (
                             <button
-                                key={tag}
-                                onClick={() => setSelectedTags(
-                                    selectedTags.includes(tag)
-                                        ? selectedTags.filter(t => t !== tag)
-                                        : [...selectedTags, tag]
-                                )}
-                                className={`badge text-xs transition-all ${selectedTags.includes(tag)
-                                    ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
-                                    : 'bg-white/5 hover:bg-white/10'
-                                    }`}
+                                onClick={handleSemanticSearch}
+                                disabled={searchLoading}
+                                className="btn-primary"
                             >
-                                {tag}
+                                Search
                             </button>
-                        ))}
+                        )}
+
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Filter className="w-4 h-4 text-[var(--foreground-muted)]" />
+                            {allTags.slice(0, 5).map(tag => (
+                                <button
+                                    key={tag}
+                                    onClick={() => setSelectedTags(
+                                        selectedTags.includes(tag)
+                                            ? selectedTags.filter(t => t !== tag)
+                                            : [...selectedTags, tag]
+                                    )}
+                                    className={`badge text-xs transition-all ${selectedTags.includes(tag)
+                                        ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
+                                        : 'bg-white/5 hover:bg-white/10'
+                                        }`}
+                                >
+                                    {tag}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
