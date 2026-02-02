@@ -70,7 +70,7 @@ export default function Home() {
           </div>
 
           {/* Quick Actions Grid */}
-          <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto">
             {quickActions.map((action) => (
               <Link
                 key={action.href}
@@ -96,7 +96,7 @@ export default function Home() {
       {/* Tool Directory */}
       <section id="tools" className="py-24 px-6 border-t border-[var(--border)]">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-12">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
             <div>
               <h2 className="section-title text-white">Tool Directory</h2>
               <p className="text-[var(--foreground-secondary)] mt-2">
@@ -106,7 +106,7 @@ export default function Home() {
             <input
               type="text"
               placeholder="Search tools..."
-              className="input w-64"
+              className="input w-full md:w-64"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
