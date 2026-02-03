@@ -17,13 +17,13 @@ const quickActions = [
     badge: "218+ Patterns"
   },
   {
-    title: "AI Memory",
-    description: "Persistent context across tools",
-    href: "/memory",
+    title: "Project Brain",
+    description: "Generate project documentation",
+    href: "/brain",
     icon: Brain,
-    color: "text-purple-400",
-    bg: "bg-purple-500/10",
-    badge: "New"
+    color: "text-cyan-400",
+    bg: "bg-cyan-500/10",
+    badge: "Scaffold"
   },
   {
     title: "AI Skills",
