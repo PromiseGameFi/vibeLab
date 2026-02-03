@@ -28,6 +28,7 @@ export default function Navbar() {
                     <Link href="/scan" className="text-sm text-[var(--foreground-secondary)] hover:text-white transition-colors">Scan</Link>
                     <Link href="/memory" className="text-sm text-[var(--foreground-secondary)] hover:text-white transition-colors">Memory</Link>
                     <Link href="/skills" className="text-sm text-[var(--foreground-secondary)] hover:text-white transition-colors">Skills</Link>
+                    <Link href="/brain" className="text-sm text-[var(--foreground-secondary)] hover:text-white transition-colors">Brain</Link>
                     <Link href="/predictions" className="text-sm text-[var(--foreground-secondary)] hover:text-white transition-colors">Predictions</Link>
                     <Link href="/#tools" className="text-sm text-[var(--foreground-secondary)] hover:text-white transition-colors">Tools</Link>
                 </div>
@@ -50,6 +51,7 @@ export default function Navbar() {
                     <Link href="/scan" onClick={closeMenu} className="text-sm text-[var(--foreground-secondary)] hover:text-white transition-colors py-2">Scan</Link>
                     <Link href="/memory" onClick={closeMenu} className="text-sm text-[var(--foreground-secondary)] hover:text-white transition-colors py-2">Memory</Link>
                     <Link href="/skills" onClick={closeMenu} className="text-sm text-[var(--foreground-secondary)] hover:text-white transition-colors py-2">Skills</Link>
+                    <Link href="/brain" onClick={closeMenu} className="text-sm text-[var(--foreground-secondary)] hover:text-white transition-colors py-2">Brain</Link>
                     <Link href="/predictions" onClick={closeMenu} className="text-sm text-[var(--foreground-secondary)] hover:text-white transition-colors py-2">Predictions</Link>
                     <Link href="/#tools" onClick={closeMenu} className="text-sm text-[var(--foreground-secondary)] hover:text-white transition-colors py-2">Tools</Link>
                 </div>
