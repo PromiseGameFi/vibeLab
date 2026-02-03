@@ -29,6 +29,7 @@ vibelab/
 | `/[slug]` | `[slug]/page.tsx` | Dynamic tool blueprints |
 | `/scan` | `scan/page.tsx` | Security Scanner |
 | `/skills` | `skills/page.tsx` | AI Coding Skills |
+| `/brain` | `brain/page.tsx` | Project Brain Generator |
 
 ### VibeMarket (`/vibeMarket`)
 | Route | Description |
@@ -54,6 +55,7 @@ vibelab/
 | `/generate/skill` | AI skill generation |
 | `/generate/gtm` | AI GTM strategy |
 | `/generate/marketing` | AI marketing strategy |
+| `/generate/brain` | Project documentation generation |
 
 ---
 
