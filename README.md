@@ -69,6 +69,7 @@ cd my-project && vibeloop     # Run loop
 - Pre-built coding rules for Cursor, Claude Code, Windsurf
 - One-click export to `.cursorrules`, `CLAUDE.md`, etc.
 
+
 ###  VibeMarket (`/vibeMarket`)
 - GTM Strategy Generator
 - Marketing Templates
@@ -121,6 +122,7 @@ vibeloop/
 ├── adapters/              # Claude Code, Cursor, OpenCode, Antigravity
 ├── cli/                   # CLI tool (vibeloop start)
 └── vscode-extension/      # VS Code extension with webview dashboard
+
 ```
 
 ##  Tech Stack
