@@ -69,6 +69,12 @@ cd my-project && vibeloop     # Run loop
 - Pre-built coding rules for Cursor, Claude Code, Windsurf
 - One-click export to `.cursorrules`, `CLAUDE.md`, etc.
 
+###  VibeAudit (`vibeAudit/`)
+**Smart Contract Security Scanner**
+- **AI-Powered**: Uses Gemini 2.0 Flash to audit Solidity code.
+- **Local Only**: Scans your files safely without exposing them to public chains.
+- **Reports**: Generates `audit_report.md` with findings and fixes.
+
 
 ###  VibeMarket (`/vibeMarket`)
 - GTM Strategy Generator
@@ -122,6 +128,11 @@ vibeloop/
 ├── adapters/              # Claude Code, Cursor, OpenCode, Antigravity
 ├── cli/                   # CLI tool (vibeloop start)
 └── vscode-extension/      # VS Code extension with webview dashboard
+
+vibeAudit/                 # Security scanner
+├── src/                   # Source code (scanner, auditor, reporter)
+├── package.json           # Dependencies (openai, glob)
+└── README.md              # Usage instructions
 
 ```
 
