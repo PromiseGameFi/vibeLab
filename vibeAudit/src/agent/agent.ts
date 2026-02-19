@@ -14,14 +14,8 @@ import { triageTarget, TriageResult } from './triage';
 import { Notifier } from './notify';
 import { startDashboard, AgentStatus } from './dashboard';
 import { checkFoundryInstalled } from '../utils';
-import { gatherIntel, getAnalyzableCode, ContractIntel } from './intel-gatherer';
-import { simulateExploits, extractFindings, VulnerabilityFinding, SimulationReport } from './exploit-simulator';
 import { LearningEngine } from './learning';
-import { analyzeContractDeep } from './analyzers/contract-deep';
-import { analyzeProcessFlow } from './analyzers/process-flow';
-import { analyzeFrontendInteraction } from './analyzers/frontend-interaction';
-import { analyzeBridgeSecurity } from './analyzers/bridge-security';
-import { generateSecurityReport, saveReport, SecurityReport } from './analyzers/report-generator';
+import { ReActEngine } from './react/loop';
 
 dotenv.config();
 
@@ -228,19 +222,8 @@ export class VibeAuditAgent {
                 this.currentTarget = target.address;
                 this.memory.updateContractStatus(target.address, target.chain, 'analyzing');
 
-                const report = await this.analyzeTarget(target, triageResult);
-
-                // Store results
-                if (report) {
-                    this.targetsProcessed++;
-                    this.storeReport(target, report.securityReport);
-
-                    // Notify on high-risk findings
-                    if (report.securityReport.overallRiskScore >= 60) {
-                        this.confirmedVulns += report.simulationReport?.confirmedVulnerabilities || 0;
-                        await this.notifyHighRisk(target, report.securityReport, report.simulationReport);
-                    }
-                }
+                await this.analyzeTarget(target, triageResult);
+                this.targetsProcessed++;
 
                 this.currentTarget = null;
 
@@ -262,214 +245,62 @@ export class VibeAuditAgent {
     private async analyzeTarget(
         target: QueueTarget,
         triageResult: TriageResult,
-    ): Promise<{ securityReport: SecurityReport; simulationReport?: SimulationReport } | null> {
+    ): Promise<void> {
 
-        // ─── Step 1: Gather Intelligence ────────────────────────
-        console.log(chalk.cyan(`   🔍 Step 1: Gathering intelligence...`));
-        let intel: ContractIntel;
-        try {
-            intel = await gatherIntel(target.address, target.chain, target.rpcUrl);
-        } catch (error) {
-            console.log(chalk.red(`   ✗ Intel gathering failed: ${(error as Error).message}`));
-            return null;
-        }
-
-        // Check cross-contract learning for known bytecode
-        const bytecodeHash = crypto.createHash('sha256').update(intel.bytecode).digest('hex');
-        const knownPatterns = this.learning.checkBytecodeMatch(bytecodeHash);
-        if (knownPatterns.length > 0) {
-            console.log(chalk.yellow(`   ⚡ Known vulnerable bytecode! Previously found: ${knownPatterns.map(p => p.category).join(', ')}`));
-        }
-
-        const code = getAnalyzableCode(intel);
-        const contractName = intel.contractName;
-        const ctx = { address: target.address, balance: intel.balance, chain: target.chain };
-
-        // ─── Step 2: Run 4 Analysis Modules ─────────────────────
-        console.log(chalk.cyan(`   📊 Step 2: Running deep analysis on ${contractName}...`));
-
-        // Get calibration context from learning DB to improve AI accuracy
-        const calCtx = this.learning.getCalibrationContext('reentrancy') +
-            this.learning.getCalibrationContext('access-control') +
-            this.learning.getCalibrationContext('integer-overflow');
-
-        const [contractAnalysis, processFlow, frontendInteraction, bridgeSecurity] = await Promise.all([
-            analyzeContractDeep(code, contractName, ctx).catch(err => {
-                console.log(chalk.yellow(`   ⚠ Contract deep analysis failed: ${err.message}`));
-                return null;
-            }),
-            analyzeProcessFlow(code, contractName, ctx).catch(err => {
-                console.log(chalk.yellow(`   ⚠ Process flow analysis failed: ${err.message}`));
-                return null;
-            }),
-            analyzeFrontendInteraction(code, contractName, ctx).catch(err => {
-                console.log(chalk.yellow(`   ⚠ Frontend interaction analysis failed: ${err.message}`));
-                return null;
-            }),
-            analyzeBridgeSecurity(code, contractName, ctx).catch(err => {
-                console.log(chalk.yellow(`   ⚠ Bridge security analysis failed: ${err.message}`));
-                return null;
-            }),
-        ]);
-
-        // ─── Step 3: Extract Testable Findings ──────────────────
-        console.log(chalk.cyan(`   🧪 Step 3: Extracting vulnerability findings...`));
-        const findings = await extractFindings(code, contractName, intel);
-        console.log(chalk.gray(`     ${findings.length} findings extracted`));
-
-        // ─── Step 4: Simulate Exploits on Fork ──────────────────
-        let simulationReport: SimulationReport | undefined;
-        if (findings.length > 0 && !this.config.skipExecution) {
-            console.log(chalk.cyan(`   ⚔️  Step 4: Simulating exploits on fork...`));
-            simulationReport = await simulateExploits(intel, findings, target.rpcUrl);
-        } else if (findings.length > 0) {
-            console.log(chalk.yellow(`   ⚠ Step 4: Skipped (Foundry not available)`));
-        }
-
-        // ─── Step 5: Learn from Results ──────────────────────────
-        console.log(chalk.cyan(`   🧠 Step 5: Recording learning...`));
-
-        // Determine contract type for pattern learning
-        const contractType = intel.tokenInfo?.standard ||
-            (intel.isProxy ? 'Proxy' : (contractAnalysis?.contractType || 'Other'));
-
-        const triageFeatures: Record<string, number> = {
-            balance_eth: parseFloat(intel.balance) || 0,
-            bytecode_size: intel.bytecodeSize / 10000,
-            has_source: intel.sourceCode ? 1 : 0,
-            is_proxy: intel.isProxy ? 1 : 0,
-            is_token: intel.tokenInfo ? 1 : 0,
-            tx_count: Math.min((intel.totalTxCount || 0) / 100, 1),
-            unique_callers: Math.min(intel.topCallers.length / 10, 1),
-            has_owner: intel.owner ? 1 : 0,
+        console.log(chalk.cyan(`   🤖 Starting ReAct Intelligence Engine...`));
+        const reactEngine = new ReActEngine();
+        
+        // Stream thoughts to UI (memory system can also pick this up if needed)
+        reactEngine.onThought = (thought) => {
+             // In the future: emit SSE to dashboard here
         };
+        
+        const result = await reactEngine.run(target.address, target.chain);
+        
+        let riskScore = 0;
+        let isConfirmed = 0;
 
-        if (simulationReport) {
-            for (const sim of simulationReport.simulations) {
-                this.learning.recordOutcome({
-                    category: sim.finding.category,
-                    contractType,
-                    wasConfirmed: sim.passed,
-                    predictedSeverity: sim.finding.severity,
-                    contractAddress: target.address,
-                    chain: target.chain,
-                    reason: sim.passed
-                        ? 'Exploit simulation succeeded on fork'
-                        : (sim.error || 'Exploit simulation failed on fork'),
-                    features: triageFeatures,
-                });
-            }
-
-            // Record bytecode pattern if vulnerabilities were confirmed
-            if (simulationReport.confirmedVulnerabilities > 0) {
-                const confirmedCategories = simulationReport.simulations
-                    .filter(s => s.passed)
-                    .map(s => s.finding.category);
-
-                this.learning.recordBytecodePattern(
-                    bytecodeHash,
-                    intel.bytecode.substring(0, 100), // First 100 chars as pattern
-                    target.address,
-                    target.chain,
-                    confirmedCategories,
-                    contractAnalysis?.overallRiskScore || 0,
-                );
-            }
+        if (result.status === 'exploited') {
+            riskScore = 100;
+            isConfirmed = 1;
+            console.log(chalk.red(`\n   💀 EXPLOIT CONFIRMED:\n${result.details}`));
+        } else if (result.status === 'secure') {
+            riskScore = 10;
+            console.log(chalk.green(`\n   🛡️ TARGET SECURE:\n${result.details}`));
+        } else {
+            riskScore = 50;
+            console.log(chalk.yellow(`\n   ⏱️ RUN ENDED (${result.status}):\n${result.details}`));
         }
 
-        // ─── Step 6: Generate Report ────────────────────────────
-        const securityReport = generateSecurityReport(
-            target.address,
-            target.chain,
-            contractAnalysis || { contractName, contractType: 'Other', tokenCompliance: { standard: 'none', deviations: [], missingEvents: [], edgeCaseRisks: [] }, upgradeMechanics: { isUpgradeable: false, proxyPattern: 'none', storageRisks: [], initGuards: [], adminControl: 'unknown' }, accessControl: { roles: [], ownershipTransfer: 'none', timelocks: [], unprotectedFunctions: [] }, fundFlow: { entryPoints: [], exitPoints: [], internalTransfers: [], feeStructure: 'unknown', emergencyWithdraw: false }, dependencies: { externalContracts: [], oracleReliance: [], approvalPatterns: [], libraryUsage: [] }, overallRiskScore: 0, summary: 'Analysis incomplete' },
-            processFlow || { contractName, states: [], transitions: [], userJourneys: [], orderingRisks: [], timeDependencies: [], economicFlows: [], mermaidDiagram: '', riskScore: 0, summary: 'Analysis incomplete' },
-            frontendInteraction || { contractName, abiSurface: { readFunctions: [], writeFunctions: [], adminFunctions: [], totalFunctions: 0, complexityScore: 0 }, approvalChains: [], txOrderingRisks: [], gasCostPatterns: [], phishingVectors: [], eventReliance: [], riskScore: 0, summary: 'Analysis incomplete' },
-            bridgeSecurity || { contractName, isBridge: false, bridgeType: 'none', messageVerification: { mechanism: 'N/A', validators: 'N/A', thresholdScheme: 'N/A', replayProtection: false, risks: [] }, lockMintMechanics: { lockFunction: '', mintFunction: '', burnFunction: '', unlockFunction: '', atomicity: 'N/A', drainRisks: [], spoofRisks: [] }, finalityRisks: [], adminKeyRisks: [], liquidityPoolRisks: [], knownExploitPatterns: [], riskScore: 0, summary: 'Not a bridge' },
-        );
-
-        // Print summary
-        const riskLabel = securityReport.overallRiskScore >= 80 ? '🔴 CRITICAL' :
-            securityReport.overallRiskScore >= 60 ? '🟠 HIGH' :
-                securityReport.overallRiskScore >= 40 ? '🟡 MEDIUM' :
-                    securityReport.overallRiskScore >= 20 ? '🟢 LOW' : '⚪ MINIMAL';
-
-        console.log(chalk.bold(`\n   ${riskLabel} — Risk Score: ${securityReport.overallRiskScore}/100`));
-        if (simulationReport) {
-            console.log(chalk.gray(`   Simulations: ${simulationReport.confirmedVulnerabilities} confirmed, ${simulationReport.deniedVulnerabilities} denied`));
-        }
-        console.log(chalk.gray(`   ${contractAnalysis?.summary || 'Analysis complete'}`));
-
-        // Save to file
-        const filepath = saveReport(securityReport);
-        console.log(chalk.green(`   📄 Report saved: ${filepath}`));
-
-        // Log learning stats
-        const lStats = this.learning.getStats();
-        console.log(chalk.gray(`   🧠 Learning: ${lStats.totalPredictions} predictions, ${(lStats.overallAccuracy * 100).toFixed(1)}% accuracy`));
-
-        return { securityReport, simulationReport };
-    }
-
-    // ─── Results Storage ────────────────────────────────────────
-
-    private storeReport(target: QueueTarget, report: SecurityReport): void {
+        // Store results in Agent Memory
         this.memory.updateContractResults(
             target.address, target.chain,
-            report.overallRiskScore, report.overallRiskScore >= 60 ? 1 : 0,
+            riskScore, isConfirmed
         );
 
         this.memory.addReport(
             target.address,
             target.chain,
-            report.contractName,
-            report.overallRiskScore,
-            JSON.stringify({
-                contractAnalysis: report.contractAnalysis,
-                processFlow: report.processFlow,
-                frontendInteraction: report.frontendInteraction,
-                bridgeSecurity: report.bridgeSecurity,
-            }),
-            report.markdown,
+            `Target ${target.address.substring(0, 8)}`,
+            riskScore,
+            JSON.stringify({ reactStatus: result.status, details: result.details }),
+            `# ReAct Security Report\n\n**Status:** ${result.status}\n\n**Details:**\n${result.details}`
         );
 
-        this.memory.log('info', `Analysis complete for ${target.address}`, {
-            riskScore: report.overallRiskScore,
-            contractType: report.contractAnalysis.contractType,
-            isBridge: report.bridgeSecurity.isBridge,
+        this.memory.log('info', `ReAct Analysis complete for ${target.address}`, {
+            status: result.status,
+            riskScore: riskScore,
         });
-    }
 
-    // ─── Notifications ──────────────────────────────────────────
-
-    private async notifyHighRisk(
-        target: QueueTarget,
-        report: SecurityReport,
-        simReport?: SimulationReport,
-    ): Promise<void> {
-        if (this.notifier.isConfigured()) {
-            const simLine = simReport
-                ? `Confirmed Vulns: ${simReport.confirmedVulnerabilities}\n`
-                : '';
-
+        if (isConfirmed && this.notifier.isConfigured()) {
+            this.confirmedVulns++;
             await this.notifier.alertStatus(
-                `🛡️ HIGH-RISK CONTRACT FOUND\n\n` +
+                `🛡️ HIGH-RISK CONTRACT EXPLOITED\n\n` +
                 `Chain: ${target.chain}\n` +
-                `Address: ${target.address}\n` +
-                `Name: ${report.contractName}\n` +
-                `Type: ${report.contractAnalysis.contractType}\n` +
-                `Risk Score: ${report.overallRiskScore}/100\n` +
-                simLine +
-                `Bridge: ${report.bridgeSecurity.isBridge ? 'YES' : 'No'}\n\n` +
-                `${report.contractAnalysis.summary}`
+                `Address: ${target.address}\n\n` +
+                `Details:\n${result.details}`
             );
         }
-
-        this.memory.log('warn', `HIGH RISK: ${report.contractName} (${report.overallRiskScore}/100)`, {
-            address: target.address,
-            chain: target.chain,
-            riskScore: report.overallRiskScore,
-            confirmedVulns: simReport?.confirmedVulnerabilities || 0,
-        });
     }
 
     // ─── Status ─────────────────────────────────────────────────
