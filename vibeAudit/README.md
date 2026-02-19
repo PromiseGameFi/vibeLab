@@ -1,8 +1,8 @@
 # VibeAudit 🛡️
 
-**Autonomous AI-Powered Smart Contract Security Intelligence Agent**
+**Autonomous AI-Powered Security Intelligence Agent**
 
-VibeAudit discovers contracts on-chain, gathers deep intelligence, runs 4-layer AI analysis, simulates exploits on forked chains, and **learns from every engagement** via reinforcement learning.
+VibeAudit discovers contracts on-chain, gathers deep intelligence, runs 4-layer AI analysis, simulates exploits (EVM), and **learns from every engagement**. Now with native **Solana** and **SUI** support.
 
 > ⚠️ **DISCLAIMER**: For authorized testing and educational purposes only.
 
@@ -14,8 +14,6 @@ cp .env.example .env
 # Edit .env with your Groq API key
 ```
 
-**Requirements**: [Foundry](https://book.getfoundry.sh/) for exploit execution (optional).
-
 ## 🧪 Testing UI
 
 Launch the interactive web interface:
@@ -26,32 +24,40 @@ npm run ui
 
 ## ⚔️ Commands
 
-### Analyze a Deployed Contract
-Full autonomous pipeline: intel → analysis → findings → simulation → learning → report
+### Analyze a Single Contract/Program
+Autonomous pipeline: intel → analysis → findings → simulation (EVM) → learning → report
+
 ```bash
+# EVM (Ethereum, Arbitrum, Base, BSC, Sepolia)
 npm start analyze 0xContractAddress --chain ethereum
+
+# Solana (Mainnet, Devnet)
+npm start analyze ProgramID --chain solana
+
+# SUI (Mainnet, Testnet)
+npm start analyze PackageID --chain sui
 ```
 
-### Attack Mode
+### Attack Mode (EVM Only)
 Fetch on-chain contract → AI generates exploits → Foundry runs them:
 ```bash
 npm run attack -- -a 0xContractAddress -r https://rpc-url
 ```
 
-### Exploit Local Files
+### Exploit Local Files (EVM Only)
 Point at `.sol` files → full 6-stage pipeline:
 ```bash
 npm run exploit -- ./contracts/Target.sol
-npm run exploit -- ./contracts/           # entire directory
+npm run exploit -- ./contracts/
 ```
 
 ### Autonomous Agent
-Continuously discover, triage, analyze, simulate, and learn:
+Continuously discover, triage, analyze, simulate, and learn (all supported chains):
 ```bash
 npm run agent
 ```
 
-### MEV Scanner
+### MEV Scanner (EVM Only)
 Scan recent blocks for profitable exploit opportunities:
 ```bash
 npm run mev -- -r https://rpc-url -b 100
@@ -60,9 +66,9 @@ npm run mev -- -r https://rpc-url -b 100
 ## 📄 Output
 
 Reports are generated in `audit_reports/` with:
-- **Risk score** (0–100) across 4 analysis layers
-- **Confirmed exploits** verified on forked chain
-- **Contract intelligence** (proxy, token, balance, deployer)
+- **Risk score** (0–100) across 4 analysis layers (Deep, Flow, Frontend, Bridge)
+- **Confirmed exploits** verified on forked chain (EVM)
+- **Contract intelligence** (proxy, token, balance, deployer, source)
 - **Learning data** fed back to the RL database
 
 ## 🧪 Test It
@@ -77,9 +83,10 @@ npm run exploit -- ./test-contracts/VulnerableVault.sol
 | Variable | Description |
 |----------|-------------|
 | `GROQ_API_KEY` | Required. Your Groq API key |
-| `AI_MODEL` | AI model (default: `llama-3.3-70b-versatile`) |
-| `DEFAULT_RPC` | Default RPC for on-chain ops |
-| `ETHERSCAN_API_KEY` | Optional. For fetching verified source code |
+| `SOLANA_RPC` | Optional. Solana RPC URL |
+| `SUI_RPC` | Optional. SUI RPC URL |
+| `DEFAULT_RPC` | Optional. EVM Default RPC |
+| `ETHERSCAN_API_KEY` | Optional. For fetching verified EVM source |
 | `FORK_BLOCK` | Block number for Foundry fork tests |
 
 ## 📐 Architecture
@@ -88,12 +95,13 @@ See [auditprd.md](./auditprd.md) for the full architecture document.
 
 ```
 src/
-├── main.ts              CLI entry (7 commands)
-├── pipeline/            6-stage exploit pipeline
+├── main.ts              CLI entry
+├── chains/              Chain Providers (EVM, Solana, SUI)
+├── pipeline/            6-stage exploit pipeline (EVM)
 ├── agent/               Autonomous intelligence agent
 │   ├── agent.ts         Main loop
-│   ├── intel-gatherer   Deep on-chain collection
-│   ├── exploit-simulator Fork-based testing
+│   ├── intel-gatherer   Chain-agnostic intel collection
+│   ├── exploit-simulator Fork-based testing (EVM)
 │   ├── learning.ts      Reinforcement learning DB
 │   └── analyzers/       4-layer analysis modules
 └── ui/                  Interactive testing UI
