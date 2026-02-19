@@ -19,6 +19,8 @@ function getLLM(): OpenAI {
     return _openai;
 }
 
+import { AttackStrategy } from '../../pipeline/strategy';
+
 export interface AttackPlan {
     prioritizedVectors: {
         vector: string;
@@ -83,7 +85,38 @@ Return ONLY valid JSON matching this schema:
             const content = response.choices[0].message.content;
             if (!content) throw new Error('Empty response from LLM');
 
-            return JSON.parse(content) as AttackPlan;
+            const llmPlan = JSON.parse(content) as AttackPlan;
+
+            // Initialize strategy from chain priors
+            const plan: AttackPlan = {
+                prioritizedVectors: [],
+            };
+
+            if (intel.extra?.characteristics?.attackPriors) {
+                const priors = intel.extra.characteristics.attackPriors as string[];
+                plan.prioritizedVectors = priors.map(prior => ({
+                    vector: prior.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                    reasoning: `High-probability exploit vector for ${chain} networks based on chain metadata.`,
+                    toolsNeeded: ['read_source', 'analyze_code', 'generate_exploit']
+                }));
+            } else {
+                // Fallback empty plan ready for ReAct engine
+                plan.prioritizedVectors.push({
+                    vector: 'General Reconnaissance & Reentrancy',
+                    reasoning: 'Scan all external calls and state changes for typical vulnerabilities.',
+                    toolsNeeded: ['read_source', 'analyze_code']
+                });
+            }
+
+            // Merge LLM plan into strategy if available
+            if (llmPlan.prioritizedVectors && llmPlan.prioritizedVectors.length > 0) {
+                llmPlan.prioritizedVectors.forEach((vector) => {
+                    plan.prioritizedVectors.push(vector);
+                });
+            }
+
+            return plan;
+
         } catch (error) {
             console.error('Failed to generate attack plan:', error);
             // Fallback safe plan
@@ -91,8 +124,8 @@ Return ONLY valid JSON matching this schema:
                 prioritizedVectors: [
                     {
                         vector: 'Standard Code Review',
-                        reasoning: 'Fallback deep analysis plan.',
-                        toolsNeeded: ['analyze_code', 'generate_exploit'],
+                        reasoning: 'Fallback deep analysis plan due to strategy generation failure.',
+                        toolsNeeded: ['read_source', 'analyze_code']
                     }
                 ]
             };

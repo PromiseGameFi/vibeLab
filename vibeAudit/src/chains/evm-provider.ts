@@ -3,12 +3,13 @@
  * Supports: Ethereum, BSC, Arbitrum, Base, Sepolia, etc.
  */
 
-import { ethers } from 'ethers';
+import { ethers, JsonRpcProvider } from 'ethers';
 import axios from 'axios';
 import OpenAI from 'openai';
 import {
     ChainProvider, ChainType, ChainIntel, ProgramInfo, TxInfo, SimResult,
 } from './chain-provider';
+import { CHAIN_METADATA } from './chain-data';
 
 let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
@@ -72,7 +73,7 @@ export class EVMProvider implements ChainProvider {
         const provider = this.getProvider();
 
         // Parallel fetches
-        const [bytecode, balance, txCount, source, nonce] = await Promise.all([
+        const [contractCode, balance, txCount, source, nonce] = await Promise.all([
             provider.getCode(address),
             provider.getBalance(address),
             provider.getTransactionCount(address),
@@ -82,17 +83,20 @@ export class EVMProvider implements ChainProvider {
 
         // Proxy detection via storage slots
         let isProxy = false;
-        let owner: string | undefined;
-        let deployer: string | undefined;
+        let adminAddress: string | undefined;
+        let implAddress: string | undefined;
         try {
             // EIP-1967 implementation slot
             const implSlot = await provider.getStorage(address, '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc');
-            if (implSlot && implSlot !== '0x' + '0'.repeat(64)) isProxy = true;
+            if (implSlot && implSlot !== '0x' + '0'.repeat(64)) {
+                isProxy = true;
+                implAddress = '0x' + implSlot.slice(-40);
+            }
 
-            // Owner slot (common pattern)
-            const ownerSlot = await provider.getStorage(address, '0x0000000000000000000000000000000000000000000000000000000000000000');
-            if (ownerSlot && ownerSlot !== '0x' + '0'.repeat(64)) {
-                owner = '0x' + ownerSlot.slice(-40);
+            // EIP-1967 admin slot
+            const adminSlot = await provider.getStorage(address, '0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103');
+            if (adminSlot && adminSlot !== '0x' + '0'.repeat(64)) {
+                adminAddress = '0x' + adminSlot.slice(-40);
             }
         } catch { }
 
@@ -125,15 +129,15 @@ export class EVMProvider implements ChainProvider {
 
         // Decompile if no source
         let decompiledCode: string | undefined;
-        if (!source && bytecode.length > 10) {
-            decompiledCode = await this.decompileOrDisassemble(bytecode);
+        if (!source && contractCode.length > 10) {
+            decompiledCode = await this.decompileOrDisassemble(contractCode);
         }
 
         // Detect function selectors from bytecode
         const detectedFunctions: string[] = [];
         const selectorRegex = /63([0-9a-f]{8})/gi;
         let match;
-        while ((match = selectorRegex.exec(bytecode)) !== null) {
+        while ((match = selectorRegex.exec(contractCode)) !== null) {
             detectedFunctions.push('0x' + match[1]);
         }
 
@@ -155,24 +159,33 @@ export class EVMProvider implements ChainProvider {
             }
         } catch { }
 
+        const chainData = CHAIN_METADATA[this.chainName];
+
         return {
             chainType: 'evm',
             chainName: this.chainName,
             address,
-            programName: contractName,
-            bytecode,
-            bytecodeSize: (bytecode.length - 2) / 2,
+            programName: contractCode.length > 2 ? contractName : 'EOA',
+            bytecode: contractCode,
+            bytecodeSize: (contractCode.length - 2) / 2,
             balance: ethers.formatEther(balance),
             sourceCode: source || undefined,
             decompiledCode,
             language: 'solidity',
             isUpgradeable: isProxy,
-            deployer,
-            owner,
+            deployer: undefined, // Removed from top-level, now in extra if applicable
+            owner: undefined, // Removed from top-level, now in extra if applicable
             tokenInfo,
             detectedFunctions,
             totalTxCount: txCount,
-            extra: { nonce },
+            extra: {
+                nonce,
+                isProxy,
+                adminAddress,
+                implAddress,
+                characteristics: chainData?.characteristics || null,
+                defiContracts: chainData?.contracts || null
+            }
         };
     }
 
