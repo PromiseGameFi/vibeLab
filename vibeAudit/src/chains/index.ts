@@ -11,6 +11,7 @@ export { ChainProvider, ChainType, ChainIntel, ProgramInfo, TxInfo, SimResult, g
 export { EVMProvider } from './evm-provider';
 export { SolanaProvider } from './solana-provider';
 export { SUIProvider } from './sui-provider';
+export { ChainMetadata, CHAIN_METADATA } from './chain-data';
 
 /**
  * Get a connected chain provider for the given chain name.
