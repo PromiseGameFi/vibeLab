@@ -15,14 +15,10 @@ import chalk from 'chalk';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 import { gatherIntel, getAnalyzableCode, ContractIntel } from '../agent/intel-gatherer';
-import { extractFindings, simulateExploits, VulnerabilityFinding, SimulationReport } from '../agent/exploit-simulator';
 import { LearningEngine } from '../agent/learning';
-import { analyzeContractDeep } from '../agent/analyzers/contract-deep';
-import { analyzeProcessFlow } from '../agent/analyzers/process-flow';
-import { analyzeFrontendInteraction } from '../agent/analyzers/frontend-interaction';
-import { analyzeBridgeSecurity } from '../agent/analyzers/bridge-security';
-import { generateSecurityReport, saveReport, SecurityReport } from '../agent/analyzers/report-generator';
 import { checkFoundryInstalled, getDefaultRpc } from '../utils';
+import { ReActEngine } from '../agent/react/loop';
+import { AttackStrategist } from '../agent/react/strategist';
 
 dotenv.config();
 
@@ -37,9 +33,8 @@ interface AnalysisRun {
     completedAt?: string;
     progress: string[];
     intel?: ContractIntel;
-    findings?: VulnerabilityFinding[];
-    simulationReport?: SimulationReport;
-    securityReport?: SecurityReport;
+    reactStatus?: string;
+    reactDetails?: string;
     error?: string;
 }
 
@@ -140,10 +135,10 @@ export function startTestingUI(port: number = 4041): void {
             status: r.status,
             startedAt: r.startedAt,
             completedAt: r.completedAt,
-            riskScore: r.securityReport?.overallRiskScore,
+            riskScore: r.reactStatus === 'exploited' ? 100 : (r.reactStatus === 'secure' ? 10 : 50),
             contractName: r.intel?.contractName,
-            confirmed: r.simulationReport?.confirmedVulnerabilities,
-            denied: r.simulationReport?.deniedVulnerabilities,
+            confirmed: r.reactStatus === 'exploited' ? 1 : 0,
+            denied: r.reactStatus === 'secure' ? 1 : 0,
         })));
     });
 
@@ -161,12 +156,12 @@ export function startTestingUI(port: number = 4041): void {
 // ─── Analysis Pipeline ──────────────────────────────────────────────
 
 async function runAnalysis(run: AnalysisRun, rpcUrl: string, simulate: boolean): Promise<void> {
-    const TOTAL_STEPS = 6;
     const runId = run.id;
 
     try {
-        // Step 1: Gather Intelligence
-        sendProgress(runId, 1, TOTAL_STEPS, 'Gathering Intelligence', `Fetching on-chain data for ${run.address}...`);
+        sendProgress(runId, 1, 3, 'Initializing Agent', `Starting ReAct engine for ${run.address}...`);
+
+        // 1. Optional: Gather initial intel for the UI (not strictly required by ReAct, but good for dashboard)
         const intel = await gatherIntel(run.address, run.chain, rpcUrl);
         run.intel = intel;
         sendEvent(runId, 'intel', {
@@ -182,159 +177,50 @@ async function runAnalysis(run: AnalysisRun, rpcUrl: string, simulate: boolean):
             owner: intel.owner,
         });
 
-        const code = getAnalyzableCode(intel);
-        const contractName = intel.contractName;
-        const ctx = { address: run.address, balance: intel.balance, chain: run.chain };
+        // 2. Generate Initial Attack Plan (Strategist)
+        sendProgress(runId, 2, 3, 'Planning', `Building attack tree...`);
+        const strategist = new AttackStrategist();
+        const plan = await strategist.generateInitialPlan(run.address, run.chain);
+        sendEvent(runId, 'plan', { plan: plan.prioritizedVectors });
 
-        // Check learning DB for known bytecode
-        const bytecodeHash = crypto.createHash('sha256').update(intel.bytecode).digest('hex');
-        const knownPatterns = learning.checkBytecodeMatch(bytecodeHash);
-        if (knownPatterns.length > 0) {
-            sendEvent(runId, 'known_pattern', { patterns: knownPatterns });
-        }
+        // 3. ReAct Loop Execution
+        sendProgress(runId, 3, 3, 'Agent Execution', 'Executing ReAct Loop...');
+        const engine = new ReActEngine();
 
-        // Step 2: 4-Layer Analysis
-        sendProgress(runId, 2, TOTAL_STEPS, 'Deep Analysis', 'Running contract, process, frontend, bridge analysis...');
-
-        const [contractAnalysis, processFlow, frontendInteraction, bridgeSecurity] = await Promise.all([
-            analyzeContractDeep(code, contractName, ctx).catch(err => {
-                sendEvent(runId, 'module_error', { module: 'contract-deep', error: err.message });
-                return null;
-            }),
-            analyzeProcessFlow(code, contractName, ctx).catch(err => {
-                sendEvent(runId, 'module_error', { module: 'process-flow', error: err.message });
-                return null;
-            }),
-            analyzeFrontendInteraction(code, contractName, ctx).catch(err => {
-                sendEvent(runId, 'module_error', { module: 'frontend-interaction', error: err.message });
-                return null;
-            }),
-            analyzeBridgeSecurity(code, contractName, ctx).catch(err => {
-                sendEvent(runId, 'module_error', { module: 'bridge-security', error: err.message });
-                return null;
-            }),
-        ]);
-
-        sendEvent(runId, 'analysis_complete', {
-            contractDeep: !!contractAnalysis,
-            processFlow: !!processFlow,
-            frontendInteraction: !!frontendInteraction,
-            bridgeSecurity: !!bridgeSecurity,
-            contractType: contractAnalysis?.contractType,
-            isBridge: bridgeSecurity?.isBridge,
-        });
-
-        // Step 3: Extract Findings
-        sendProgress(runId, 3, TOTAL_STEPS, 'Extracting Findings', 'AI analyzing for vulnerabilities...');
-        const findings = await extractFindings(code, contractName, intel);
-        run.findings = findings;
-        sendEvent(runId, 'findings', { findings });
-
-        // Step 4: Simulate
-        let simReport: SimulationReport | undefined;
-        if (findings.length > 0 && simulate && checkFoundryInstalled()) {
-            sendProgress(runId, 4, TOTAL_STEPS, 'Simulating Exploits', `Testing ${findings.length} findings on fork...`);
-            simReport = await simulateExploits(intel, findings, rpcUrl);
-            run.simulationReport = simReport;
-            sendEvent(runId, 'simulation', {
-                confirmed: simReport.confirmedVulnerabilities,
-                denied: simReport.deniedVulnerabilities,
-                simulations: simReport.simulations.map(s => ({
-                    title: s.finding.title,
-                    category: s.finding.category,
-                    severity: s.finding.severity,
-                    passed: s.passed,
-                    duration: s.duration,
-                    gasUsed: s.gasUsed,
-                })),
-            });
-        } else {
-            sendProgress(runId, 4, TOTAL_STEPS, 'Simulation Skipped',
-                !simulate ? 'Disabled by user' :
-                    findings.length === 0 ? 'No findings to test' :
-                        'Foundry not installed');
-        }
-
-        // Step 5: Learn
-        sendProgress(runId, 5, TOTAL_STEPS, 'Recording Learning', 'Updating RL database...');
-        const contractType = intel.tokenInfo?.standard ||
-            (intel.isProxy ? 'Proxy' : (contractAnalysis?.contractType || 'Other'));
-
-        const triageFeatures: Record<string, number> = {
-            balance_eth: parseFloat(intel.balance) || 0,
-            bytecode_size: intel.bytecodeSize / 10000,
-            has_source: intel.sourceCode ? 1 : 0,
-            is_proxy: intel.isProxy ? 1 : 0,
-            is_token: intel.tokenInfo ? 1 : 0,
+        // Stream thoughts, actions, and observations to the UI!
+        engine.onThought = (thought) => {
+            sendEvent(runId, 'thought', { text: thought });
+        };
+        engine.onAction = (actionName, args) => {
+            sendEvent(runId, 'action', { name: actionName, args });
+        };
+        engine.onObservation = (observation) => {
+            // Truncate observation for UI if huge
+            const safeObs = observation.length > 2000 ? observation.substring(0, 2000) + '...[Truncated]' : observation;
+            sendEvent(runId, 'observation', { text: safeObs });
         };
 
-        if (simReport) {
-            for (const sim of simReport.simulations) {
-                learning.recordOutcome({
-                    category: sim.finding.category,
-                    contractType,
-                    wasConfirmed: sim.passed,
-                    predictedSeverity: sim.finding.severity,
-                    contractAddress: run.address,
-                    chain: run.chain,
-                    reason: sim.passed
-                        ? 'Exploit simulation succeeded on fork'
-                        : (sim.error || 'Exploit simulation failed on fork'),
-                    features: triageFeatures,
-                });
-            }
+        const result = await engine.run(run.address, run.chain);
 
-            if (simReport.confirmedVulnerabilities > 0) {
-                const confirmedCats = simReport.simulations
-                    .filter(s => s.passed).map(s => s.finding.category);
-                learning.recordBytecodePattern(
-                    bytecodeHash,
-                    intel.bytecode.substring(0, 100),
-                    run.address, run.chain, confirmedCats,
-                    contractAnalysis?.overallRiskScore || 0,
-                );
-            }
-        }
-
-        sendEvent(runId, 'learning', learning.getStats());
-
-        // Step 6: Generate Report
-        sendProgress(runId, 6, TOTAL_STEPS, 'Generating Report', 'Creating unified security report...');
-
-        const securityReport = generateSecurityReport(
-            run.address,
-            run.chain,
-            contractAnalysis || { contractName, contractType: 'Other', tokenCompliance: { standard: 'none', deviations: [], missingEvents: [], edgeCaseRisks: [] }, upgradeMechanics: { isUpgradeable: false, proxyPattern: 'none', storageRisks: [], initGuards: [], adminControl: 'unknown' }, accessControl: { roles: [], ownershipTransfer: 'none', timelocks: [], unprotectedFunctions: [] }, fundFlow: { entryPoints: [], exitPoints: [], internalTransfers: [], feeStructure: 'unknown', emergencyWithdraw: false }, dependencies: { externalContracts: [], oracleReliance: [], approvalPatterns: [], libraryUsage: [] }, overallRiskScore: 0, summary: 'Analysis incomplete' },
-            processFlow || { contractName, states: [], transitions: [], userJourneys: [], orderingRisks: [], timeDependencies: [], economicFlows: [], mermaidDiagram: '', riskScore: 0, summary: 'Analysis incomplete' },
-            frontendInteraction || { contractName, abiSurface: { readFunctions: [], writeFunctions: [], adminFunctions: [], totalFunctions: 0, complexityScore: 0 }, approvalChains: [], txOrderingRisks: [], gasCostPatterns: [], phishingVectors: [], eventReliance: [], riskScore: 0, summary: 'Analysis incomplete' },
-            bridgeSecurity || { contractName, isBridge: false, bridgeType: 'none', messageVerification: { mechanism: 'N/A', validators: 'N/A', thresholdScheme: 'N/A', replayProtection: false, risks: [] }, lockMintMechanics: { lockFunction: '', mintFunction: '', burnFunction: '', unlockFunction: '', atomicity: 'N/A', drainRisks: [], spoofRisks: [] }, finalityRisks: [], adminKeyRisks: [], liquidityPoolRisks: [], knownExploitPatterns: [], riskScore: 0, summary: 'Not a bridge' },
-        );
-
-        run.securityReport = securityReport;
-        const filepath = saveReport(securityReport);
-
+        // Map ReAct result back to the old UI formats for now, or just send a completion event
         run.status = 'complete';
         run.completedAt = new Date().toISOString();
 
-        sendEvent(runId, 'complete', {
-            riskScore: securityReport.overallRiskScore,
-            contractName,
-            contractType: contractAnalysis?.contractType || 'Unknown',
-            summary: contractAnalysis?.summary || 'Analysis complete',
-            filepath,
-            confirmed: simReport?.confirmedVulnerabilities || 0,
-            denied: simReport?.deniedVulnerabilities || 0,
-            duration: Date.now() - new Date(run.startedAt).getTime(),
+        sendEvent(runId, 'analysis_complete', {
+            status: result.status,
+            details: result.details,
+            isExploited: result.status === 'exploited'
         });
 
-    } catch (err) {
+    } catch (error) {
+        console.error(chalk.red(`\n❌ Analysis Error:`), error);
         run.status = 'error';
-        run.error = (err as Error).message;
-        sendEvent(runId, 'error', { message: (err as Error).message });
+        run.error = (error as Error).message;
+        sendEvent(runId, 'error', { message: (error as Error).message });
     }
 }
 
-// ─── HTML Template ──────────────────────────────────────────────────
+// ─── Frontend HTML ──────────────────────────────────────────────────
 
 function generateHTML(): string {
     return `<!DOCTYPE html>
