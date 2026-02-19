@@ -1,56 +1,57 @@
-# How VibeAudit Works (Technical Architecture)
+# How VibeAudit Works (Offensive Architecture)
 
-VibeAudit is a **Defensive Static Analysis Tool** that acts as an "AI Red Teamer" for your local smart contracts. Instead of just matching patterns (like Slither), it uses a Large Language Model (LLM) to "reason" about business logic and generate exploit Proof-of-Concepts (PoCs).
+VibeAudit is an **Automated Smart Contract Attack Tool** with three modes of operation.
 
-## 1. The Pipeline
+## Architecture
 
-The tool follows a linear 3-stage process:
+```
+vibeAudit/src/
+├── main.ts              # CLI: attack, exploit, mev commands
+├── scanner.ts           # Local .sol file reader
+├── onchain.ts           # Fetch contract from blockchain (bytecode + Etherscan source)
+├── auditor.ts           # AI brain — offensive prompts, generates Foundry exploit code
+├── exploit-runner.ts    # Creates Foundry project, runs forge test --fork-url, parses results
+├── mev-scanner.ts       # Scans recent blocks for exploit opportunities
+├── reporter.ts          # Generates attack and MEV reports
+└── utils.ts             # Shared helpers (Foundry check, env config)
+```
+
+## Pipeline
 
 ```mermaid
-graph LR
-    A[CLI Input] --> B[Scanner]
-    B --> C[AI Auditor]
-    C --> D[Reporter]
+graph TD
+    A[Target] --> B{Mode?}
+    B -->|address| C[On-Chain Fetcher]
+    B -->|.sol file| D[File Scanner]
+    B -->|mev| E[Block Scanner]
+    C --> F[AI Attacker]
+    D --> F
+    E --> G[AI MEV Analyzer]
+    F --> H[Exploit Runner<br>forge test --fork-url]
+    G --> I[MEV Report]
+    H --> J{PASS or FAIL?}
+    J -->|PASS| K[💀 CONFIRMED EXPLOIT]
+    J -->|FAIL| L[❌ False Positive]
+    K --> M[Attack Report]
+    L --> M
 ```
 
-### A. Scanner (`src/scanner.ts`)
-- Recursively finds all `.sol` files in the target directory.
-- Reads their content into memory.
-- **Why?** To feed the raw source code to the AI.
+## Key Components
 
-### B. AI Auditor (`src/auditor.ts`)
-This is the core "brain". It sends the prompt to **OpenRouter** (Gemini 2.0 Flash / OpenAI).
-- **System Prompt**: Functions as a "Red Team" security expert.
-- **Instructions**:
-  1.  Analyze code for **KNOWN** bugs (Reentrancy, Overflow).
-  2.  Analyze code for **NOVEL** logic errors (Business Logic, Invariants).
-  3.  **Generate PoC**: Write a specific Foundry test case demonstrating the exploit.
-- **Output**: Strict JSON array of findings.
+### AI Attacker (`auditor.ts`)
+- Two specialized prompts: **Exploit** (generates full Foundry tests) and **MEV** (finds profitable opportunities)
+- Demands **complete, runnable Solidity test contracts** — not snippets
+- Focuses on Theft, Locking, and Manipulation
 
-### C. Reporter (`src/reporter.ts`)
-- Parses the JSON findings.
-- Generates a Markdown report in `audit_reports/`.
-- Includes the **Exploit PoC** code block so you can copy-paste it into a test file.
+### Exploit Runner (`exploit-runner.ts`)
+- Creates a temporary Foundry project (`.vibeaudit-exploits/`)
+- Installs `forge-std` automatically
+- Copies target source code into the workspace
+- Runs `forge test --fork-url <RPC> -vvv`
+- Parses output: **PASS** = exploit confirmed, **FAIL** = false positive
 
-## 2. Novel Detection Mechanism
-Traditional tools use **Abstract Syntax Trees (AST)** and **Regex**:
-- *Slither*: "If `call.value` exists before state update -> Reentrancy."
-
-**VibeAudit (AI)** uses **Semantic Understanding**:
-- *AI*: "This function calculates fees based on `balanceOf(pool)`, but a Flash Loan can manipulate `balanceOf(pool)` atomically. Therefore, this fee logic is exploitable."
-
-This allows it to find **Logic Errors** that synthesize multiple valid lines of code into an invalid state.
-
-## 3. Exploit Verification (PoC)
-To prove a vulnerability exists without attacking a live chain, VibeAudit generates a **Foundry Test**:
-
-```solidity
-// AI Generated PoC Example
-function testExploit() public {
-    // 1. Borrow 1000 ETH via Flash Loan
-    // 2. Call vulnerable function
-    // 3. Assert attacker balance > initial
-}
-```
-
-You run this test locally (`forge test`). If it passes (i.e., the exploit works), you have confirmed the bug safely.
+### MEV Scanner (`mev-scanner.ts`)
+- Scans recent blocks for newly deployed contracts
+- Fetches source from Etherscan (if verified) or analyzes bytecode patterns
+- Filters by minimum balance threshold
+- Ranks opportunities by estimated profit

@@ -1,12 +1,19 @@
 {
     "name": "vibeaudit",
-    "version": "0.1.0",
-    "description": "AI-powered smart contract vulnerability scanner",
+    "version": "1.0.0",
+    "description": "🏴‍☠️ Offensive AI-powered smart contract attack tool",
     "main": "dist/main.js",
     "scripts": {
         "build": "tsc",
         "start": "ts-node src/main.ts",
-        "scan": "ts-node src/main.ts scan"
+        "attack": "ts-node src/main.ts attack",
+        "exploit": "ts-node src/main.ts exploit",
+        "mev": "ts-node src/main.ts mev",
+        "evmbench": "ts-node src/main.ts evmbench",
+        "scan": "ts-node src/main.ts exploit",
+        "agent": "ts-node src/main.ts agent",
+        "dashboard": "ts-node src/main.ts agent --no-exec",
+        "ui": "ts-node src/main.ts ui"
     },
     "keywords": [
         "smart-contract",
@@ -18,14 +25,22 @@
     "author": "VibeLab",
     "license": "MIT",
     "dependencies": {
+        "axios": "^1.13.5",
         "chalk": "^4.1.2",
         "commander": "^11.1.0",
         "dotenv": "^16.4.5",
+        "ethers": "^6.16.0",
         "glob": "^10.3.10",
-        "openai": "^4.28.4"
+        "openai": "^4.28.4",
+        "better-sqlite3": "^11.7.0",
+        "express": "^4.21.0",
+        "ws": "^8.18.0"
     },
     "devDependencies": {
         "@types/node": "^20.11.24",
+        "@types/better-sqlite3": "^7.6.8",
+        "@types/express": "^4.17.21",
+        "@types/ws": "^8.5.10",
         "ts-node": "^10.9.2",
         "typescript": "^5.3.3"
     }

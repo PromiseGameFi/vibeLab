@@ -1,42 +1,63 @@
-# VibeAudit
+# VibeAudit 🏴‍☠️
 
-**AI-Powered Smart Contract Security Scanner**
+**Offensive AI-Powered Smart Contract Attack Tool**
 
-VibeAudit is a defensive tool that uses **Gemini 2.0 Flash (via OpenRouter)** to audit your local Solidity smart contracts for common vulnerabilities.
+VibeAudit uses **Gemini 2.0 Flash (via OpenRouter)** to find exploitable vulnerabilities in Solidity smart contracts, generate **weaponized Foundry exploit tests**, and **run them automatically** to confirm attacks.
+
+> ⚠️ **DISCLAIMER**: For authorized testing and educational purposes only.
 
 ## 🚀 Quick Start
 
-### 1. Installation
 ```bash
-cd vibeAudit
 npm install
 cp .env.example .env
+# Edit .env with your OpenRouter API key
 ```
 
-### 2. Configuration
-Edit `.env` and add your OpenRouter API key:
-```ini
-OPENROUTER_API_KEY=sk-or-vv-...
-AI_MODEL=google/gemini-2.0-flash-exp:free
-```
+**Requirements**: [Foundry](https://book.getfoundry.sh/) must be installed for exploit execution.
 
-### 3. Usage
-Scan a single file or a directory:
+## ⚔️ Three Attack Modes
+
+### 1. Attack an On-Chain Contract
+Paste an address → fetch source → AI generates exploits → Foundry runs them:
 ```bash
-# Scan a specific file
-npm run scan -- ./contracts/MyContract.sol
-
-# Scan a directory
-npm run scan -- ./contracts
+npm run attack -- -a 0xContractAddress -r https://rpc-url
 ```
 
-## 🛡️ Capabilities
+### 2. Exploit a Local File
+Point at `.sol` files → AI generates Foundry tests → auto-runs them:
+```bash
+npm run exploit -- ./contracts/Target.sol
+npm run exploit -- ./contracts/           # entire directory
+```
 
-VibeAudit uses static analysis (AI) to detect:
-- **Reentrancy**: Unsafe external calls before state updates.
-- **Access Control**: Missing `onlyOwner` or similar modifiers.
-- **Integer Overflow/Underflow**: (Mostly relevant for Solidity <0.8.0).
-- **Unchecked Return Values**: Ignoring return data from low-level calls.
-- **Phishing**: `tx.origin` usage.
+### 3. MEV Scanner
+Scan recent blocks for profitable exploit opportunities:
+```bash
+npm run mev -- -r https://rpc-url -b 100
+```
 
-**Note:** This is a **static analysis tool**. It does not execute code or guarantee safety. Always use professional audits for mainnet deployments.
+## 📄 Output
+
+Reports are generated in `audit_reports/` with:
+- **Confirmed exploits** that passed `forge test`
+- **Weaponized PoC code** ready to copy-paste
+- **Profit estimates** and attack vectors
+- **MEV opportunities** ranked by potential value
+
+## 🧪 Test It
+
+A deliberately vulnerable contract is included:
+```bash
+npm run exploit -- ./test-contracts/VulnerableVault.sol
+```
+
+## ⚙️ Configuration (`.env`)
+
+| Variable | Description |
+|----------|-------------|
+| `OPENROUTER_API_KEY` | Required. Your OpenRouter API key |
+| `AI_MODEL` | AI model (default: `google/gemini-2.0-flash-exp:free`) |
+| `DEFAULT_RPC` | Default RPC for on-chain ops |
+| `ETHERSCAN_API_KEY` | Optional. For fetching verified source code |
+| `FORK_BLOCK` | Block number for Foundry fork tests |
