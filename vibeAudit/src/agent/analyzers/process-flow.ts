@@ -13,8 +13,8 @@ let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
     if (!_openai) {
         _openai = new OpenAI({
-            apiKey: process.env.OPENROUTER_API_KEY || 'dummy',
-            baseURL: 'https://openrouter.ai/api/v1',
+            apiKey: process.env.GROQ_API_KEY || 'dummy',
+            baseURL: 'https://api.groq.com/openai/v1',
             defaultHeaders: {
                 'HTTP-Referer': 'https://vibelab.app',
                 'X-Title': 'VibeAudit',
@@ -79,7 +79,8 @@ export interface ProcessFlowAnalysis {
 
 // ─── Analysis Prompt ────────────────────────────────────────────────
 
-const PROCESS_FLOW_PROMPT = `You are a smart contract process analyst. Analyze the contract as a STATE MACHINE and BUSINESS PROCESS. Focus on HOW users interact with it, not just vulnerability hunting.
+function getProcessFlowPrompt(language: string): string {
+    return `You are a ${language} program process analyst. Analyze the ${language === 'Move' ? 'module' : language === 'Rust (Anchor)' ? 'program' : 'contract'} as a STATE MACHINE and BUSINESS PROCESS. Focus on HOW users interact with it, not just vulnerability hunting.
 
 Respond with ONLY a JSON object:
 {
@@ -123,27 +124,31 @@ Respond with ONLY a JSON object:
   "summary": "Brief summary of the process flow and key risks"
 }
 
-Map EVERY state transition and user path. Be thorough. If something doesn't apply, use empty arrays.`;
+Map EVERY state transition and user path. Be thorough. If something doesn't apply, use empty arrays.
+Adapt your analysis to the language: for Rust/Anchor analyze CPI calls, PDA derivation, and account constraints; for Move analyze resource transfers, capability patterns, and shared objects.`;
+}
 
 // ─── Analysis Function ──────────────────────────────────────────────
 
 export async function analyzeProcessFlow(
     code: string,
     contractName: string,
-    context?: { address?: string; balance?: string; chain?: string },
+    context?: { address?: string; balance?: string; chain?: string; language?: string },
 ): Promise<ProcessFlowAnalysis> {
-    const model = process.env.AI_MODEL || 'google/gemini-2.0-flash-exp:free';
+    const model = process.env.AI_MODEL || 'llama-3.3-70b-versatile';
+    const lang = context?.language || 'Solidity';
 
-    let userMessage = `Analyze the process flow of this contract:\n\nContract: ${contractName}\n`;
+    let userMessage = `Analyze the process flow of this ${lang} ${lang === 'Move' ? 'module' : 'program'}:\n\nName: ${contractName}\n`;
     if (context?.address) userMessage += `Address: ${context.address}\n`;
     if (context?.chain) userMessage += `Chain: ${context.chain}\n`;
+    userMessage += `Language: ${lang}\n`;
     userMessage += `\n=== SOURCE CODE ===\n${code}`;
 
     try {
         const response = await getOpenAI().chat.completions.create({
             model,
             messages: [
-                { role: 'system', content: PROCESS_FLOW_PROMPT },
+                { role: 'system', content: getProcessFlowPrompt(lang) },
                 { role: 'user', content: userMessage },
             ],
             response_format: { type: 'json_object' },

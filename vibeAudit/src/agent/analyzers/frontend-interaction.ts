@@ -13,8 +13,8 @@ let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
     if (!_openai) {
         _openai = new OpenAI({
-            apiKey: process.env.OPENROUTER_API_KEY || 'dummy',
-            baseURL: 'https://openrouter.ai/api/v1',
+            apiKey: process.env.GROQ_API_KEY || 'dummy',
+            baseURL: 'https://api.groq.com/openai/v1',
             defaultHeaders: {
                 'HTTP-Referer': 'https://vibelab.app',
                 'X-Title': 'VibeAudit',
@@ -90,7 +90,8 @@ export interface FrontendInteractionAnalysis {
 
 // ─── Analysis Prompt ────────────────────────────────────────────────
 
-const FRONTEND_ANALYSIS_PROMPT = `You are an expert at analyzing smart contract interfaces from a frontend/client perspective. Analyze how a dApp frontend would interact with this contract and identify all interaction-layer risks.
+function getFrontendAnalysisPrompt(language: string): string {
+    return `You are an expert at analyzing ${language} program interfaces from a frontend/client perspective. Analyze how a dApp frontend would interact with this ${language === 'Move' ? 'module' : language === 'Rust (Anchor)' ? 'program' : 'contract'} and identify all interaction-layer risks.
 
 Respond with ONLY a JSON object:
 {
@@ -143,28 +144,32 @@ Respond with ONLY a JSON object:
   "summary": "Brief summary of frontend interaction risks"
 }
 
-Be thorough about every user-facing function. Think like a dApp developer trying to integrate safely.`;
+Be thorough about every user-facing function. Think like a dApp developer trying to integrate safely.
+Adapt to the language: for Rust/Anchor analyze instruction accounts, signers, and CPI; for Move analyze entry functions, shared objects, and capability requirements.`;
+}
 
 // ─── Analysis Function ──────────────────────────────────────────────
 
 export async function analyzeFrontendInteraction(
     code: string,
     contractName: string,
-    context?: { address?: string; chain?: string; abi?: any[] },
+    context?: { address?: string; chain?: string; abi?: any[]; language?: string },
 ): Promise<FrontendInteractionAnalysis> {
-    const model = process.env.AI_MODEL || 'google/gemini-2.0-flash-exp:free';
+    const model = process.env.AI_MODEL || 'llama-3.3-70b-versatile';
+    const lang = context?.language || 'Solidity';
 
-    let userMessage = `Analyze the frontend interaction surface of this contract:\n\nContract: ${contractName}\n`;
+    let userMessage = `Analyze the frontend interaction surface of this ${lang} ${lang === 'Move' ? 'module' : 'program'}:\n\nName: ${contractName}\n`;
     if (context?.address) userMessage += `Address: ${context.address}\n`;
     if (context?.chain) userMessage += `Chain: ${context.chain}\n`;
-    if (context?.abi) userMessage += `ABI: ${JSON.stringify(context.abi).substring(0, 2000)}\n`;
+    userMessage += `Language: ${lang}\n`;
+    if (context?.abi) userMessage += `ABI/IDL: ${JSON.stringify(context.abi).substring(0, 2000)}\n`;
     userMessage += `\n=== SOURCE CODE ===\n${code}`;
 
     try {
         const response = await getOpenAI().chat.completions.create({
             model,
             messages: [
-                { role: 'system', content: FRONTEND_ANALYSIS_PROMPT },
+                { role: 'system', content: getFrontendAnalysisPrompt(lang) },
                 { role: 'user', content: userMessage },
             ],
             response_format: { type: 'json_object' },

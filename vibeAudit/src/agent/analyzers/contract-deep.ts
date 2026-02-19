@@ -13,8 +13,8 @@ let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
     if (!_openai) {
         _openai = new OpenAI({
-            apiKey: process.env.OPENROUTER_API_KEY || 'dummy',
-            baseURL: 'https://openrouter.ai/api/v1',
+            apiKey: process.env.GROQ_API_KEY || 'dummy',
+            baseURL: 'https://api.groq.com/openai/v1',
             defaultHeaders: {
                 'HTTP-Referer': 'https://vibelab.app',
                 'X-Title': 'VibeAudit',
@@ -77,7 +77,8 @@ export interface ContractDeepAnalysis {
 
 // ─── Analysis Prompt ────────────────────────────────────────────────
 
-const DEEP_ANALYSIS_PROMPT = `You are an expert smart contract security analyst. Perform a DEEP structural analysis of the contract. Do NOT just look for exploits — analyze the application architecture.
+function getDeepAnalysisPrompt(language: string): string {
+    return `You are an expert ${language} security analyst. Perform a DEEP structural analysis of the ${language === 'Move' ? 'module' : language === 'Rust (Anchor)' ? 'program' : 'contract'}. Do NOT just look for exploits — analyze the application architecture.
 
 You MUST respond with ONLY a JSON object in this exact format:
 {
@@ -119,28 +120,32 @@ You MUST respond with ONLY a JSON object in this exact format:
   "summary": "2-3 sentence summary of the contract's purpose and key risk areas"
 }
 
-Be thorough but precise. If a section doesn't apply, use empty arrays. Risk score: 0=safe, 100=extremely dangerous.`;
+Be thorough but precise. If a section doesn't apply, use empty arrays. Risk score: 0=safe, 100=extremely dangerous.
+Adapt your analysis to the language: for Rust/Anchor analyze account validation and privilege escalation; for Move analyze resource safety and capability access.`;
+}
 
 // ─── Analysis Function ──────────────────────────────────────────────
 
 export async function analyzeContractDeep(
     code: string,
     contractName: string,
-    context?: { address?: string; balance?: string; chain?: string },
+    context?: { address?: string; balance?: string; chain?: string; language?: string },
 ): Promise<ContractDeepAnalysis> {
-    const model = process.env.AI_MODEL || 'google/gemini-2.0-flash-exp:free';
+    const model = process.env.AI_MODEL || 'llama-3.3-70b-versatile';
+    const lang = context?.language || 'Solidity';
 
-    let userMessage = `Analyze this smart contract:\n\nContract: ${contractName}\n`;
+    let userMessage = `Analyze this ${lang} ${lang === 'Move' ? 'module' : lang === 'Rust (Anchor)' ? 'program' : 'contract'}:\n\nName: ${contractName}\n`;
     if (context?.address) userMessage += `Address: ${context.address}\n`;
-    if (context?.balance) userMessage += `Balance: ${context.balance} ETH\n`;
+    if (context?.balance) userMessage += `Balance: ${context.balance}\n`;
     if (context?.chain) userMessage += `Chain: ${context.chain}\n`;
+    userMessage += `Language: ${lang}\n`;
     userMessage += `\n=== SOURCE CODE ===\n${code}`;
 
     try {
         const response = await getOpenAI().chat.completions.create({
             model,
             messages: [
-                { role: 'system', content: DEEP_ANALYSIS_PROMPT },
+                { role: 'system', content: getDeepAnalysisPrompt(lang) },
                 { role: 'user', content: userMessage },
             ],
             response_format: { type: 'json_object' },

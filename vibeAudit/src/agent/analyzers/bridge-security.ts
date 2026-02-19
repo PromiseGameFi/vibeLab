@@ -13,8 +13,8 @@ let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
     if (!_openai) {
         _openai = new OpenAI({
-            apiKey: process.env.OPENROUTER_API_KEY || 'dummy',
-            baseURL: 'https://openrouter.ai/api/v1',
+            apiKey: process.env.GROQ_API_KEY || 'dummy',
+            baseURL: 'https://api.groq.com/openai/v1',
             defaultHeaders: {
                 'HTTP-Referer': 'https://vibelab.app',
                 'X-Title': 'VibeAudit',
@@ -109,7 +109,8 @@ export interface BridgeSecurityAnalysis {
 
 // ─── Analysis Prompt ────────────────────────────────────────────────
 
-const BRIDGE_ANALYSIS_PROMPT = `You are a cross-chain bridge security expert. Analyze this contract for bridge-specific vulnerabilities and design weaknesses.
+function getBridgeAnalysisPrompt(language: string): string {
+    return `You are a cross-chain bridge security expert. Analyze this ${language} ${language === 'Move' ? 'module' : 'program'} for bridge-specific vulnerabilities and design weaknesses.
 
 Known bridge exploit patterns to check against:
 - Wormhole: Guardian key compromise, signature verification bypass
@@ -171,32 +172,36 @@ Respond with ONLY a JSON object:
   "summary": "Brief summary of bridge security posture"
 }
 
-If the contract is NOT a bridge, set isBridge to false and provide minimal analysis. Be thorough about all bridge-specific risks.`;
+If the ${language === 'Move' ? 'module' : 'program'} is NOT a bridge, set isBridge to false and provide minimal analysis. Be thorough about all bridge-specific risks.
+For Solana: check for Wormhole guardian patterns, account ownership, PDA seeds. For SUI: check shared object access, capability-based authentication.`;
+}
 
 // ─── Analysis Function ──────────────────────────────────────────────
 
 export async function analyzeBridgeSecurity(
     code: string,
     contractName: string,
-    context?: { address?: string; chain?: string },
+    context?: { address?: string; chain?: string; language?: string },
 ): Promise<BridgeSecurityAnalysis> {
-    const model = process.env.AI_MODEL || 'google/gemini-2.0-flash-exp:free';
+    const model = process.env.AI_MODEL || 'llama-3.3-70b-versatile';
+    const lang = context?.language || 'Solidity';
 
     // Quick check — is this even a bridge?
     if (!isBridgeContract(code)) {
         return getEmptyBridgeAnalysis(contractName);
     }
 
-    let userMessage = `Analyze bridge security for this contract:\n\nContract: ${contractName}\n`;
+    let userMessage = `Analyze bridge security for this ${lang} ${lang === 'Move' ? 'module' : 'program'}:\n\nName: ${contractName}\n`;
     if (context?.address) userMessage += `Address: ${context.address}\n`;
     if (context?.chain) userMessage += `Chain: ${context.chain}\n`;
+    userMessage += `Language: ${lang}\n`;
     userMessage += `\n=== SOURCE CODE ===\n${code}`;
 
     try {
         const response = await getOpenAI().chat.completions.create({
             model,
             messages: [
-                { role: 'system', content: BRIDGE_ANALYSIS_PROMPT },
+                { role: 'system', content: getBridgeAnalysisPrompt(lang) },
                 { role: 'user', content: userMessage },
             ],
             response_format: { type: 'json_object' },

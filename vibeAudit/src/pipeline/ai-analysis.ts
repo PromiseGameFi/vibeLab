@@ -16,8 +16,8 @@ let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
     if (!_openai) {
         _openai = new OpenAI({
-            apiKey: process.env.OPENROUTER_API_KEY || 'dummy',
-            baseURL: 'https://openrouter.ai/api/v1',
+            apiKey: process.env.GROQ_API_KEY || 'dummy',
+            baseURL: 'https://api.groq.com/openai/v1',
             defaultHeaders: {
                 'HTTP-Referer': 'https://vibelab.app',
                 'X-Title': 'VibeAudit',
@@ -232,7 +232,7 @@ export async function multiVectorAnalysis(
     recon: ContractRecon,
     staticFindings: StaticFinding[],
 ): Promise<AnalysisPassResult[]> {
-    const model = process.env.AI_MODEL || 'google/gemini-2.0-flash-exp:free';
+    const model = process.env.AI_MODEL || 'llama-3.3-70b-versatile';
     const results: AnalysisPassResult[] = [];
 
     // Build context from recon and static analysis

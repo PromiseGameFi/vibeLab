@@ -10,8 +10,8 @@ let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
     if (!_openai) {
         _openai = new OpenAI({
-            apiKey: process.env.OPENROUTER_API_KEY || 'dummy',
-            baseURL: 'https://openrouter.ai/api/v1',
+            apiKey: process.env.GROQ_API_KEY || 'dummy',
+            baseURL: 'https://api.groq.com/openai/v1',
             defaultHeaders: {
                 'HTTP-Referer': 'https://vibelab.app',
                 'X-Title': 'VibeAudit',
@@ -130,7 +130,7 @@ export async function evmbenchDetect(
     filename: string,
     context?: { address?: string; balance?: string }
 ): Promise<EVMbenchReport> {
-    const model = process.env.AI_MODEL || 'google/gemini-2.0-flash-exp:free';
+    const model = process.env.AI_MODEL || 'llama-3.3-70b-versatile';
 
     let userMessage = `Audit this contract (${filename}):\n\n${code}`;
     if (context?.address) {
@@ -165,7 +165,7 @@ export async function evmbenchAttack(
     filename: string,
     context?: { address?: string; balance?: string }
 ): Promise<EVMbenchReport> {
-    const model = process.env.AI_MODEL || 'google/gemini-2.0-flash-exp:free';
+    const model = process.env.AI_MODEL || 'llama-3.3-70b-versatile';
 
     let userMessage = `TARGET: ${filename}\n\n${code}`;
     if (context?.address) {
