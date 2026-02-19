@@ -726,7 +726,59 @@ function generateHTML(): string {
             .header { flex-direction: column; gap: 16px; }
             .container { padding: 24px 1rem; }
             .history-item { grid-template-columns: 1fr 80px; }
+            .history-item { grid-template-columns: 1fr 80px; }
         }
+
+        /* ─── Cypherpunk Terminal & Attack Tree ─── */
+        .attack-tree {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 16px;
+            padding-left: 20px;
+            border-left: 2px dashed var(--border);
+        }
+        .tree-node {
+            position: relative;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            transition: all 0.3s ease;
+        }
+        .tree-node::before {
+            content: '';
+            position: absolute;
+            left: -22px;
+            top: 50%;
+            width: 20px;
+            height: 2px;
+            background: var(--border);
+        }
+        .tree-node.pending { border-color: var(--border-hover); opacity: 0.6; }
+        .tree-node.active { border-color: var(--accent); box-shadow: 0 0 15px rgba(0, 102, 255, 0.2); opacity: 1; }
+        .tree-node.pruned { border-color: var(--red); opacity: 0.4; }
+        .tree-node.exploited { border-color: var(--green); box-shadow: 0 0 15px rgba(16, 185, 129, 0.2); opacity: 1; }
+        
+        .tree-node-title { font-weight: 600; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .tree-node-reasoning { font-size: 0.85rem; color: var(--foreground-secondary); }
+
+        .terminal-container {
+            background: #000;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            height: 400px;
+            overflow-y: auto;
+            margin-top: 16px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+        .term-line { margin-bottom: 8px; line-height: 1.4; word-wrap: break-word; }
+        .term-thought { color: #8B5CF6; } /* Purple for AI thoughts */
+        .term-action { color: #F59E0B; font-weight: bold; } /* Yellow for Actions */
+        .term-obs { color: #10B981; opacity: 0.9; } /* Green for Observations */
     </style>
 </head>
 <body>
@@ -819,6 +871,22 @@ function generateHTML(): string {
         </div>
     </div>
 
+    <!-- Attack Strategist & Terminal -->
+    <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px; margin-bottom: 24px; display: none;" id="liveAgentPanel">
+        <div class="card" style="margin-bottom: 0;">
+            <h3>🕸️ Attack Strategy Tree</h3>
+            <div class="attack-tree" id="attackTree">
+                <!-- Nodes generated via JS -->
+            </div>
+        </div>
+        <div class="card" style="margin-bottom: 0;">
+            <h3>💻 ReAct Terminal</h3>
+            <div class="terminal-container" id="terminalFeed">
+                <!-- Feed generated via JS -->
+            </div>
+        </div>
+    </div>
+
     <!-- Results -->
     <div class="results-panel" id="resultsPanel"></div>
 
@@ -899,11 +967,42 @@ function connectSSE(runId) {
         document.getElementById('statAccuracy').textContent = (stats.overallAccuracy * 100).toFixed(1) + '%';
     });
 
+    currentEventSource.addEventListener('plan', (e) => {
+        const d = JSON.parse(e.data);
+        analysisData.plan = d.plan;
+        renderAttackTree(d.plan);
+    });
+
+    currentEventSource.addEventListener('thought', (e) => {
+        const d = JSON.parse(e.data);
+        appendTerminal('<div class="term-line term-thought">🧠 <b>Thinking:</b> ' + escapeHtml(d.text) + '</div>');
+    });
+
+    currentEventSource.addEventListener('action', (e) => {
+        const d = JSON.parse(e.data);
+        const argsStr = JSON.stringify(d.args);
+        appendTerminal('<div class="term-line term-action">🛠️ <b>Action:</b> ' + d.name + '(' + escapeHtml(argsStr) + ')</div>');
+        // Pulse the active node conceptually
+        updateActiveTreeNode();
+    });
+
+    currentEventSource.addEventListener('observation', (e) => {
+        const d = JSON.parse(e.data);
+        appendTerminal('<div class="term-line term-obs">👀 <b>Observation:</b><br/>' + escapeHtml(d.text).replace(/\n/g, '<br/>') + '</div>');
+    });
+
     currentEventSource.addEventListener('complete', (e) => {
         const d = JSON.parse(e.data);
         analysisData.result = d;
         for (let i = 1; i <= 6; i++) updateStep(i, 'complete');
         document.getElementById('progressBar').style.width = '100%';
+        
+        // Mark tree success/fail
+        const treeNodes = document.querySelectorAll('.tree-node');
+        if (treeNodes.length > 0) {
+            treeNodes[0].className = 'tree-node ' + (d.status === 'exploited' ? 'exploited' : 'pruned');
+        }
+
         renderResults(d);
         document.getElementById('btnAnalyze').disabled = false;
         loadHistory();
@@ -921,11 +1020,54 @@ function connectSSE(runId) {
 }
 
 function resetSteps() {
-    for (let i = 1; i <= 6; i++) {
-        document.getElementById('step' + i).className = 'step';
+        for (let i = 1; i <= 6; i++) {
+            document.getElementById('step' + i).className = 'step';
+        }
+        document.getElementById('progressBar').style.width = '0%';
+        document.getElementById('liveAgentPanel').style.display = 'none';
+        document.getElementById('attackTree').innerHTML = '';
+        document.getElementById('terminalFeed').innerHTML = '';
     }
-    document.getElementById('progressBar').style.width = '0%';
-}
+
+    function escapeHtml(unsafe) {
+        return (unsafe || '').toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function renderAttackTree(plan) {
+        document.getElementById('liveAgentPanel').style.display = 'grid'; // unhide
+        const treeEl = document.getElementById('attackTree');
+        let html = '';
+        plan.forEach((vector, i) => {
+            // First item starts active, others pending
+            const stateClass = i === 0 ? 'active pulsing' : 'pending';
+            const statusBadge = i === 0 ? '<span class="badge badge-info fade-in" style="font-size:0.7rem">Active</span>' : '';
+            html += '<div class="tree-node ' + stateClass + '" id="treeNode-' + i + '">';
+            html += '<div class="tree-node-title">' + escapeHtml(vector.vector) + ' ' + statusBadge + '</div>';
+            html += '<div class="tree-node-reasoning">' + escapeHtml(vector.reasoning) + '</div>';
+            html += '</div>';
+        });
+        treeEl.innerHTML = html;
+        appendTerminal('<div class="term-line" style="color:var(--accent)">[SYSTEM] Attack Strategy Initialized. Loaded ' + plan.length + ' vectors from Strategist.</div>');
+    }
+
+    function appendTerminal(htmlString) {
+        const feed = document.getElementById('terminalFeed');
+        feed.innerHTML += htmlString;
+        feed.scrollTop = feed.scrollHeight;
+    }
+
+    function updateActiveTreeNode() {
+        // Visual sugar: Just ensures the first node looks very active during execution
+        const firstNode = document.getElementById('treeNode-0');
+        if(firstNode && !firstNode.classList.contains('active')) {
+            firstNode.className = 'tree-node active pulsing fade-in';
+        }
+    }
 
 function updateStep(n, state) {
     document.getElementById('step' + n).className = 'step ' + state;

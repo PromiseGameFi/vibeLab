@@ -1,8 +1,8 @@
 # VibeAudit 🛡️
 
-**Autonomous AI-Powered Security Intelligence Agent**
+**Autonomous AI-Powered Security Intelligence Agent (V2 ReAct Engine)**
 
-VibeAudit discovers contracts on-chain, gathers deep intelligence, runs 4-layer AI analysis, simulates exploits (EVM), and **learns from every engagement**. Now with native **Solana** and **SUI** support.
+VibeAudit is an enterprise-grade autonomous security agent. Powered by a dynamic **ReAct (Reasoning and Acting)** loop, it autonomously discovers contracts, maps architectures, builds dynamic attack trees, and executes exploits via a sophisticated Tool Registry.
 
 > ⚠️ **DISCLAIMER**: For authorized testing and educational purposes only.
 
@@ -25,7 +25,7 @@ npm run ui
 ## ⚔️ Commands
 
 ### Analyze a Single Contract/Program
-Autonomous pipeline: intel → analysis → findings → simulation (EVM) → learning → report
+The standalone pipeline has been replaced by the autonomous ReAct Engine. The agent will read sources, analyze code, and run simulated exploits iteratively.
 
 ```bash
 # EVM (Ethereum, Arbitrum, Base, BSC, Sepolia)
@@ -67,9 +67,9 @@ npm run mev -- -r https://rpc-url -b 100
 
 Reports are generated in `audit_reports/` with:
 - **Risk score** (0–100) across 4 analysis layers (Deep, Flow, Frontend, Bridge)
-- **Confirmed exploits** verified on forked chain (EVM)
+- **Confirmed exploits** packaged as standalone Foundry `Target.t.sol` proofs (Proof of Hack)
 - **Contract intelligence** (proxy, token, balance, deployer, source)
-- **Learning data** fed back to the RL database
+- **Attack Tree Analytics** tracking the agent's pivoted paths and logic
 
 ## 🧪 Test It
 
@@ -97,12 +97,12 @@ See [auditprd.md](./auditprd.md) for the full architecture document.
 src/
 ├── main.ts              CLI entry
 ├── chains/              Chain Providers (EVM, Solana, SUI)
-├── pipeline/            6-stage exploit pipeline (EVM)
 ├── agent/               Autonomous intelligence agent
-│   ├── agent.ts         Main loop
-│   ├── intel-gatherer   Chain-agnostic intel collection
-│   ├── exploit-simulator Fork-based testing (EVM)
-│   ├── learning.ts      Reinforcement learning DB
-│   └── analyzers/       4-layer analysis modules
-└── ui/                  Interactive testing UI
+│   ├── agent.ts         Main ReAct loop entrypoint
+│   └── react/           Core AI reasoning engine
+│       ├── tools/       Capabilities (read_source, generate_fuzz_campaign, ask_human)
+│       ├── strategist.ts Dynamic attack tree generation
+│       ├── loop.ts      The core ReAct Thought/Action/Observation matrix
+│       └── memory.ts    LLM context and scratchpad management
+└── ui/                  Interactive testing UI with Attack Tree Visualization
 ```

@@ -1,14 +1,14 @@
 # VibeAudit — Product Requirements & Architecture Document
 
-> **Version**: 1.1.0  
+> **Version**: 2.0.0 (Enterprise ReAct Edition)
 > **Last Updated**: 2026-02-19  
-> **Status**: Phase 1–3 Complete (Multi-Chain Support Added)
+> **Status**: Transitioning to autonomous ReAct Tool-calling engine with HitL and Fuzzing.
 
 ---
 
 ## 1. Vision
 
-VibeAudit is an **autonomous AI-powered security intelligence agent** for smart contracts across **EVM, Solana, and SUI**. It goes beyond static analysis — it discovers targets on-chain, gathers deep intelligence, runs 4-layer AI analysis, simulates exploits (EVM only), and **learns from every engagement** to get better over time.
+VibeAudit is an **autonomous AI-powered security intelligence agent** for smart contracts across **EVM, Solana, and SUI**. It has evolved from a static pipeline into a dynamic **ReAct (Reasoning and Acting)** loop. The agent dynamically explores smart contracts, maps dependencies with `analyze_architecture`, builds physical attack trees, interacts with operators via a Human-in-the-Loop (`ask_human`) tool, and spins up `generate_fuzz_campaign` invariant properties until a "Proof of Hack" can be exported to Immunefi.
 
 ---
 
@@ -39,10 +39,10 @@ The codebase has **3 distinct layers**, now with a **Chain Abstraction Layer**:
 
 | Layer | Purpose | Files |
 |---|---|---|
-| **Layer 1: Core Tools** | Single-shot scanning, AI exploit gen, Foundry execution (EVM only) | `scanner.ts`, `auditor.ts`, `onchain.ts`, `exploit-runner.ts`, `reporter.ts` |
-| **Layer 2: Pipeline Engine** | 6-stage automated pipeline (recon → static → AI → strategy → exploit-gen → execution) | `pipeline/index.ts`, `recon.ts`, `static-analysis.ts`, `ai-analysis.ts`, `strategy.ts`, `exploit-gen.ts`, `executor.ts` |
-| **Layer 3: Autonomous Agent** | Self-running agent with discovery, triage, intelligence, simulation, and reinforcement learning | `agent/agent.ts`, `watcher.ts`, `mempool.ts`, `queue.ts`, `triage.ts`, `memory.ts`, `dashboard.ts`, `notify.ts`, `intel-gatherer.ts`, `exploit-simulator.ts`, `learning.ts`, `analyzers/*`, `report-generator.ts` |
-| **Layer 4: Testing UI** | Web interface for interactive pipeline runs with SSE progress | `ui/testing-server.ts` |
+| **Layer 1: Core Toolset** | Single-shot capabilities exposed to the LLM (read_source, check_storage, generate_fuzz_campaign, ask_human). | `src/agent/react/tools/*` |
+| **Layer 2: ReAct Engine** | The autonomous Thought -> Action -> Observation loop that drives target exploration. | `src/agent/react/loop.ts`, `memory.ts` |
+| **Layer 3: Attack Strategist** | Builds dynamic node-based attack trees based on chain priors and actively prunes failed branches. | `src/agent/react/strategist.ts` |
+| **Layer 4: Dashboard & UI** | Cypherpunk-themed interactive testing UI with live node-graphs, web3 wallet loading, and "Live Chat" agent steering. | `src/ui/testing-server.ts` |
 | **Chain Layer** | Abstracts EVM, Solana, SUI differences | `src/chains/chain-provider.ts`, `evm-provider.ts`, `solana-provider.ts`, `sui-provider.ts` |
 
 ---
@@ -129,11 +129,15 @@ The codebase has **3 distinct layers**, now with a **Chain Abstraction Layer**:
 - [x] Interactive testing UI with SSE progress (VibeLab design system)
 - [x] Groq API integration
 
-### 🔲 Remaining
-- [ ] Simulation support for Solana/SUI (requires `anchor test` / `sui move test`)
-- [ ] End-to-end test on Sepolia testnet
-- [ ] Production deployment (Docker)
-- [ ] CI/CD pipeline
+### 🔲 Remaining (V2 Enterprise Features)
+- [ ] Implement `analyze_architecture` module and tool for Project-Level auditing.
+- [ ] Implement `ask_human` tool with backend pause/resume suspension logic.
+- [ ] Generate fully standalone "Proof of Hack" exploit packages.
+- [ ] Implement `generate_fuzz_campaign` and background fuzzer polling.
+- [ ] Build the interactive node-based Attack Tree Visualization in HTML.
+- [ ] Restyle the UI to a Cypherpunk/Terminal hacking aesthetic.
+- [ ] Add Web3 Wallet connection to fetch users' recent deployments.
+- [ ] Implement "Live Chat" prompt steering to inject context into running `AgentMemory`.
 
 ---
 
