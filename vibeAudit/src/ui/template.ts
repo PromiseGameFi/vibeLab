@@ -343,9 +343,15 @@ export function generateHTML(): string {
             <div class="header-title">Offensive Security Automation</div>
             <div class="header-subtitle">Continuous Reasoning AI Pentester <span>(C.R.A.P.)</span></div>
         </div>
-        <div class="status-badge">
-            <div class="status-dot" id="statusDot"></div>
-            <span id="statusText">Idle</span>
+        <div style="display: flex; gap: 16px; align-items: center;">
+            <button id="btnWallet" onclick="connectWallet()" style="background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); padding: 8px 16px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+                <span id="walletText">Connect Wallet</span>
+            </button>
+            <div class="status-badge">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Idle</span>
+            </div>
         </div>
     </header>
 
@@ -467,6 +473,47 @@ export function generateHTML(): string {
         let currentRunId = null;
         let currentEventSource = null;
         let findingsCount = 0;
+
+        async function connectWallet() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    const account = accounts[0];
+                    document.getElementById('walletText').innerText = account.substring(0, 6) + '...' + account.substring(38);
+                    const btn = document.getElementById('btnWallet');
+                    btn.style.borderColor = 'var(--accent-green)';
+                    btn.style.color = 'var(--accent-green)';
+                    btn.style.background = 'var(--accent-green-dim)';
+                    
+                    fetchDeployments(account);
+                } catch (error) {
+                    console.error("Wallet connection rejected", error);
+                }
+            } else {
+                alert('Please install MetaMask or a Web3 wallet extension.');
+            }
+        }
+
+        async function fetchDeployments(address) {
+            try {
+                // Using an Etherscan API fallback to check recent transactions
+                const url = \`https://api.etherscan.io/api?module=account&action=txlist&address=\${address}&startblock=0&endblock=99999999&page=1&offset=20&sort=desc\`;
+                const resp = await fetch(url);
+                const data = await resp.json();
+                if (data.status === '1' && data.result) {
+                    const creationTx = data.result.find(tx => tx.to === "" && tx.contractAddress);
+                    if (creationTx) {
+                        const contractAddress = creationTx.contractAddress;
+                        document.getElementById('inputTarget').value = contractAddress;
+                        appendTerm('<span class="term-action">💳 Wallet Connected. Auto-targeting most recent deployment: <span style="font-family: monospace; color: var(--text-main)">' + contractAddress + '</span></span>');
+                    } else {
+                        appendTerm('<span class="term-action" style="color:var(--text-muted)">💳 Wallet Connected. No recent contract deployments found.</span>');
+                    }
+                }
+            } catch(e) {
+                console.error('Failed to fetch deployments', e);
+            }
+        }
 
         function getTimestamp() {
             const d = new Date();
