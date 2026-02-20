@@ -21,7 +21,7 @@ export class AskHumanTool implements ReActTool {
                     description: 'The unique ID for this analysis run (must pass this to map the reply back).',
                 }
             },
-            required: ['question', 'runId'],
+            required: ['question'],
         },
     };
 
