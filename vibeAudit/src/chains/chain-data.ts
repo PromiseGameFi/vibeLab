@@ -30,6 +30,13 @@ export interface ChainMetadata {
         uniswapV3Router?: string;
         aaveV3Pool?: string;
         balancerVault?: string;
+        // Registries
+        ensRegistry?: string;
+        chainlinkFeedRegistry?: string;
+        // Cross-Chain Bridges
+        layerZeroV2Endpoint?: string;
+        wormholeCore?: string;
+        chainlinkCCIPRouter?: string;
     };
     characteristics: {
         blockTimeSeconds: number;
@@ -57,12 +64,17 @@ export const CHAIN_METADATA: Record<string, ChainMetadata> = {
             uniswapV3Router: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
             aaveV3Pool: '0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2',
             balancerVault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+            ensRegistry: '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e',
+            chainlinkFeedRegistry: '0x47fb25854301B5c777e4d8B7085750A8aD374fCeEDf',
+            layerZeroV2Endpoint: '0x1a44076050125825900e736c501f859c50fE728c',
+            wormholeCore: '0x98f3c9e6E3fAce36bAAd05FE09d375Ef1464288B',
+            chainlinkCCIPRouter: '0x80226fc0Ee2b096224EeAc085Bb9a8cba1146f7D',
         },
         characteristics: {
             blockTimeSeconds: 12,
             hasPublicMempool: true,
             supportsEip1559: true,
-            attackPriors: ['reentrancy', 'flash_loan_manipulation', 'sandwich_attack', 'frontrunning']
+            attackPriors: ['reentrancy', 'flash_loan_manipulation', 'sandwich_attack', 'frontrunning', 'cross_chain_message_spoofing']
         },
         testnet: false,
     },
@@ -99,12 +111,15 @@ export const CHAIN_METADATA: Record<string, ChainMetadata> = {
             multicall: '0xca11bde05977b3631167028862be2a173976ca11',
             uniswapV2Router: '0x10ED43C718714eb63d5aA57B78B54704E256024E', // PancakeSwap
             uniswapV3Router: '0x13f4EA83D0bd40E75C8222255bc855a974568Dd4', // PancakeSwap V3
+            layerZeroV2Endpoint: '0x1a44076050125825900e736c501f859c50fE728c',
+            wormholeCore: '0x27428DD2d3DD32A4D7f7C497eAaa23130d894911',
+            chainlinkCCIPRouter: '0x34B0975F34c3F947387F026C5bE48f59635959FE',
         },
         characteristics: {
             blockTimeSeconds: 3,
             hasPublicMempool: true,
             supportsEip1559: false, // BSC is legacy Type 0 transactions mainly
-            attackPriors: ['flash_loan_manipulation', 'reentrancy', 'price_oracle_manipulation']
+            attackPriors: ['flash_loan_manipulation', 'reentrancy', 'price_oracle_manipulation', 'cross_chain_message_spoofing']
         },
         testnet: false,
     },
@@ -140,12 +155,15 @@ export const CHAIN_METADATA: Record<string, ChainMetadata> = {
             uniswapV3Router: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
             aaveV3Pool: '0x794a61358D6845594F94dc1DB02A252b5b4814aD',
             balancerVault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+            layerZeroV2Endpoint: '0x1a44076050125825900e736c501f859c50fE728c',
+            wormholeCore: '0x27428DD2d3DD32A4D7f7C497eAaa23130d894911',
+            chainlinkCCIPRouter: '0x141f981470870a4635C6b7C1181A83254249DdE8',
         },
         characteristics: {
             blockTimeSeconds: 0.25, // Very fast
             hasPublicMempool: false, // FCFS Sequencer
             supportsEip1559: true,
-            attackPriors: ['flash_loan_manipulation', 'reentrancy', 'time_manipulation'] // No sandwiching on pure FCFS
+            attackPriors: ['flash_loan_manipulation', 'reentrancy', 'time_manipulation', 'cross_chain_message_spoofing'] // No sandwiching on pure FCFS
         },
         testnet: false,
     },
@@ -161,12 +179,15 @@ export const CHAIN_METADATA: Record<string, ChainMetadata> = {
             multicall: '0xca11bde05977b3631167028862be2a173976ca11',
             uniswapV3Router: '0x2626664c2603336E57B271c5C0b26F421741e481', // Uniswap V3 on Base
             aaveV3Pool: '0xA238Dd80C259a72e81d7e4664a9801593F98d1c5',
+            layerZeroV2Endpoint: '0x1a44076050125825900e736c501f859c50fE728c',
+            wormholeCore: '0x706f82e9bb5b0813501714ab5974216704980e31',
+            chainlinkCCIPRouter: '0x881e3A65a26084C95A749021469D84F8975F58bCD',
         },
         characteristics: {
             blockTimeSeconds: 2,
             hasPublicMempool: false, // OP Stack Sequencer
             supportsEip1559: true,
-            attackPriors: ['flash_loan_manipulation', 'reentrancy', 'oracle_manipulation']
+            attackPriors: ['flash_loan_manipulation', 'reentrancy', 'oracle_manipulation', 'cross_chain_message_spoofing']
         },
         testnet: false,
     },
@@ -184,12 +205,15 @@ export const CHAIN_METADATA: Record<string, ChainMetadata> = {
             uniswapV3Router: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
             aaveV3Pool: '0x794a61358D6845594F94dc1DB02A252b5b4814aD',
             balancerVault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+            layerZeroV2Endpoint: '0x1a44076050125825900e736c501f859c50fE728c',
+            wormholeCore: '0x53cD7442721b969Ed',
+            chainlinkCCIPRouter: '0x849c47c4767794B40B51F9B77d5B7286455BfBfe',
         },
         characteristics: {
             blockTimeSeconds: 2,
             hasPublicMempool: true,
             supportsEip1559: true,
-            attackPriors: ['flash_loan_manipulation', 'reentrancy', 'sandwich_attack']
+            attackPriors: ['flash_loan_manipulation', 'reentrancy', 'sandwich_attack', 'cross_chain_message_spoofing']
         },
         testnet: false,
     },
@@ -206,12 +230,15 @@ export const CHAIN_METADATA: Record<string, ChainMetadata> = {
             multicall: '0xca11bde05977b3631167028862be2a173976ca11',
             uniswapV3Router: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
             aaveV3Pool: '0x794a61358D6845594F94dc1DB02A252b5b4814aD',
+            chainlinkFeedRegistry: '0x696fb0d7C9242d8B880b91B335446D308e55cb9Aa6',
+            layerZeroV2Endpoint: '0x1a44076050125825900e736c501f859c50fE728c',
+            chainlinkCCIPRouter: '0x3206695cf643f82025D8D44A68494b565bc8ce0f',
         },
         characteristics: {
             blockTimeSeconds: 2,
             hasPublicMempool: false, // OP Stack Sequencer
             supportsEip1559: true,
-            attackPriors: ['flash_loan_manipulation', 'reentrancy']
+            attackPriors: ['flash_loan_manipulation', 'reentrancy', 'cross_chain_message_spoofing']
         },
         testnet: false,
     },
