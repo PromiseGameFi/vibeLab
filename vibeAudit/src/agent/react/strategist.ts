@@ -1,6 +1,8 @@
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
 import { getProvider } from '../../chains';
+import { gatherProjectIntel } from '../project-intel';
+import { AnalyzeArchitectureTool } from './tools/analyze-architecture';
 
 dotenv.config();
 
@@ -31,29 +33,60 @@ export class AttackStrategist {
     /**
      * Seeds the initial attack plan by looking at the raw bytecode/source of the target contract.
      */
-    async generateInitialPlan(address: string, chain: string): Promise<AttackPlan> {
-        const provider = await getProvider(chain);
+    async generateInitialPlan(target: string, chain: string, isProject: boolean = false): Promise<AttackPlan> {
+        let prompt = '';
+        let priors: string[] | undefined;
 
-        const intel = await provider.gatherIntel(address);
-        let codePreview = '';
+        if (isProject) {
+            const projectIntel = await gatherProjectIntel(target);
 
-        if (intel.sourceCode) {
-            codePreview = intel.sourceCode.substring(0, 10000); // Send up to 10k chars of source
-        } else if (intel.bytecode) {
-            codePreview = (await provider.decompileOrDisassemble(address)).substring(0, 10000);
+            // Generate architecture map directly using the tool
+            const archTool = new AnalyzeArchitectureTool();
+            const archMap = await archTool.execute({
+                files: projectIntel.files,
+                projectType: projectIntel.projectType,
+            });
+
+            prompt = `You are a master smart contract hacker. You are planning a SYSTEMIC ATTACK TREE for a full project.
+Target Project: ${target}
+
+Architecture Analysis & Map:
+${archMap}
+
+Generate an initial ATTACK PLAN prioritizing high-impact systemic vulnerabilities across multiple interconnected contracts. Identify 1 to 3 high-probability attack vectors based on this architecture.
+Return ONLY valid JSON matching this schema:
+{
+  "prioritizedVectors": [
+    {
+      "vector": "Name of the attack vector (e.g. Cross-Contract Reentrancy)",
+      "reasoning": "Why this is a viable attack path based on the architecture",
+      "toolsNeeded": ["read_source", "analyze_code", "generate_exploit"]
+    }
+  ]
+}`;
         } else {
-            return {
-                prioritizedVectors: [
-                    {
-                        vector: 'Blind Fuzzing / Transaction Analysis',
-                        reasoning: 'No source code or bytecode available to statically analyze.',
-                        toolsNeeded: ['get_transactions', 'check_storage'],
-                    }
-                ]
-            };
-        }
+            const provider = await getProvider(chain);
+            const intel = await provider.gatherIntel(target);
+            priors = intel.extra?.characteristics?.attackPriors as string[] | undefined;
+            let codePreview = '';
 
-        const prompt = `You are a master smart contract hacker. You are planning an attack tree for a target contract.
+            if (intel.sourceCode) {
+                codePreview = intel.sourceCode.substring(0, 10000); // Send up to 10k chars of source
+            } else if (intel.bytecode) {
+                codePreview = (await provider.decompileOrDisassemble(target)).substring(0, 10000);
+            } else {
+                return {
+                    prioritizedVectors: [
+                        {
+                            vector: 'Blind Fuzzing / Transaction Analysis',
+                            reasoning: 'No source code or bytecode available to statically analyze.',
+                            toolsNeeded: ['get_transactions', 'check_storage'],
+                        }
+                    ]
+                };
+            }
+
+            prompt = `You are a master smart contract hacker. You are planning an attack tree for a target contract.
 Target Chain: ${chain}
 Target Code Preview (Truncated):
 \`\`\`
@@ -67,10 +100,11 @@ Return ONLY valid JSON matching this schema:
     {
       "vector": "Name of the attack vector (e.g. Flash Loan Reentrancy)",
       "reasoning": "Why this is a viable attack path based on the code",
-      "toolsNeeded": ["read_source", "analyze_code", ...]
+      "toolsNeeded": ["read_source", "analyze_code"]
     }
   ]
 }`;
+        }
 
         try {
             const response = await getLLM().chat.completions.create({
@@ -90,8 +124,7 @@ Return ONLY valid JSON matching this schema:
                 prioritizedVectors: [],
             };
 
-            if (intel.extra?.characteristics?.attackPriors) {
-                const priors = intel.extra.characteristics.attackPriors as string[];
+            if (priors) {
                 plan.prioritizedVectors = priors.map(prior => ({
                     vector: prior.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
                     reasoning: `High-probability exploit vector for ${chain} networks based on chain metadata.`,

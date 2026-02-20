@@ -52,11 +52,17 @@ export class ReActEngine {
         this.memory = new AgentMemory();
     }
 
-    async run(targetAddress: string, chain: string): Promise<{ status: 'exploited' | 'secure' | 'timeout' | 'error', details: string }> {
+    async run(target: string, chain: string, isProject: boolean = false): Promise<{ status: 'exploited' | 'secure' | 'timeout' | 'error', details: string }> {
         this.memory.clear();
         this.memory.addMessage('system', REACT_SYSTEM_PROMPT);
 
-        const initialPrompt = `START ENGAGEMENT\nTarget: ${targetAddress}\nChain: ${chain}\n\nYour mandate: Hack this contract. Build a plan, fetch the source, and execute exploits until successful. Use finish_exploit or finish_secure when done.`;
+        let initialPrompt = '';
+        if (isProject) {
+            initialPrompt = `START ENGAGEMENT\nTarget Project: ${target}\n\nYour mandate: Hack this full project. Build a plan, use analyze_architecture to understand the systemic map, read source code across the directory, and execute exploits until successful. Use finish_exploit or finish_secure when done.`;
+        } else {
+            initialPrompt = `START ENGAGEMENT\nTarget: ${target}\nChain: ${chain}\n\nYour mandate: Hack this contract. Build a plan, fetch the source, and execute exploits until successful. Use finish_exploit or finish_secure when done.`;
+        }
+
         this.memory.addMessage('user', initialPrompt);
 
         let steps = 0;
@@ -157,13 +163,25 @@ export class ReActEngine {
                                 if (pocCode !== '// PoC code not found in memory history') break;
                             }
 
-                            // Write PoC to reports directory
+                            // Write PoC to reports directory bundle
                             try {
-                                const reportDir = path.join(process.cwd(), 'reports');
+                                const timestamp = Date.now();
+                                const bundleName = `ProofOfHack_${chain}_${target.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}`;
+                                const reportDir = path.join(process.cwd(), 'reports', bundleName);
                                 await fs.mkdir(reportDir, { recursive: true });
-                                const filename = `ProofOfHack_${chain}_${targetAddress}_${Date.now()}.t.sol`;
-                                await fs.writeFile(path.join(reportDir, filename), pocCode);
-                                console.log(chalk.green(`\n💾 [EXPORT] Proof of Hack saved to reports/${filename}`));
+
+                                // 1. PoC test file
+                                await fs.writeFile(path.join(reportDir, 'Exploit.t.sol'), pocCode);
+
+                                // 2. README.md
+                                const readmeContent = `# Proof of Hack: ${target}\n\n## Chain: ${chain}\n\n## Vulnerability Summary\n${args.exploitSummary}\n\n## Values Extracted / Impact\n${args.valueExtracted || 'N/A'}\n\n## Run Instructions\n\`\`\`bash\nforge test --match-path Exploit.t.sol -vvv\n\`\`\`\n`;
+                                await fs.writeFile(path.join(reportDir, 'README.md'), readmeContent);
+
+                                // 3. Basic foundry.toml
+                                const foundryToml = `[profile.default]\nsrc = "src"\nout = "out"\nlibs = ["lib"]\n`;
+                                await fs.writeFile(path.join(reportDir, 'foundry.toml'), foundryToml);
+
+                                console.log(chalk.green(`\n💾 [EXPORT] Proof of Hack bundled into directory: ${reportDir}`));
                             } catch (e) {
                                 console.error(chalk.red(`\n❌ Failed to write PoC export: ${e}`));
                             }

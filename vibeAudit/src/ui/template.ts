@@ -93,7 +93,7 @@ export function generateHTML(): string {
         /* Forms */
         .config-row {
             display: grid;
-            grid-template-columns: 1fr 200px 200px 260px;
+            grid-template-columns: 160px 1fr 160px 160px 220px;
             gap: 16px;
             margin-bottom: 24px;
         }
@@ -351,6 +351,13 @@ export function generateHTML(): string {
 
     <div class="config-row">
         <div class="form-group">
+            <label>Type</label>
+            <select id="inputType" class="form-input" onchange="toggleType()">
+                <option value="contract">Single Contract</option>
+                <option value="project">Project / Repository</option>
+            </select>
+        </div>
+        <div class="form-group">
             <label>Target</label>
             <input type="text" id="inputTarget" class="form-input" placeholder="0x... / Address" value="0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" />
         </div>
@@ -466,6 +473,21 @@ export function generateHTML(): string {
             return '[' + d.toTimeString().split(' ')[0] + ']';
         }
 
+        function toggleType() {
+            const type = document.getElementById('inputType').value;
+            const targetEl = document.getElementById('inputTarget');
+            const chainEl = document.getElementById('inputChain');
+            if (type === 'project') {
+                targetEl.placeholder = "https://github.com/... or /local/path";
+                targetEl.value = "";
+                chainEl.disabled = true;
+            } else {
+                targetEl.placeholder = "0x... / Address";
+                targetEl.value = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+                chainEl.disabled = false;
+            }
+        }
+
         function appendTerm(msgHTML) {
             const term = document.getElementById('terminalFeed');
             // Remove the "Waiting" message if it's there
@@ -486,10 +508,12 @@ export function generateHTML(): string {
         }
 
         async function startAudit() {
+            const type = document.getElementById('inputType').value;
             const address = document.getElementById('inputTarget').value.trim();
             const chain = document.getElementById('inputChain').value;
+            const isProject = type === 'project';
 
-            if (!address) return alert("Missing target address.");
+            if (!address) return alert("Missing target.");
 
             document.getElementById('btnStart').disabled = true;
             document.getElementById('btnStart').innerText = "Running...";
@@ -511,7 +535,7 @@ export function generateHTML(): string {
                 const resp = await fetch('/api/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ address, chain, simulate: true }),
+                    body: JSON.stringify({ address, chain, simulate: true, isProject }),
                 });
                 const data = await resp.json();
                 if (data.error) throw new Error(data.error);

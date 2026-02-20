@@ -38,6 +38,7 @@ interface AnalysisRun {
     reactStatus?: string;
     reactDetails?: string;
     error?: string;
+    isProject?: boolean;
 }
 
 const analysisHistory: AnalysisRun[] = [];
@@ -92,10 +93,10 @@ export function startTestingUI(port: number = 4041): void {
 
     // ─── Start Analysis ─────────────────────────────────────────
     app.post('/api/analyze', async (req, res) => {
-        const { address, chain, rpcUrl, simulate } = req.body;
+        const { address, chain, rpcUrl, simulate, isProject } = req.body;
 
-        if (!address || !address.startsWith('0x')) {
-            return res.status(400).json({ error: 'Invalid address' });
+        if (!address) {
+            return res.status(400).json({ error: 'Invalid target' });
         }
 
         const runId = crypto.randomUUID();
@@ -106,6 +107,7 @@ export function startTestingUI(port: number = 4041): void {
             status: 'running',
             startedAt: new Date().toISOString(),
             progress: [],
+            isProject: !!isProject,
         };
         analysisHistory.unshift(run);
 
@@ -172,26 +174,37 @@ async function runAnalysis(run: AnalysisRun, rpcUrl: string, simulate: boolean):
     try {
         sendProgress(runId, 1, 3, 'Initializing Agent', `Starting ReAct engine for ${run.address}...`);
 
-        // 1. Optional: Gather initial intel for the UI (not strictly required by ReAct, but good for dashboard)
-        const intel = await gatherIntel(run.address, run.chain, rpcUrl);
-        run.intel = intel;
-        sendEvent(runId, 'intel', {
-            contractName: intel.contractName,
-            bytecodeSize: intel.bytecodeSize,
-            balance: intel.balance,
-            hasSource: !!intel.sourceCode,
-            isProxy: intel.isProxy,
-            tokenInfo: intel.tokenInfo,
-            functionsDetected: intel.detectedFunctions.length,
-            txCount: intel.totalTxCount,
-            deployer: intel.deployer,
-            owner: intel.owner,
-        });
+        // 1. Optional: Gather initial intel for the UI
+        if (!run.isProject) {
+            const intel = await gatherIntel(run.address, run.chain, rpcUrl);
+            run.intel = intel;
+            sendEvent(runId, 'intel', {
+                contractName: intel.contractName,
+                bytecodeSize: intel.bytecodeSize,
+                balance: intel.balance,
+                hasSource: !!intel.sourceCode,
+                isProxy: intel.isProxy,
+                tokenInfo: intel.tokenInfo,
+                functionsDetected: intel.detectedFunctions.length,
+                txCount: intel.totalTxCount,
+                deployer: intel.deployer,
+                owner: intel.owner,
+            });
+        } else {
+            sendEvent(runId, 'intel', {
+                contractName: run.address.split('/').pop() || 'Project Workspace',
+                bytecodeSize: 0,
+                balance: '0',
+                hasSource: true,
+                isProxy: false,
+                functionsDetected: 0,
+            });
+        }
 
         // 2. Generate Initial Attack Plan (Strategist)
         sendProgress(runId, 2, 3, 'Planning', `Building attack tree...`);
         const strategist = new AttackStrategist();
-        const plan = await strategist.generateInitialPlan(run.address, run.chain);
+        const plan = await strategist.generateInitialPlan(run.address, run.chain, run.isProject);
         sendEvent(runId, 'plan', { plan: plan.prioritizedVectors });
 
         // 3. ReAct Loop Execution
@@ -211,7 +224,7 @@ async function runAnalysis(run: AnalysisRun, rpcUrl: string, simulate: boolean):
             sendEvent(runId, 'observation', { text: safeObs });
         };
 
-        const result = await engine.run(run.address, run.chain);
+        const result = await engine.run(run.address, run.chain, run.isProject);
 
         // Map ReAct result back to the old UI formats for now, or just send a completion event
         run.status = 'complete';
