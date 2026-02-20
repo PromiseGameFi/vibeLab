@@ -14,7 +14,6 @@ import { triageTarget, TriageResult } from './triage';
 import { Notifier } from './notify';
 import { startDashboard, AgentStatus } from './dashboard';
 import { checkFoundryInstalled } from '../utils';
-import { LearningEngine } from './learning';
 import { ReActEngine } from './react/loop';
 
 dotenv.config();
@@ -49,7 +48,6 @@ const DEFAULT_CONFIG: AgentConfig = {
 
 export class VibeAuditAgent {
     private memory: AgentMemory;
-    private learning: LearningEngine;
     private queue: TargetQueue;
     private watcher: BlockWatcher;
     private mempool: MempoolMonitor;
@@ -65,7 +63,6 @@ export class VibeAuditAgent {
     constructor(config?: Partial<AgentConfig>) {
         this.config = { ...DEFAULT_CONFIG, ...config };
         this.memory = new AgentMemory();
-        this.learning = new LearningEngine();
         this.queue = new TargetQueue(500);
         this.notifier = new Notifier(this.memory);
         this.watcher = new BlockWatcher(
@@ -149,11 +146,9 @@ export class VibeAuditAgent {
         this.mempool.stop();
 
         const stats = this.memory.getStats();
-        const learningStats = this.learning.getStats();
         this.memory.log('info', 'Agent stopped', {
             targetsProcessed: this.targetsProcessed,
             confirmedVulns: this.confirmedVulns,
-            learningAccuracy: learningStats.overallAccuracy,
             uptime: Date.now() - this.startTime,
         });
 
@@ -161,12 +156,11 @@ export class VibeAuditAgent {
             await this.notifier.alertStatus(
                 `🔴 Agent stopped\nTargets: ${this.targetsProcessed}\n` +
                 `Confirmed Vulns: ${this.confirmedVulns}\n` +
-                `Learning Accuracy: ${(learningStats.overallAccuracy * 100).toFixed(1)}%\n` +
                 `Uptime: ${this.formatUptime()}`
             );
         }
 
-        this.learning.close();
+
         this.memory.close();
         console.log(chalk.green('Agent stopped.'));
     }
@@ -249,14 +243,14 @@ export class VibeAuditAgent {
 
         console.log(chalk.cyan(`   🤖 Starting ReAct Intelligence Engine...`));
         const reactEngine = new ReActEngine();
-        
+
         // Stream thoughts to UI (memory system can also pick this up if needed)
         reactEngine.onThought = (thought) => {
-             // In the future: emit SSE to dashboard here
+            // In the future: emit SSE to dashboard here
         };
-        
+
         const result = await reactEngine.run(target.address, target.chain);
-        
+
         let riskScore = 0;
         let isConfirmed = 0;
 

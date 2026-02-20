@@ -10,7 +10,6 @@ import crypto from 'crypto';
 import axios from 'axios';
 import { QueueTarget } from './queue';
 import { AgentMemory } from './memory';
-import { LearningEngine } from './learning';
 
 export interface TriageResult {
     target: QueueTarget;
@@ -33,8 +32,7 @@ const KNOWN_TEMPLATE_HASHES = new Set<string>([
 
 export async function triageTarget(
     target: QueueTarget,
-    memory: AgentMemory,
-    learning?: LearningEngine,
+    memory: AgentMemory
 ): Promise<TriageResult> {
     const result: TriageResult = {
         target,
@@ -142,26 +140,7 @@ export async function triageTarget(
         }
     }
 
-    // ─── Check 7: Learned weight scoring (adaptive) ─────────────
 
-    if (learning) {
-        const features: Record<string, number> = {
-            balance_eth: Math.min(balanceEth / 10, 1),
-            bytecode_size: bytecodeSize / 10000,
-            has_source: result.hasSource ? 1 : 0,
-            is_proxy: 0,        // Will be detected in intel phase
-            is_token: 0,        // Will be detected in intel phase
-            tx_count: 0,        // Will be detected in intel phase
-            unique_callers: 0,  // Will be detected in intel phase
-            has_owner: 0,       // Will be detected in intel phase
-        };
-
-        const learnedScore = learning.calculateTriageScore(features);
-        // Blend learned score with current priority (50/50)
-        result.adjustedPriority = Math.round(
-            (result.adjustedPriority + learnedScore) / 2,
-        );
-    }
 
     // Clamp priority
     result.adjustedPriority = Math.max(0, Math.min(100, result.adjustedPriority));

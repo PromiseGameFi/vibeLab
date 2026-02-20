@@ -1,6 +1,6 @@
 import { ReActTool } from './index';
-import { analyzeContractDeep } from '../../analyzers/contract-deep';
-import { analyzeProcessFlow } from '../../analyzers/process-flow';
+import OpenAI from 'openai';
+import { getProvider } from '../../../chains';
 
 export class AnalyzeCodeTool implements ReActTool {
     definition = {
@@ -33,17 +33,20 @@ export class AnalyzeCodeTool implements ReActTool {
         }
 
         try {
-            // Provide fake name/context just to satisfy the analyzer signatures
-            const contractName = `Target_${args.language}_Code`;
-            const context = { language: args.language };
+            const openai = new OpenAI({
+                apiKey: process.env.GROQ_API_KEY || 'dummy',
+                baseURL: 'https://api.groq.com/openai/v1',
+            });
 
-            if (args.analysisType === 'deep') {
-                const report = await analyzeContractDeep(args.code, contractName, context);
-                return `## Deep Analysis Results\n\n**Risk Score:** ${report.overallRiskScore}/100\n\n**Summary:**\n${report.summary}\n\n**Access Control Issues:**\n${JSON.stringify(report.accessControl, null, 2)}\n\n**Fund Flow Risks:**\n${JSON.stringify(report.fundFlow, null, 2)}`;
-            } else {
-                const report = await analyzeProcessFlow(args.code, contractName, context);
-                return `## Process Flow Results\n\n**Risk Score:** ${report.riskScore}/100\n\n**Summary:**\n${report.summary}\n\n**Ordering Risks:**\n${JSON.stringify(report.orderingRisks, null, 2)}\n\n**Time Dependencies:**\n${JSON.stringify(report.timeDependencies, null, 2)}`;
-            }
+            const prompt = `Perform a ${args.analysisType} security analysis on the following ${args.language} code.\n\nCode:\n${args.code}\n\nReturn a comprehensive report detailing vulnerabilities, architecture risks, and access control issues.`;
+
+            const completion = await openai.chat.completions.create({
+                model: 'llama-3.3-70b-versatile',
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.1,
+            });
+
+            return completion.choices[0]?.message?.content || 'No analysis generated.';
         } catch (error) {
             return `Error executing analyze_code: ${(error as Error).message}`;
         }

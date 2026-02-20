@@ -19,8 +19,6 @@ function getLLM(): OpenAI {
     return _openai;
 }
 
-import { AttackStrategy } from '../../pipeline/strategy';
-
 export interface AttackPlan {
     prioritizedVectors: {
         vector: string;
