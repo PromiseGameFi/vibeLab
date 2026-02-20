@@ -46,7 +46,7 @@ export const CHAIN_METADATA: Record<string, ChainMetadata> = {
         id: 1,
         name: 'Ethereum Mainnet',
         nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-        rpcUrls: ['https://eth.llamarpc.com', 'https://cloudflare-eth.com'],
+        rpcUrls: ['https://cloudflare-eth.com', 'https://eth.llamarpc.com'],
         blockExplorers: [{ name: 'Etherscan', url: 'https://etherscan.io', apiUrl: 'https://api.etherscan.io/api' }],
         contracts: {
             wrappedNative: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // WETH

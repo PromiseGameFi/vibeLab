@@ -6,9 +6,16 @@ import { ExecuteExploitTool } from './execute-exploit';
 import { GetTransactionsTool } from './get-transactions';
 import { CheckStorageTool } from './check-storage';
 
+import { AnalyzeArchitectureTool } from './analyze-architecture';
+import { AskHumanTool } from './ask-human';
+import { GenerateFuzzCampaignTool } from './generate-fuzz-campaign';
+
 export const getAvailableTools = (): ReActTool[] => [
     new ReadSourceTool(),
     new AnalyzeCodeTool(),
+    new AnalyzeArchitectureTool(),
+    new AskHumanTool(),
+    new GenerateFuzzCampaignTool(),
     new GenerateExploitTool(),
     new ExecuteExploitTool(),
     new GetTransactionsTool(),

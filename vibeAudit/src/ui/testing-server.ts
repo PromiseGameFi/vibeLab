@@ -118,6 +118,20 @@ export function startTestingUI(port: number = 4041): void {
         });
     });
 
+    // ─── Human Input Webhook ────────────────────────────────────
+    app.post('/api/reply', (req, res) => {
+        const { runId, message } = req.body;
+        if (!runId || !message) {
+            return res.status(400).json({ error: 'Missing runId or message' });
+        }
+
+        // Import the queue from the tool
+        const { HumanInputQueue } = require('../agent/react/tools/ask-human');
+        HumanInputQueue[runId] = message;
+
+        res.json({ success: true, message: 'Reply sent to agent.' });
+    });
+
     // ─── Get run result ─────────────────────────────────────────
     app.get('/api/run/:runId', (req, res) => {
         const run = analysisHistory.find(r => r.id === req.params.runId);
@@ -181,7 +195,7 @@ async function runAnalysis(run: AnalysisRun, rpcUrl: string, simulate: boolean):
 
         // 3. ReAct Loop Execution
         sendProgress(runId, 3, 3, 'Agent Execution', 'Executing ReAct Loop...');
-        const engine = new ReActEngine();
+        const engine = new ReActEngine(runId);
 
         // Stream thoughts, actions, and observations to the UI!
         engine.onThought = (thought) => {
@@ -917,6 +931,17 @@ function generateHTML(): string {
             <div class="terminal-container" id="terminalFeed">
                 <!-- Feed generated via JS -->
             </div>
+            
+            <!-- Agent Comm-Link (Live Chat) -->
+            <div style="margin-top: 16px; border-top: 1px dotted var(--border); padding-top: 16px;">
+                <div class="form-row" style="grid-template-columns: 1fr auto; gap: 8px;">
+                    <div class="form-group" style="margin: 0;">
+                        <input type="text" id="agentReplyInput" placeholder="> Type instruction or answer..." autocomplete="off" onkeypress="if(event.key === 'Enter') sendReplyToAgent()" />
+                    </div>
+                    <button class="btn-primary" style="padding: 0.75rem 1rem;" onclick="sendReplyToAgent()">Send</button>
+                </div>
+                <div style="font-size: 0.7rem; color: var(--foreground-muted); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.05em;">Agent Comm-Link</div>
+            </div>
         </div>
     </div>
 
@@ -1122,6 +1147,29 @@ function resetSteps() {
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
+    }
+
+    async function sendReplyToAgent() {
+        if (!currentRunId) return;
+        const inputEl = document.getElementById('agentReplyInput');
+        const message = inputEl.value.trim();
+        if (!message) return;
+
+        inputEl.disabled = true;
+        try {
+            await fetch('/api/reply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ runId: currentRunId, message })
+            });
+            inputEl.value = '';
+            appendTerminal('<div class="term-line" style="color: var(--green);">👤 <b>You:</b> ' + escapeHtml(message) + '</div>');
+        } catch (e) {
+            alert('Failed to send reply: ' + e.message);
+        } finally {
+            inputEl.disabled = false;
+            inputEl.focus();
+        }
     }
 
     function renderAttackTree(plan) {

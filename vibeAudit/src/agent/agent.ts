@@ -242,7 +242,8 @@ export class VibeAuditAgent {
     ): Promise<void> {
 
         console.log(chalk.cyan(`   🤖 Starting ReAct Intelligence Engine...`));
-        const reactEngine = new ReActEngine();
+        const runId = `agent_${target.chain}_${target.address}_${Date.now()}`;
+        const reactEngine = new ReActEngine(runId);
 
         // Stream thoughts to UI (memory system can also pick this up if needed)
         reactEngine.onThought = (thought) => {

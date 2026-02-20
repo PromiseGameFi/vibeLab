@@ -107,7 +107,7 @@ export interface ChainProvider {
 
 export const DEFAULT_RPCS: Record<string, string> = {
     // EVM
-    ethereum: 'https://eth.llamarpc.com',
+    ethereum: 'https://cloudflare-eth.com',
     sepolia: 'https://rpc.sepolia.org',
     bsc: 'https://bsc-dataseed1.binance.org',
     'bsc-testnet': 'https://data-seed-prebsc-1-s1.binance.org:8545',

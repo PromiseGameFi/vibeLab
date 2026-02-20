@@ -3,6 +3,8 @@ import chalk from 'chalk';
 import dotenv from 'dotenv';
 import { AgentMemory } from './memory';
 import { getAvailableTools, getToolDefinition } from './tools/registry';
+import fs from 'fs/promises';
+import path from 'path';
 
 dotenv.config();
 
@@ -46,7 +48,7 @@ export class ReActEngine {
     public onAction?: (actionName: string, args: any) => void;
     public onObservation?: (observation: string) => void;
 
-    constructor() {
+    constructor(private runId: string) {
         this.memory = new AgentMemory();
     }
 
@@ -132,6 +134,40 @@ export class ReActEngine {
 
                         // Handle terminal states
                         if (actionName === 'finish_exploit') {
+                            // Automatically extract the winning PoC from memory and write it
+                            const history = this.memory.getHistory();
+
+                            // Traverse backwards to find the last execute_exploit or generate_exploit payload
+                            let pocCode = '// PoC code not found in memory history';
+                            for (let i = history.length - 1; i >= 0; i--) {
+                                const msg = history[i];
+                                if (msg.role === 'assistant' && msg.tool_calls) {
+                                    for (const tc of msg.tool_calls) {
+                                        if (tc.function.name === 'execute_exploit' || tc.function.name === 'generate_exploit') {
+                                            try {
+                                                const parsed = JSON.parse(tc.function.arguments);
+                                                if (parsed.testCode) {
+                                                    pocCode = parsed.testCode;
+                                                    break;
+                                                }
+                                            } catch (e) { }
+                                        }
+                                    }
+                                }
+                                if (pocCode !== '// PoC code not found in memory history') break;
+                            }
+
+                            // Write PoC to reports directory
+                            try {
+                                const reportDir = path.join(process.cwd(), 'reports');
+                                await fs.mkdir(reportDir, { recursive: true });
+                                const filename = `ProofOfHack_${chain}_${targetAddress}_${Date.now()}.t.sol`;
+                                await fs.writeFile(path.join(reportDir, filename), pocCode);
+                                console.log(chalk.green(`\n💾 [EXPORT] Proof of Hack saved to reports/${filename}`));
+                            } catch (e) {
+                                console.error(chalk.red(`\n❌ Failed to write PoC export: ${e}`));
+                            }
+
                             return { status: 'exploited', details: args.exploitSummary };
                         }
                         if (actionName === 'finish_secure') {
@@ -143,6 +179,10 @@ export class ReActEngine {
                         let observation = '';
 
                         if (tool) {
+                            // Inject runId automatically if the tool asks for it
+                            if (tool.definition.parameters?.properties?.runId) {
+                                args.runId = this.runId;
+                            }
                             observation = await tool.execute(args);
                         } else {
                             observation = `Error: Tool ${actionName} not found.`;
@@ -153,7 +193,7 @@ export class ReActEngine {
                             observation = observation.substring(0, 15000) + '\n...[TRUNCATED FOR LENGTH]...';
                         }
 
-                        console.log(chalk.green(`\n👀 Observation:\n${observation.substring(0, 500)}${observation.length > 500 ? '...' : ''}`));
+                        console.log(chalk.green(`\n👀 Observation: \n${observation.substring(0, 500)}${observation.length > 500 ? '...' : ''} `));
                         if (this.onObservation) this.onObservation(observation);
 
                         this.memory.addMessage('tool', observation, actionName, toolCall.id);
@@ -164,11 +204,11 @@ export class ReActEngine {
                 }
 
             } catch (error) {
-                console.error(chalk.red(`\n❌ ReAct Engine Error: ${(error as Error).message}`));
+                console.error(chalk.red(`\n❌ ReAct Engine Error: ${(error as Error).message} `));
                 return { status: 'error', details: (error as Error).message };
             }
         }
 
-        return { status: 'timeout', details: `Hit max steps limit (${this.maxSteps}).` };
+        return { status: 'timeout', details: `Hit max steps limit(${this.maxSteps}).` };
     }
 }
