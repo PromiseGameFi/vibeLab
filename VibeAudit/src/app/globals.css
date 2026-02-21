@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@theme {
+  --color-vibe-primary: #3b82f6; 
+  --color-vibe-secondary: #8b5cf6; 
+  --color-vibe-accent: #10b981; 
+  --color-vibe-danger: #ef4444;
+  --color-background: #030712; 
+  --color-card: #111827; 
+  --color-border: #1f2937; 
+  --color-foreground: #f9fafb; 
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    background-color: rgb(17 24 39 / 0.5);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+  }
+}
