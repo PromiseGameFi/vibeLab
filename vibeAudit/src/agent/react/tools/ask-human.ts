@@ -21,13 +21,13 @@ export class AskHumanTool implements ReActTool {
                     description: 'The unique ID for this analysis run (must pass this to map the reply back).',
                 }
             },
-            required: ['question'],
+            required: ['question', 'runId'],
         },
     };
 
     async execute(args: { question: string; runId: string }): Promise<string> {
         if (!args.question || !args.runId) {
-            return 'Error: Missing question or runId.';
+            return JSON.stringify({ ok: false, error: 'Missing question or runId.' });
         }
 
         console.log(chalk.yellow(`\\n✋ [AGENT PAUSED] Asking Human: "${args.question}"`));
@@ -45,12 +45,17 @@ export class AskHumanTool implements ReActTool {
                 const reply = HumanInputQueue[args.runId];
                 console.log(chalk.green(`\\n👤 [HUMAN REPLIED]: "${reply}"`));
                 delete HumanInputQueue[args.runId];
-                return `[Human Response]: ${reply}`;
+                return JSON.stringify({ ok: true, runId: args.runId, response: reply });
             }
             await new Promise((resolve) => setTimeout(resolve, pollInterval));
             elapsed += pollInterval;
         }
 
-        return 'Error: Human did not respond within the 5-minute timeout window. Proceed without them.';
+        return JSON.stringify({
+            ok: false,
+            runId: args.runId,
+            timeout: true,
+            error: 'Human did not respond within the 5-minute timeout window.',
+        });
     }
 }

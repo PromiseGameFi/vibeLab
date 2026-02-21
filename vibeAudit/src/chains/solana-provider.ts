@@ -5,12 +5,12 @@
 
 import {
     Connection, PublicKey, LAMPORTS_PER_SOL,
-    ParsedTransactionWithMeta,
+    ParsedTransactionWithMeta, VersionedTransaction,
 } from '@solana/web3.js';
 import axios from 'axios';
 import OpenAI from 'openai';
 import {
-    ChainProvider, ChainType, ChainIntel, ProgramInfo, TxInfo, SimResult,
+    ChainProvider, ChainType, ChainIntel, ProgramInfo, TxInfo, SimResult, SimulationAction,
 } from './chain-provider';
 
 let _openai: OpenAI | null = null;
@@ -221,6 +221,55 @@ export class SolanaProvider implements ChainProvider {
     }
 
     canSimulate(): boolean {
-        return false; // No Foundry equivalent for Solana
+        return true; // Live RPC simulation via simulateTransaction
+    }
+
+    async simulateAction(action: SimulationAction): Promise<SimResult> {
+        const conn = this.getConnection();
+        const start = Date.now();
+
+        if (!action.rawTransactionBase64) {
+            return {
+                supported: true,
+                passed: false,
+                chain: this.chainName,
+                error: 'Missing rawTransactionBase64 for Solana simulation.',
+            };
+        }
+
+        try {
+            const raw = Buffer.from(action.rawTransactionBase64, 'base64');
+            const vtx = VersionedTransaction.deserialize(raw);
+            const simResult = await conn.simulateTransaction(vtx, {
+                sigVerify: false,
+                replaceRecentBlockhash: true,
+            });
+
+            return {
+                supported: true,
+                passed: !simResult.value.err,
+                chain: this.chainName,
+                output: JSON.stringify(simResult.value),
+                error: simResult.value.err ? JSON.stringify(simResult.value.err) : undefined,
+                duration: Date.now() - start,
+            };
+        } catch (error) {
+            return {
+                supported: true,
+                passed: false,
+                chain: this.chainName,
+                error: (error as Error).message,
+                duration: Date.now() - start,
+            };
+        }
+    }
+
+    async broadcastAction(_action: SimulationAction): Promise<SimResult> {
+        return {
+            supported: false,
+            passed: false,
+            chain: this.chainName,
+            error: 'Broadcast is disabled by default in authorized defensive mode.',
+        };
     }
 }

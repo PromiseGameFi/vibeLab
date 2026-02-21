@@ -9,10 +9,12 @@ import { CheckStorageTool } from './check-storage';
 import { AnalyzeArchitectureTool } from './analyze-architecture';
 import { AskHumanTool } from './ask-human';
 import { GenerateFuzzCampaignTool } from './generate-fuzz-campaign';
+import { LoadProjectFilesTool } from './load-project-files';
 
 export const getAvailableTools = (): ReActTool[] => [
     new ReadSourceTool(),
     new AnalyzeCodeTool(),
+    new LoadProjectFilesTool(),
     new AnalyzeArchitectureTool(),
     new AskHumanTool(),
     new GenerateFuzzCampaignTool(),

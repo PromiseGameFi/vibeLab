@@ -41,7 +41,7 @@ export class ReadSourceTool implements ReActTool {
 
             // Fallback to decompilation if source is not verified
             if (intel.bytecode && intel.bytecode.length > 2) {
-                const decompiled = await provider.decompileOrDisassemble(args.address);
+                const decompiled = await provider.decompileOrDisassemble(intel.bytecode);
                 return `[No Verified Source. Showing Decompiled/Disassembled Code - Format: ${intel.language}]\n\n${decompiled.substring(0, 8000)}${decompiled.length > 8000 ? '\n...[Truncated]' : ''}`;
             }
 

@@ -1,108 +1,72 @@
 # VibeAudit 🛡️
 
-**Autonomous AI-Powered Security Intelligence Agent (V2 ReAct Engine)**
+Autonomous, human-in-the-loop smart contract security platform using a Continuous Reasoning (ReAct) engine.
 
-VibeAudit is an enterprise-grade autonomous security agent. Powered by a dynamic **ReAct (Reasoning and Acting)** loop, it autonomously discovers contracts, maps architectures, builds dynamic attack trees, and executes exploits via a sophisticated Tool Registry.
+> Authorized defensive testing only.
 
-> ⚠️ **DISCLAIMER**: For authorized testing and educational purposes only.
-
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 npm install
 cp .env.example .env
-# Edit .env with your Groq API key
+# set GROQ_API_KEY and RPC/explorer keys as needed
 ```
 
-## 🧪 Testing UI
-
-Launch the interactive web interface:
-```bash
-npm run ui
-# Open http://localhost:4041
-```
-
-## ⚔️ Commands
-
-### Analyze a Single Contract/Program
-The standalone pipeline has been replaced by the autonomous ReAct Engine. The agent will read sources, analyze code, and run simulated exploits iteratively.
+## Core Commands
 
 ```bash
-# EVM (Ethereum, Arbitrum, Base, BSC, Sepolia)
-npm start analyze 0xContractAddress --chain ethereum
+# Single target (contract/program)
+npm start -- analyze <target> --chain ethereum --mode validate
 
-# Solana (Mainnet, Devnet)
-npm start analyze ProgramID --chain solana
+# Project/repository engagement
+npm start -- analyze <path-or-repo> --project --chain ethereum --mode exploit --approve
 
-# SUI (Mainnet, Testnet)
-npm start analyze PackageID --chain sui
-```
+# Compatibility shims
+npm run exploit -- <target> --chain ethereum --approve
+npm run attack -- <target> --chain ethereum --approve
 
-### Attack Mode (EVM Only)
-Fetch on-chain contract → AI generates exploits → Foundry runs them:
-```bash
-npm run attack -- -a 0xContractAddress -r https://rpc-url
-```
-
-### Exploit Local Files (EVM Only)
-Point at `.sol` files → full 6-stage pipeline:
-```bash
-npm run exploit -- ./contracts/Target.sol
-npm run exploit -- ./contracts/
-```
-
-### Autonomous Agent
-Continuously discover, triage, analyze, simulate, and learn (all supported chains):
-```bash
+# Autonomous watcher agent (EVM deployment discovery)
 npm run agent
+
+# Testing UI
+npm run ui
+# http://localhost:4041
 ```
 
-### MEV Scanner (EVM Only)
-Scan recent blocks for profitable exploit opportunities:
-```bash
-npm run mev -- -r https://rpc-url -b 100
-```
+## Defensive Execution Guard
 
-## 📄 Output
+Execution actions (exploit run, fuzz campaign, non-EVM live simulation) are blocked unless the run is explicitly approved.
 
-Reports are generated in `audit_reports/` with:
-- **Risk score** (0–100) across 4 analysis layers (Deep, Flow, Frontend, Bridge)
-- **Confirmed exploits** packaged as standalone Foundry `Target.t.sol` proofs (Proof of Hack)
-- **Contract intelligence** (proxy, token, balance, deployer, source)
-- **Attack Tree Analytics** tracking the agent's pivoted paths and logic
+- CLI: pass `--approve` for per-run approval.
+- UI: use `Approve Execution` button (calls `POST /api/approve`).
 
-## 🧪 Test It
+## HTTP Endpoints (UI Server)
 
-A deliberately vulnerable contract is included:
-```bash
-npm run exploit -- ./test-contracts/VulnerableVault.sol
-```
+- `POST /api/analyze` start run
+- `POST /api/approve` grant run-scoped execution token
+- `POST /api/reply` send human reply/injected operator instruction
+- `GET /api/run/:runId` includes `reactStatus`, `reactDetails`, `approvalState`, `attackTree`
+- `GET /api/history` persisted run summary (not inferred)
+- `GET /api/export/:runId` returns exported run summary
 
-## ⚙️ Configuration (`.env`)
+## Output Bundles
 
-| Variable | Description |
-|----------|-------------|
-| `GROQ_API_KEY` | Required. Your Groq API key |
-| `SOLANA_RPC` | Optional. Solana RPC URL |
-| `SUI_RPC` | Optional. SUI RPC URL |
-| `DEFAULT_RPC` | Optional. EVM Default RPC |
-| `ETHERSCAN_API_KEY` | Optional. For fetching verified EVM source |
-| `FORK_BLOCK` | Block number for Foundry fork tests |
+Each run exports to `reports/<runId>/` with:
 
-## 📐 Architecture
+- `summary.json`
+- `attack-tree.json`
+- `evidence/events.json`
+- `evidence/simulation.json` (when available)
+- `Exploit.t.sol` + `foundry.toml` (EVM PoH path)
+- `HARNESS_TEMPLATE.md` (Solana/Sui simulation replay guidance)
 
-See [auditprd.md](./auditprd.md) for the full architecture document.
+## Chains
 
-```
-src/
-├── main.ts              CLI entry
-├── chains/              Chain Providers (EVM, Solana, SUI)
-├── agent/               Autonomous intelligence agent
-│   ├── agent.ts         Main ReAct loop entrypoint
-│   └── react/           Core AI reasoning engine
-│       ├── tools/       Capabilities (read_source, generate_fuzz_campaign, ask_human)
-│       ├── strategist.ts Dynamic attack tree generation
-│       ├── loop.ts      The core ReAct Thought/Action/Observation matrix
-│       └── memory.ts    LLM context and scratchpad management
-└── ui/                  Interactive testing UI with Attack Tree Visualization
-```
+- EVM: `ethereum`, `sepolia`, `bsc`, `arbitrum`, `base`, `somnia`
+- Solana: `solana`, `solana-devnet`
+- Sui: `sui`, `sui-testnet`
+
+## Notes
+
+- `mev` and `evmbench` are intentionally constrained in defensive mode and return explicit guidance.
+- Agent watcher discovery remains EVM-oriented; cross-chain analysis/execution is supported in `analyze` and UI flows.

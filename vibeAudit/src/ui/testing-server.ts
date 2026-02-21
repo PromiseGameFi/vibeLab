@@ -1,30 +1,31 @@
 /**
- * Testing UI Server — Interactive web interface for running the
- * VibeAudit security intelligence pipeline on any contract.
- *
- * Features:
- * - Enter contract address + chain → runs full 6-step pipeline
- * - Real-time progress via Server-Sent Events
- * - Results rendered with risk badges, findings, simulation results
- * - Learning statistics panel
- * - Past analyses history
+ * Testing UI Server — Interactive web interface for running
+ * multi-chain VibeAudit engagements with approval-gated execution.
  */
 
 import express from 'express';
 import chalk from 'chalk';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
-import { gatherIntel, getAnalyzableCode, ContractIntel } from '../agent/intel-gatherer';
-
-import { checkFoundryInstalled, getDefaultRpc } from '../utils';
+import fs from 'fs/promises';
+import path from 'path';
+import { gatherIntel, ContractIntel } from '../agent/intel-gatherer';
+import { getDefaultRpc } from '../utils';
 import { ReActEngine } from '../agent/react/loop';
 import { AttackStrategist } from '../agent/react/strategist';
-import { HumanInputQueue } from '../agent/react/tools/ask-human'; // Moved HumanInputQueue import to top-level
+import { HumanInputQueue } from '../agent/react/tools/ask-human';
 import { generateHTML } from './template';
+import {
+    AttackTree,
+    appendAttackTreeNode,
+    createEngagement,
+    getEngagement,
+    setAttackTree,
+    pushOperatorInstruction,
+} from '../agent/engagement';
+import { approvalService } from '../agent/approval';
 
 dotenv.config();
-
-// ─── State ──────────────────────────────────────────────────────────
 
 interface AnalysisRun {
     id: string;
@@ -37,144 +38,211 @@ interface AnalysisRun {
     intel?: ContractIntel;
     reactStatus?: string;
     reactDetails?: string;
+    riskScore?: number;
+    confirmed?: number;
+    exportPath?: string;
     error?: string;
     isProject?: boolean;
+    mode?: 'recon' | 'validate' | 'exploit';
 }
 
 const analysisHistory: AnalysisRun[] = [];
-const activeClients: Map<string, express.Response[]> = new Map(); // runId → SSE clients
-
-// ─── SSE Helpers ────────────────────────────────────────────────────
+const activeClients: Map<string, express.Response[]> = new Map();
 
 function sendEvent(runId: string, type: string, data: any): void {
     const clients = activeClients.get(runId) || [];
     const payload = `event: ${type}\ndata: ${JSON.stringify(data)}\n\n`;
-    clients.forEach(res => {
-        try { res.write(payload); } catch { }
+    clients.forEach((res) => {
+        try {
+            res.write(payload);
+        } catch {
+            // ignore broken streams
+        }
     });
 }
 
 function sendProgress(runId: string, step: number, total: number, label: string, detail?: string): void {
     sendEvent(runId, 'progress', { step, total, label, detail });
-    // Also store in history
-    const run = analysisHistory.find(r => r.id === runId);
-    if (run) run.progress.push(`[${step}/${total}] ${label}${detail ? ': ' + detail : ''}`);
+    const run = analysisHistory.find((entry) => entry.id === runId);
+    if (run) run.progress.push(`[${step}/${total}] ${label}${detail ? `: ${detail}` : ''}`);
 }
 
-// ─── Server ─────────────────────────────────────────────────────────
+function attackTreeFromPlan(target: string, vectors: { vector: string; reasoning: string }[]): AttackTree {
+    return {
+        nodes: [
+            { id: 'root', label: target, type: 'root' as const, status: 'active' as const },
+            ...vectors.map((vector, idx) => ({
+                id: `vector_${idx}`,
+                label: vector.vector,
+                type: 'vector' as const,
+                status: 'pending' as const,
+                metadata: { reasoning: vector.reasoning },
+            })),
+        ],
+        edges: vectors.map((_, idx) => ({ from: 'root', to: `vector_${idx}` })),
+    };
+}
 
 export function startTestingUI(port: number = 4041): void {
     const app = express();
-    app.use(express.json());
+    app.use(express.json({ limit: '5mb' }));
 
-    // ─── Serve the Testing UI ───────────────────────────────────
     app.get('/', (_req, res) => {
         res.send(generateHTML());
     });
 
-    // ─── SSE stream for a specific run ──────────────────────────
     app.get('/api/stream/:runId', (req, res) => {
         const { runId } = req.params;
         res.writeHead(200, {
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
+            Connection: 'keep-alive',
         });
         res.write(':ok\n\n');
 
         if (!activeClients.has(runId)) activeClients.set(runId, []);
-        activeClients.get(runId)!.push(res);
+        activeClients.get(runId)?.push(res);
 
         req.on('close', () => {
             const clients = activeClients.get(runId) || [];
-            activeClients.set(runId, clients.filter(c => c !== res));
+            activeClients.set(runId, clients.filter((client) => client !== res));
         });
     });
 
-    // ─── Start Analysis ─────────────────────────────────────────
     app.post('/api/analyze', async (req, res) => {
-        const { address, chain, rpcUrl, simulate, isProject } = req.body;
+        const { address, chain, rpcUrl, isProject, mode } = req.body;
 
-        if (!address) {
-            return res.status(400).json({ error: 'Invalid target' });
+        if (!address || typeof address !== 'string') {
+            return res.status(400).json({ error: 'Invalid target.' });
         }
 
         const runId = crypto.randomUUID();
+        const normalizedChain = typeof chain === 'string' && chain ? chain : 'ethereum';
+        const runMode = (mode || 'validate') as 'recon' | 'validate' | 'exploit';
+
         const run: AnalysisRun = {
             id: runId,
             address,
-            chain: chain || 'ethereum',
+            chain: normalizedChain,
             status: 'running',
             startedAt: new Date().toISOString(),
             progress: [],
             isProject: !!isProject,
+            mode: runMode,
         };
         analysisHistory.unshift(run);
 
-        // Return immediately with runId, analysis runs in background
+        createEngagement({
+            runId,
+            target: address,
+            targetType: isProject ? 'project' : 'contract',
+            chain: normalizedChain,
+            rpcUrl: rpcUrl || getDefaultRpc(),
+            mode: runMode,
+            approvalRequired: true,
+            project: isProject ? { path: address } : undefined,
+        });
+
         res.json({ runId });
 
-        // Run the pipeline async
-        runAnalysis(run, rpcUrl || getDefaultRpc(), simulate !== false).catch(err => {
+        runAnalysis(run, rpcUrl || getDefaultRpc()).catch((err) => {
             run.status = 'error';
-            run.error = err.message;
-            sendEvent(runId, 'error', { message: err.message });
+            run.error = (err as Error).message;
+            sendEvent(runId, 'error', { message: (err as Error).message });
         });
     });
 
-    // ─── Human Input Webhook ────────────────────────────────────
+    app.post('/api/approve', (req, res) => {
+        const { runId, scopes, ttlMs, approvedBy } = req.body;
+        if (!runId || typeof runId !== 'string') {
+            return res.status(400).json({ error: 'Missing runId.' });
+        }
+
+        const grant = approvalService.grantApproval({
+            runId,
+            scopes: Array.isArray(scopes) ? scopes : ['all'],
+            ttlMs: typeof ttlMs === 'number' ? ttlMs : undefined,
+            approvedBy: typeof approvedBy === 'string' ? approvedBy : 'operator',
+        });
+
+        sendEvent(runId, 'approval_update', {
+            approved: true,
+            scopes: grant.scopes,
+            token: grant.token,
+            expiresAt: grant.expiresAt,
+        });
+
+        return res.json({ ok: true, grant });
+    });
+
     app.post('/api/reply', (req, res) => {
         const { runId, message } = req.body;
         if (!runId || !message) {
-            return res.status(400).json({ error: 'Missing runId or message' });
+            return res.status(400).json({ error: 'Missing runId or message.' });
         }
 
-        // Import the queue from the tool - REMOVED, now imported at top-level
         HumanInputQueue[runId] = message;
+        pushOperatorInstruction(runId, message);
+        sendEvent(runId, 'operator_note', { message });
 
-        res.json({ success: true, message: 'Reply sent to agent.' });
+        return res.json({ success: true });
     });
 
-    // ─── Get run result ─────────────────────────────────────────
     app.get('/api/run/:runId', (req, res) => {
-        const run = analysisHistory.find(r => r.id === req.params.runId);
+        const run = analysisHistory.find((entry) => entry.id === req.params.runId);
         if (!run) return res.status(404).json({ error: 'Not found' });
-        res.json(run);
+
+        const engagement = getEngagement(run.id);
+        return res.json({
+            ...run,
+            approvalState: approvalService.getState(run.id),
+            attackTree: engagement?.attackTree || { nodes: [], edges: [] },
+        });
     });
 
-    // ─── History ────────────────────────────────────────────────
     app.get('/api/history', (_req, res) => {
-        res.json(analysisHistory.slice(0, 50).map(r => ({
-            id: r.id,
-            address: r.address,
-            chain: r.chain,
-            status: r.status,
-            startedAt: r.startedAt,
-            completedAt: r.completedAt,
-            riskScore: r.reactStatus === 'exploited' ? 100 : (r.reactStatus === 'secure' ? 10 : 50),
-            contractName: r.intel?.contractName,
-            confirmed: r.reactStatus === 'exploited' ? 1 : 0,
-            denied: r.reactStatus === 'secure' ? 1 : 0,
-        })));
+        return res.json(
+            analysisHistory.slice(0, 50).map((run) => ({
+                id: run.id,
+                address: run.address,
+                chain: run.chain,
+                status: run.status,
+                startedAt: run.startedAt,
+                completedAt: run.completedAt,
+                riskScore: run.riskScore ?? 0,
+                contractName: run.intel?.contractName,
+                confirmed: run.confirmed ?? 0,
+                reactStatus: run.reactStatus,
+                reactDetails: run.reactDetails,
+                mode: run.mode,
+            })),
+        );
     });
 
-    // ─── Learning Stats ─────────────────────────────────────────
+    app.get('/api/export/:runId', async (req, res) => {
+        const runId = req.params.runId;
+        const exportPath = path.join(process.cwd(), 'reports', runId, 'summary.json');
 
-    // ─── Start ──────────────────────────────────────────────────
+        try {
+            const content = await fs.readFile(exportPath, 'utf8');
+            res.setHeader('Content-Type', 'application/json');
+            return res.send(content);
+        } catch {
+            return res.status(404).json({ error: 'Export not found for this run.' });
+        }
+    });
+
     app.listen(port, () => {
         console.log(chalk.cyan(`\n🧪 VibeAudit Testing UI: http://localhost:${port}\n`));
     });
 }
 
-// ─── Analysis Pipeline ──────────────────────────────────────────────
-
-async function runAnalysis(run: AnalysisRun, rpcUrl: string, simulate: boolean): Promise<void> {
+async function runAnalysis(run: AnalysisRun, rpcUrl: string): Promise<void> {
     const runId = run.id;
 
     try {
-        sendProgress(runId, 1, 3, 'Initializing Agent', `Starting ReAct engine for ${run.address}...`);
+        sendProgress(runId, 1, 4, 'Initializing Agent', `Starting ReAct engine for ${run.address}...`);
 
-        // 1. Optional: Gather initial intel for the UI
         if (!run.isProject) {
             const intel = await gatherIntel(run.address, run.chain, rpcUrl);
             run.intel = intel;
@@ -189,59 +257,92 @@ async function runAnalysis(run: AnalysisRun, rpcUrl: string, simulate: boolean):
                 txCount: intel.totalTxCount,
                 deployer: intel.deployer,
                 owner: intel.owner,
+                language: intel.language,
+                chainType: intel.chainType,
             });
         } else {
             sendEvent(runId, 'intel', {
                 contractName: run.address.split('/').pop() || 'Project Workspace',
-                bytecodeSize: 0,
-                balance: '0',
                 hasSource: true,
                 isProxy: false,
                 functionsDetected: 0,
             });
         }
 
-        // 2. Generate Initial Attack Plan (Strategist)
-        sendProgress(runId, 2, 3, 'Planning', `Building attack tree...`);
+        sendProgress(runId, 2, 4, 'Planning', 'Building attack tree...');
         const strategist = new AttackStrategist();
-        const plan = await strategist.generateInitialPlan(run.address, run.chain, run.isProject);
-        sendEvent(runId, 'plan', { plan: plan.prioritizedVectors });
+        const plan = await strategist.generateInitialPlan(run.address, run.chain, !!run.isProject);
 
-        // 3. ReAct Loop Execution
-        sendProgress(runId, 3, 3, 'Agent Execution', 'Executing ReAct Loop...');
+        const attackTree = attackTreeFromPlan(run.address, plan.prioritizedVectors);
+        setAttackTree(runId, attackTree);
+        sendEvent(runId, 'plan', { plan: plan.prioritizedVectors });
+        sendEvent(runId, 'attack_tree', { attackTree });
+
+        sendProgress(runId, 3, 4, 'Execution Approval', 'Waiting for optional execution approval...');
+        sendEvent(runId, 'approval_update', approvalService.getState(runId));
+
+        sendProgress(runId, 4, 4, 'Agent Execution', 'Executing ReAct loop...');
         const engine = new ReActEngine(runId);
 
-        // Stream thoughts, actions, and observations to the UI!
         engine.onThought = (thought) => {
             sendEvent(runId, 'thought', { text: thought });
         };
+
         engine.onAction = (actionName, args) => {
+            const nodeId = `live_${Date.now()}_${actionName}`;
+            appendAttackTreeNode(runId, {
+                id: nodeId,
+                label: actionName,
+                type: 'action',
+                status: 'complete',
+                metadata: { args },
+            });
+
             sendEvent(runId, 'action', { name: actionName, args });
+            const engagement = getEngagement(runId);
+            if (engagement) {
+                sendEvent(runId, 'attack_tree', { attackTree: engagement.attackTree });
+            }
         };
+
         engine.onObservation = (observation) => {
-            // Truncate observation for UI if huge
-            const safeObs = observation.length > 2000 ? observation.substring(0, 2000) + '...[Truncated]' : observation;
-            sendEvent(runId, 'observation', { text: safeObs });
+            const safe = observation.length > 2500
+                ? `${observation.substring(0, 2500)}...[Truncated]`
+                : observation;
+            sendEvent(runId, 'observation', { text: safe });
         };
 
-        const result = await engine.run(run.address, run.chain, run.isProject);
+        const result = await engine.run(run.address, run.chain, !!run.isProject);
 
-        // Map ReAct result back to the old UI formats for now, or just send a completion event
         run.status = 'complete';
         run.completedAt = new Date().toISOString();
+        run.reactStatus = result.status;
+        run.reactDetails = result.details;
+        run.exportPath = result.exportPath;
+        run.riskScore = result.status === 'exploited' ? 100 : result.status === 'secure' ? 15 : 55;
+        run.confirmed = result.status === 'exploited' ? 1 : 0;
+
+        if (result.status === 'exploited') {
+            sendEvent(runId, 'findings', {
+                findings: [{
+                    severity: 'critical',
+                    title: 'Validated exploit path',
+                    category: 'confirmed_exploit',
+                }],
+            });
+        }
 
         sendEvent(runId, 'analysis_complete', {
             status: result.status,
             details: result.details,
-            isExploited: result.status === 'exploited'
+            isExploited: result.status === 'exploited',
+            exportPath: result.exportPath,
+            approvalState: approvalService.getState(runId),
+            attackTree: getEngagement(runId)?.attackTree,
         });
-
     } catch (error) {
-        console.error(chalk.red(`\n❌ Analysis Error:`), error);
         run.status = 'error';
         run.error = (error as Error).message;
         sendEvent(runId, 'error', { message: (error as Error).message });
     }
 }
-
-// ─── End ────────────────────────────────────────────────────────────

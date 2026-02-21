@@ -93,7 +93,7 @@ export function generateHTML(): string {
         /* Forms */
         .config-row {
             display: grid;
-            grid-template-columns: 160px 1fr 160px 160px 220px;
+            grid-template-columns: 160px 1fr 160px 160px 220px 180px;
             gap: 16px;
             margin-bottom: 24px;
         }
@@ -146,6 +146,29 @@ export function generateHTML(): string {
             border-color: var(--text-muted);
             color: var(--text-muted);
             background: transparent;
+        }
+
+        .btn-approve {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.6);
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            height: 44px;
+            align-self: end;
+        }
+
+        .btn-approve:hover:not(:disabled) {
+            background: #f59e0b;
+            color: var(--bg);
+        }
+
+        .btn-approve:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         /* KPIs */
@@ -272,6 +295,23 @@ export function generateHTML(): string {
             color: var(--accent-green-dim);
         }
 
+        .attack-tree {
+            border-top: 1px solid var(--border);
+            padding: 12px 16px;
+            overflow-y: auto;
+            max-height: 180px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+        }
+
+        .attack-tree-node {
+            padding: 6px 8px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
         /* Findings Area */
         .findings-area {
             background: var(--card-bg);
@@ -373,7 +413,9 @@ export function generateHTML(): string {
                 <option value="ethereum">Mainnet</option>
                 <option value="base">Base</option>
                 <option value="arbitrum">Arbitrum</option>
+                <option value="sui">Sui</option>
                 <option value="solana">Solana</option>
+                <option value="somnia">Somnia</option>
             </select>
         </div>
         <div class="form-group">
@@ -385,6 +427,7 @@ export function generateHTML(): string {
             </select>
         </div>
         <button class="btn-start" id="btnStart" onclick="startAudit()">Start Autonomous Audit</button>
+        <button class="btn-approve" id="btnApprove" onclick="approveExecution()" disabled>Approve Execution</button>
     </div>
 
     <div class="kpi-row">
@@ -429,7 +472,7 @@ export function generateHTML(): string {
         <!-- Campaign Phases -->
         <div class="panel">
             <div class="panel-header">
-                Campaign Phases
+                Campaign Phases + Attack Tree
                 <div class="panel-badge" id="currentPhaseBadge" style="background: var(--text-muted)">WAITING</div>
             </div>
             <ul class="phases-list">
@@ -440,6 +483,9 @@ export function generateHTML(): string {
                 <li class="phase-item" id="phase-4">Lateral Movement Modeling</li>
                 <li class="phase-item" id="phase-5">Reporting</li>
             </ul>
+            <div class="attack-tree" id="attackTreeView">
+                <div style="color: var(--text-muted);">Attack tree will appear after planning.</div>
+            </div>
         </div>
     </div>
 
@@ -447,7 +493,7 @@ export function generateHTML(): string {
     <div class="findings-area">
         <div class="panel-header" style="border-bottom: 0;">
             Validated Findings
-            <span style="font-size: 0.75rem; color: var(--text-muted); cursor: pointer;" onclick="alert('Export module not implemented in UI demo')">Export Report \u2193</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted); cursor: pointer;" onclick="exportReport()">Export Report \u2193</span>
         </div>
         <div style="flex:1; overflow-y: auto;">
             <table class="findings-table">
@@ -473,6 +519,8 @@ export function generateHTML(): string {
         let currentRunId = null;
         let currentEventSource = null;
         let findingsCount = 0;
+        let currentAttackTree = null;
+        let latestApprovalState = null;
 
         async function connectWallet() {
             if (typeof window.ethereum !== 'undefined') {
@@ -554,23 +602,99 @@ export function generateHTML(): string {
             badge.style.background = 'var(--accent-green)';
         }
 
+        function renderAttackTree(tree) {
+            const container = document.getElementById('attackTreeView');
+            if (!tree || !tree.nodes || tree.nodes.length === 0) {
+                container.innerHTML = '<div style=\"color: var(--text-muted);\">No attack tree data.</div>';
+                return;
+            }
+
+            const nodes = tree.nodes.slice(0, 60).map((node) => {
+                const statusColor = node.status === 'complete'
+                    ? '#34d399'
+                    : node.status === 'failed'
+                        ? '#ef4444'
+                        : '#8295a6';
+                return '<div class=\"attack-tree-node\">'
+                    + '<div style=\"display:flex; justify-content:space-between; gap:8px;\">'
+                    + '<span>' + escapeHtml(node.label || node.id) + '</span>'
+                    + '<span style=\"color:' + statusColor + '\">' + escapeHtml(node.status || 'pending') + '</span>'
+                    + '</div>'
+                    + '</div>';
+            });
+
+            container.innerHTML = nodes.join('');
+        }
+
+        async function approveExecution() {
+            if (!currentRunId) return alert('Start a run before approving execution.');
+            const btn = document.getElementById('btnApprove');
+            btn.disabled = true;
+
+            try {
+                const resp = await fetch('/api/approve', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        runId: currentRunId,
+                        scopes: ['all'],
+                        ttlMs: 20 * 60 * 1000
+                    }),
+                });
+                const data = await resp.json();
+                if (!resp.ok || data.error) throw new Error(data.error || 'Approval failed');
+
+                latestApprovalState = { approved: true, scopes: data.grant.scopes, expiresAt: data.grant.expiresAt };
+                appendTerm('<span class=\"term-human\">✅ Execution approved for run (scopes: ' + data.grant.scopes.join(',') + ')</span>');
+            } catch (err) {
+                alert('Approval failed: ' + err.message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function exportReport() {
+            if (!currentRunId) return alert('No run to export yet.');
+            try {
+                const resp = await fetch('/api/export/' + currentRunId);
+                const payload = await resp.text();
+                if (!resp.ok) throw new Error(payload);
+
+                const blob = new Blob([payload], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'vibeaudit-' + currentRunId + '-summary.json';
+                link.click();
+                URL.revokeObjectURL(url);
+            } catch (err) {
+                alert('Export failed: ' + err.message);
+            }
+        }
+
         async function startAudit() {
             const type = document.getElementById('inputType').value;
             const address = document.getElementById('inputTarget').value.trim();
             const chain = document.getElementById('inputChain').value;
             const isProject = type === 'project';
+            const profile = document.getElementById('inputProfile').value;
+            const mode = profile === 'stealth' ? 'recon' : (profile === 'aggressive' ? 'exploit' : 'validate');
 
             if (!address) return alert("Missing target.");
 
             document.getElementById('btnStart').disabled = true;
             document.getElementById('btnStart').innerText = "Running...";
+            document.getElementById('btnApprove').disabled = false;
             document.getElementById('statusDot').className = "status-dot running";
             document.getElementById('statusText').innerText = "Running";
             
             // Reset state
             document.getElementById('terminalFeed').innerHTML = '';
             document.getElementById('findingsBody').innerHTML = '';
+            document.getElementById('attackTreeView').innerHTML = '<div style="color: var(--text-muted);">Attack tree pending...</div>';
             findingsCount = 0;
+            currentAttackTree = null;
+            latestApprovalState = null;
             updateKPIs({ paths: 0, findings: 0, score: 0.0, assets: 1 });
             setPhase(0, "Reconnaissance");
 
@@ -582,7 +706,7 @@ export function generateHTML(): string {
                 const resp = await fetch('/api/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ address, chain, simulate: true, isProject }),
+                    body: JSON.stringify({ address, chain, isProject, mode }),
                 });
                 const data = await resp.json();
                 if (data.error) throw new Error(data.error);
@@ -593,6 +717,7 @@ export function generateHTML(): string {
                 alert('Analysis start failed: ' + err.message);
                 document.getElementById('btnStart').disabled = false;
                 document.getElementById('btnStart').innerText = "Start Autonomous Audit";
+                document.getElementById('btnApprove').disabled = true;
                 document.getElementById('statusDot').className = "status-dot";
                 document.getElementById('statusText').innerText = "Error";
             }
@@ -664,6 +789,21 @@ export function generateHTML(): string {
                 appendTerm('<span style="color:var(--accent-green)">[strategy] Strategist compiled ' + (d.plan?d.plan.length:0) + ' attack vectors for execution.</span>');
             });
 
+            currentEventSource.addEventListener('attack_tree', (e) => {
+                const d = JSON.parse(e.data);
+                currentAttackTree = d.attackTree;
+                renderAttackTree(currentAttackTree);
+            });
+
+            currentEventSource.addEventListener('approval_update', (e) => {
+                const d = JSON.parse(e.data);
+                latestApprovalState = d;
+                const txt = d.approved
+                    ? 'Execution Approved'
+                    : 'Execution Not Approved';
+                appendTerm('<span class="term-human">[approval] ' + txt + '</span>');
+            });
+
             currentEventSource.addEventListener('intel', (e) => {
                 appendTerm('<span style="color:var(--text-muted)">[recon] Target contract identified: ' + JSON.parse(e.data).contractName + '</span>');
             });
@@ -693,20 +833,33 @@ export function generateHTML(): string {
                 const d = JSON.parse(e.data);
                 document.getElementById('btnStart').disabled = false;
                 document.getElementById('btnStart').innerText = "Start Autonomous Audit";
+                document.getElementById('btnApprove').disabled = true;
                 document.getElementById('statusDot').className = "status-dot";
                 document.getElementById('statusText').innerText = "Complete";
                 
                 setPhase(5, "Reporting Complete");
                 appendTerm('<span style="color:var(--accent-green); font-weight:bold;">>>> CAMPAIGN CONCLUDED. Report generated.</span>');
+                if (d.isExploited) {
+                    updateKPIs({ findings: findingsCount + 1, score: 9.5 });
+                } else {
+                    updateKPIs({ score: 2.5 });
+                }
                 currentEventSource.close();
             });
 
             currentEventSource.addEventListener('error', (e) => {
                 document.getElementById('btnStart').disabled = false;
                 document.getElementById('btnStart').innerText = "Start Autonomous Audit";
+                document.getElementById('btnApprove').disabled = true;
                 document.getElementById('statusDot').className = "status-dot";
                 document.getElementById('statusText').innerText = "Error";
-                appendTerm('<span class="term-action" style="color:var(--red)">[ERROR] ' + escapeHtml(JSON.parse(e.data).message) + '</span>');
+                let message = 'Stream disconnected';
+                try {
+                    if (e.data) {
+                        message = JSON.parse(e.data).message || message;
+                    }
+                } catch (_) {}
+                appendTerm('<span class="term-action" style="color:var(--red)">[ERROR] ' + escapeHtml(message) + '</span>');
                 currentEventSource.close();
             });
         }

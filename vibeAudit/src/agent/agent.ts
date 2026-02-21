@@ -15,6 +15,7 @@ import { Notifier } from './notify';
 import { startDashboard, AgentStatus } from './dashboard';
 import { checkFoundryInstalled } from '../utils';
 import { ReActEngine } from './react/loop';
+import { createEngagement } from './engagement';
 
 dotenv.config();
 
@@ -243,6 +244,15 @@ export class VibeAuditAgent {
 
         console.log(chalk.cyan(`   🤖 Starting ReAct Intelligence Engine...`));
         const runId = `agent_${target.chain}_${target.address}_${Date.now()}`;
+        createEngagement({
+            runId,
+            target: target.address,
+            targetType: 'contract',
+            chain: target.chain,
+            rpcUrl: target.rpcUrl,
+            mode: 'validate',
+            approvalRequired: true,
+        });
         const reactEngine = new ReActEngine(runId);
 
         // Stream thoughts to UI (memory system can also pick this up if needed)
@@ -268,17 +278,31 @@ export class VibeAuditAgent {
         }
 
         // Store results in Agent Memory
-        this.memory.updateContractResults(
-            target.address, target.chain,
-            riskScore, isConfirmed
-        );
+        const findingsCount = result.status === 'exploited' ? 1 : 0;
+        this.memory.updateContractResults(target.address, target.chain, findingsCount, isConfirmed);
+
+        if (result.status === 'exploited') {
+            this.memory.addFinding({
+                id: `finding_${runId}`,
+                contractAddress: target.address,
+                chain: target.chain,
+                category: 'confirmed_exploit',
+                severity: 'CRITICAL',
+                title: 'Validated exploit path',
+                score: 100,
+                exploitPassed: true,
+                exploitCode: undefined,
+                attempts: 1,
+                timestamp: new Date().toISOString(),
+            });
+        }
 
         this.memory.addReport(
             target.address,
             target.chain,
             `Target ${target.address.substring(0, 8)}`,
             riskScore,
-            JSON.stringify({ reactStatus: result.status, details: result.details }),
+            JSON.stringify({ reactStatus: result.status, details: result.details, exportPath: result.exportPath }),
             `# ReAct Security Report\n\n**Status:** ${result.status}\n\n**Details:**\n${result.details}`
         );
 

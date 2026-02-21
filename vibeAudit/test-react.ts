@@ -1,6 +1,5 @@
 import fs from 'fs';
 import { ReActEngine } from './src/agent/react/loop';
-import { getProvider } from './src/chains';
 import { EVMProvider } from './src/chains/evm-provider';
 
 // Fake address
@@ -55,7 +54,7 @@ async function main() {
     console.log(`Target: ${TARGET_ADDRESS} (Mocked VulnerableVault)`);
 
     // The ReAct engine will emit thoughts and actions, let's log them cleanly
-    const engine = new ReActEngine();
+    const engine = new ReActEngine('test_run');
 
     engine.onThought = (t) => { }; // loop.ts console.logs thoughts already
     engine.onAction = (a, args) => { }; // logic already logged

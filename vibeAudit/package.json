@@ -6,11 +6,12 @@
     "scripts": {
         "build": "tsc",
         "start": "ts-node src/main.ts",
+        "analyze": "ts-node src/main.ts analyze",
         "attack": "ts-node src/main.ts attack",
         "exploit": "ts-node src/main.ts exploit",
         "mev": "ts-node src/main.ts mev",
         "evmbench": "ts-node src/main.ts evmbench",
-        "scan": "ts-node src/main.ts exploit",
+        "scan": "ts-node src/main.ts analyze",
         "agent": "ts-node src/main.ts agent",
         "dashboard": "ts-node src/main.ts agent --no-exec",
         "ui": "ts-node src/main.ts ui"

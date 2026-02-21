@@ -39,3 +39,6 @@ Thumbs.db
 
 # VibeAudit specific
 audit_reports/
+reports/
+.vibe_tmp/
+.vibeaudit-agent/

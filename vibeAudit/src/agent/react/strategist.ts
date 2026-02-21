@@ -1,8 +1,8 @@
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
 import { getProvider } from '../../chains';
-import { gatherProjectIntel } from '../project-intel';
 import { AnalyzeArchitectureTool } from './tools/analyze-architecture';
+import { LoadProjectFilesTool } from './tools/load-project-files';
 
 dotenv.config();
 
@@ -29,84 +29,97 @@ export interface AttackPlan {
     }[];
 }
 
-export class AttackStrategist {
-    /**
-     * Seeds the initial attack plan by looking at the raw bytecode/source of the target contract.
-     */
-    async generateInitialPlan(target: string, chain: string, isProject: boolean = false): Promise<AttackPlan> {
-        let prompt = '';
-        let priors: string[] | undefined;
+function dedupeVectors(vectors: AttackPlan['prioritizedVectors']): AttackPlan['prioritizedVectors'] {
+    const seen = new Set<string>();
+    const deduped: AttackPlan['prioritizedVectors'] = [];
 
-        if (isProject) {
-            const projectIntel = await gatherProjectIntel(target);
-
-            // Generate architecture map directly using the tool
-            const archTool = new AnalyzeArchitectureTool();
-            const archMap = await archTool.execute({
-                files: projectIntel.files,
-                projectType: projectIntel.projectType,
-            });
-
-            prompt = `You are a master smart contract hacker. You are planning a SYSTEMIC ATTACK TREE for a full project.
-Target Project: ${target}
-
-Architecture Analysis & Map:
-${archMap}
-
-Generate an initial ATTACK PLAN prioritizing high-impact systemic vulnerabilities across multiple interconnected contracts. Identify 1 to 3 high-probability attack vectors based on this architecture.
-Return ONLY valid JSON matching this schema:
-{
-  "prioritizedVectors": [
-    {
-      "vector": "Name of the attack vector (e.g. Cross-Contract Reentrancy)",
-      "reasoning": "Why this is a viable attack path based on the architecture",
-      "toolsNeeded": ["read_source", "analyze_code", "generate_exploit"]
+    for (const vector of vectors) {
+        const key = vector.vector.trim().toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        deduped.push(vector);
     }
-  ]
-}`;
-        } else {
+
+    return deduped;
+}
+
+export class AttackStrategist {
+    async generateInitialPlan(target: string, chain: string, isProject: boolean = false): Promise<AttackPlan> {
+        const defaultPlan: AttackPlan = {
+            prioritizedVectors: [{
+                vector: 'General Reconnaissance & Reentrancy',
+                reasoning: 'Baseline fallback vector when architecture context is limited.',
+                toolsNeeded: ['read_source', 'analyze_code'],
+            }],
+        };
+
+        try {
+            if (isProject) {
+                const loader = new LoadProjectFilesTool();
+                const loadedRaw = await loader.execute({ projectPath: target });
+                const loaded = JSON.parse(loadedRaw);
+
+                if (!loaded.ok) {
+                    return defaultPlan;
+                }
+
+                const architectureTool = new AnalyzeArchitectureTool();
+                const analysisRaw = await architectureTool.execute({
+                    files: loaded.files,
+                    projectType: loaded.projectType,
+                });
+                const analysisPayload = JSON.parse(analysisRaw);
+
+                const seedVectors = analysisPayload.ok
+                    ? ((analysisPayload.analysis?.attackTreeSeeds || []).map((seed: any) => ({
+                        vector: seed.vector || 'Systemic Architecture Risk',
+                        reasoning: seed.rationale || 'Generated from architecture analysis.',
+                        toolsNeeded: ['load_project_files', 'analyze_architecture', 'analyze_code'],
+                    })))
+                    : [];
+
+                const plan = {
+                    prioritizedVectors: dedupeVectors([
+                        ...seedVectors,
+                        ...defaultPlan.prioritizedVectors,
+                    ]),
+                };
+
+                return plan;
+            }
+
             const provider = await getProvider(chain);
             const intel = await provider.gatherIntel(target);
-            priors = intel.extra?.characteristics?.attackPriors as string[] | undefined;
-            let codePreview = '';
+            const priors = intel.extra?.characteristics?.attackPriors as string[] | undefined;
 
+            let codePreview = '';
             if (intel.sourceCode) {
-                codePreview = intel.sourceCode.substring(0, 10000); // Send up to 10k chars of source
+                codePreview = intel.sourceCode.substring(0, 10000);
             } else if (intel.bytecode) {
-                codePreview = (await provider.decompileOrDisassemble(target)).substring(0, 10000);
+                codePreview = (await provider.decompileOrDisassemble(intel.bytecode)).substring(0, 10000);
             } else {
                 return {
                     prioritizedVectors: [
                         {
                             vector: 'Blind Fuzzing / Transaction Analysis',
-                            reasoning: 'No source code or bytecode available to statically analyze.',
+                            reasoning: 'No source code or bytecode available for static analysis.',
                             toolsNeeded: ['get_transactions', 'check_storage'],
-                        }
-                    ]
+                        },
+                    ],
                 };
             }
 
-            prompt = `You are a master smart contract hacker. You are planning an attack tree for a target contract.
-Target Chain: ${chain}
-Target Code Preview (Truncated):
-\`\`\`
-${codePreview}
-\`\`\`
+            const prompt = `You are a master smart contract hacker planning an attack tree.
+Target chain: ${chain}
+Code preview:\n${codePreview}
 
-Generate an initial ATTACK PLAN. Identify 1 to 3 high-probability attack vectors based on this code.
-Return ONLY valid JSON matching this schema:
+Return JSON with:
 {
   "prioritizedVectors": [
-    {
-      "vector": "Name of the attack vector (e.g. Flash Loan Reentrancy)",
-      "reasoning": "Why this is a viable attack path based on the code",
-      "toolsNeeded": ["read_source", "analyze_code"]
-    }
+    {"vector": "...", "reasoning": "...", "toolsNeeded": ["read_source", "analyze_code"]}
   ]
 }`;
-        }
 
-        try {
             const response = await getLLM().chat.completions.create({
                 model: process.env.AI_MODEL || 'llama-3.3-70b-versatile',
                 messages: [{ role: 'user', content: prompt }],
@@ -115,51 +128,24 @@ Return ONLY valid JSON matching this schema:
             });
 
             const content = response.choices[0].message.content;
-            if (!content) throw new Error('Empty response from LLM');
+            if (!content) return defaultPlan;
 
             const llmPlan = JSON.parse(content) as AttackPlan;
+            const priorVectors = (priors || []).map((prior) => ({
+                vector: prior.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()),
+                reasoning: `High-probability exploit prior for ${chain}.`,
+                toolsNeeded: ['read_source', 'analyze_code', 'generate_exploit'],
+            }));
 
-            // Initialize strategy from chain priors
-            const plan: AttackPlan = {
-                prioritizedVectors: [],
-            };
-
-            if (priors) {
-                plan.prioritizedVectors = priors.map(prior => ({
-                    vector: prior.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-                    reasoning: `High-probability exploit vector for ${chain} networks based on chain metadata.`,
-                    toolsNeeded: ['read_source', 'analyze_code', 'generate_exploit']
-                }));
-            } else {
-                // Fallback empty plan ready for ReAct engine
-                plan.prioritizedVectors.push({
-                    vector: 'General Reconnaissance & Reentrancy',
-                    reasoning: 'Scan all external calls and state changes for typical vulnerabilities.',
-                    toolsNeeded: ['read_source', 'analyze_code']
-                });
-            }
-
-            // Merge LLM plan into strategy if available
-            if (llmPlan.prioritizedVectors && llmPlan.prioritizedVectors.length > 0) {
-                llmPlan.prioritizedVectors.forEach((vector) => {
-                    plan.prioritizedVectors.push(vector);
-                });
-            }
-
-            return plan;
-
-        } catch (error) {
-            console.error('Failed to generate attack plan:', error);
-            // Fallback safe plan
             return {
-                prioritizedVectors: [
-                    {
-                        vector: 'Standard Code Review',
-                        reasoning: 'Fallback deep analysis plan due to strategy generation failure.',
-                        toolsNeeded: ['read_source', 'analyze_code']
-                    }
-                ]
+                prioritizedVectors: dedupeVectors([
+                    ...priorVectors,
+                    ...(llmPlan.prioritizedVectors || []),
+                    ...defaultPlan.prioritizedVectors,
+                ]),
             };
+        } catch {
+            return defaultPlan;
         }
     }
 }

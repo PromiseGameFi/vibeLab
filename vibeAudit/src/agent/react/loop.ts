@@ -3,8 +3,16 @@ import chalk from 'chalk';
 import dotenv from 'dotenv';
 import { AgentMemory } from './memory';
 import { getAvailableTools, getToolDefinition } from './tools/registry';
-import fs from 'fs/promises';
-import path from 'path';
+import {
+    appendAttackTreeNode,
+    appendEvidence,
+    createEngagement,
+    drainOperatorInstructions,
+    getEngagement,
+    updateAttackTreeNodeStatus,
+    updateEngagement,
+} from '../engagement';
+import { exportProofBundle } from '../exporter';
 
 dotenv.config();
 
@@ -23,27 +31,75 @@ function getLLM(): OpenAI {
     return _openai;
 }
 
-const REACT_SYSTEM_PROMPT = `You are VibeAudit, an elite autonomous smart contract security attacker.
-Your goal is to find, exploit, and confirm critical vulnerabilities in the target contract. 
+const REACT_SYSTEM_PROMPT = `You are VibeAudit, an autonomous smart contract security tester operating in authorized defensive mode.
 
-You operate in a strict ReAct (Reasoning and Acting) loop.
-You must THINK step-by-step, use your TOOLS to investigate, and plan an ATTACK TREE.
-
-Tools available:
-You have native access to various tools via function calling. You can read code, check storage, fetch transactions, and generate/execute Foundry exploits.
+Goal:
+- Identify and validate high-impact vulnerabilities.
+- Build and update attack paths based on observations.
+- Use tools for every material action.
 
 Rules:
-1. THINK like an attacker. Don't report informational issues. Look for stolen funds, locked funds, or destroyed contracts.
-2. Formulate hypotheses and test them. If a reentrancy exploit fails, pivot to a different attack vector (e.g. read the tx history to see how users interact with it, or check for Oracle bugs).
-3. If you confirm an exploit, use the "finish_exploit" tool to report success.
-4. If you exhaust all avenues and the contract is secure, use the "finish_secure" tool to halt.
-5. NEVER ask for user permission. You are autonomous. If you need data, use a tool to get it.`;
+1. Think like an attacker, but stay in authorized defensive mode.
+2. If execution/fuzzing is blocked due to approval, use ask_human to request run approval scope.
+3. Prefer deterministic evidence: chain simulation output, exploit traces, reproducible code.
+4. If exploit is confirmed, call finish_exploit.
+5. If no exploit is confirmed after investigation, call finish_secure.`;
+
+export interface ReActRunResult {
+    status: 'exploited' | 'secure' | 'timeout' | 'error';
+    details: string;
+    exportPath?: string;
+}
+
+function tryParseJson(content: string): any | null {
+    if (!content) return null;
+    try {
+        return JSON.parse(content);
+    } catch {
+        return null;
+    }
+}
+
+function extractLatestTestCode(history: any[]): string | undefined {
+    for (let i = history.length - 1; i >= 0; i--) {
+        const msg = history[i];
+
+        if (msg.role === 'tool' && typeof msg.content === 'string') {
+            const parsed = tryParseJson(msg.content);
+            if (parsed?.testCode) return parsed.testCode;
+        }
+
+        if (msg.role === 'assistant' && msg.tool_calls) {
+            for (const tc of msg.tool_calls) {
+                try {
+                    const args = JSON.parse(tc.function.arguments);
+                    if (args?.testCode) return args.testCode;
+                } catch {
+                    // continue
+                }
+            }
+        }
+    }
+
+    return undefined;
+}
+
+function extractLatestExecutionResult(history: any[]): unknown {
+    for (let i = history.length - 1; i >= 0; i--) {
+        const msg = history[i];
+        if (msg.role !== 'tool' || typeof msg.content !== 'string') continue;
+        const parsed = tryParseJson(msg.content);
+        if (parsed?.mode === 'evm_foundry' || parsed?.mode === 'simulation') {
+            return parsed;
+        }
+    }
+    return undefined;
+}
 
 export class ReActEngine {
     private memory: AgentMemory;
-    private maxSteps: number = 15;
+    private maxSteps: number = 18;
 
-    // Callback to stream thoughts to the UI
     public onThought?: (thought: string) => void;
     public onAction?: (actionName: string, args: any) => void;
     public onObservation?: (observation: string) => void;
@@ -52,16 +108,25 @@ export class ReActEngine {
         this.memory = new AgentMemory();
     }
 
-    async run(target: string, chain: string, isProject: boolean = false): Promise<{ status: 'exploited' | 'secure' | 'timeout' | 'error', details: string }> {
+    async run(target: string, chain: string, isProject: boolean = false): Promise<ReActRunResult> {
+        let engagement = getEngagement(this.runId);
+        if (!engagement) {
+            engagement = createEngagement({
+                runId: this.runId,
+                target,
+                targetType: isProject ? 'project' : 'contract',
+                chain,
+                mode: 'validate',
+                approvalRequired: true,
+            });
+        }
+
         this.memory.clear();
         this.memory.addMessage('system', REACT_SYSTEM_PROMPT);
 
-        let initialPrompt = '';
-        if (isProject) {
-            initialPrompt = `START ENGAGEMENT\nTarget Project: ${target}\n\nYour mandate: Hack this full project. Build a plan, use analyze_architecture to understand the systemic map, read source code across the directory, and execute exploits until successful. Use finish_exploit or finish_secure when done.`;
-        } else {
-            initialPrompt = `START ENGAGEMENT\nTarget: ${target}\nChain: ${chain}\n\nYour mandate: Hack this contract. Build a plan, fetch the source, and execute exploits until successful. Use finish_exploit or finish_secure when done.`;
-        }
+        const initialPrompt = isProject
+            ? `START ENGAGEMENT\nRun: ${this.runId}\nTarget Project: ${target}\nChain Context: ${chain}\nMode: ${engagement.mode}\n\nBuild systemic attack paths. Use load_project_files and analyze_architecture first.`
+            : `START ENGAGEMENT\nRun: ${this.runId}\nTarget: ${target}\nChain: ${chain}\nMode: ${engagement.mode}\n\nBuild attack paths, validate findings, and produce reproducible evidence.`;
 
         this.memory.addMessage('user', initialPrompt);
 
@@ -71,57 +136,58 @@ export class ReActEngine {
             steps++;
             console.log(chalk.gray(`\n[ReAct Loop] Step ${steps}/${this.maxSteps}`));
 
+            const injected = drainOperatorInstructions(this.runId);
+            for (const note of injected) {
+                this.memory.addMessage('user', `Operator Instruction: ${note}`);
+            }
+
             try {
-                // Prepare tools for OpenAI API
-                const tools = getAvailableTools().map(t => ({
+                const tools = getAvailableTools().map((tool) => ({
                     type: 'function' as const,
-                    function: t.definition,
+                    function: tool.definition,
                 }));
 
-                // Add terminal actions
                 tools.push({
                     type: 'function' as const,
                     function: {
                         name: 'finish_exploit',
-                        description: 'Call this when you have successfully confirmed an exploit.',
+                        description: 'Call when exploit or simulation evidence confirms an actionable vulnerability.',
                         parameters: {
                             type: 'object',
                             properties: {
-                                exploitSummary: { type: 'string', description: 'Detailed summary of the successful attack' },
-                                valueExtracted: { type: 'string', description: 'Estimated value extracted or damage caused' }
+                                exploitSummary: { type: 'string' },
+                                valueExtracted: { type: 'string' },
                             },
-                            required: ['exploitSummary']
-                        }
-                    }
+                            required: ['exploitSummary'],
+                        },
+                    },
                 });
 
                 tools.push({
                     type: 'function' as const,
                     function: {
                         name: 'finish_secure',
-                        description: 'Call this when you have exhausted all avenues and conclude the contract is secure.',
+                        description: 'Call when no exploit path is validated after sufficient testing.',
                         parameters: {
                             type: 'object',
                             properties: {
-                                reasoning: { type: 'string', description: 'Why the contract is deemed secure' }
+                                reasoning: { type: 'string' },
                             },
-                            required: ['reasoning']
-                        }
-                    }
+                            required: ['reasoning'],
+                        },
+                    },
                 });
 
-                // Call LLM
                 const response = await getLLM().chat.completions.create({
                     model: process.env.AI_MODEL || 'llama-3.3-70b-versatile',
                     messages: this.memory.getHistory() as any,
-                    tools: tools,
+                    tools,
                     tool_choice: 'auto',
                     temperature: 0.2,
                 });
 
                 const message = response.choices[0].message;
 
-                // Store LLM response string/thoughts
                 if (message.content) {
                     console.log(chalk.magenta(`\n🧠 Thought:\n${message.content}`));
                     if (this.onThought) this.onThought(message.content);
@@ -129,104 +195,159 @@ export class ReActEngine {
 
                 this.memory.addMessage('assistant', message.content || '', undefined, undefined, message.tool_calls);
 
-                // Handle Tool Calls
-                if (message.tool_calls && message.tool_calls.length > 0) {
-                    for (const toolCall of message.tool_calls) {
-                        const actionName = toolCall.function.name;
-                        const args = JSON.parse(toolCall.function.arguments);
-
-                        console.log(chalk.yellow(`\n🛠️  Action: ${actionName}(${JSON.stringify(args)})`));
-                        if (this.onAction) this.onAction(actionName, args);
-
-                        // Handle terminal states
-                        if (actionName === 'finish_exploit') {
-                            // Automatically extract the winning PoC from memory and write it
-                            const history = this.memory.getHistory();
-
-                            // Traverse backwards to find the last execute_exploit or generate_exploit payload
-                            let pocCode = '// PoC code not found in memory history';
-                            for (let i = history.length - 1; i >= 0; i--) {
-                                const msg = history[i];
-                                if (msg.role === 'assistant' && msg.tool_calls) {
-                                    for (const tc of msg.tool_calls) {
-                                        if (tc.function.name === 'execute_exploit' || tc.function.name === 'generate_exploit') {
-                                            try {
-                                                const parsed = JSON.parse(tc.function.arguments);
-                                                if (parsed.testCode) {
-                                                    pocCode = parsed.testCode;
-                                                    break;
-                                                }
-                                            } catch (e) { }
-                                        }
-                                    }
-                                }
-                                if (pocCode !== '// PoC code not found in memory history') break;
-                            }
-
-                            // Write PoC to reports directory bundle
-                            try {
-                                const timestamp = Date.now();
-                                const bundleName = `ProofOfHack_${chain}_${target.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}`;
-                                const reportDir = path.join(process.cwd(), 'reports', bundleName);
-                                await fs.mkdir(reportDir, { recursive: true });
-
-                                // 1. PoC test file
-                                await fs.writeFile(path.join(reportDir, 'Exploit.t.sol'), pocCode);
-
-                                // 2. README.md
-                                const readmeContent = `# Proof of Hack: ${target}\n\n## Chain: ${chain}\n\n## Vulnerability Summary\n${args.exploitSummary}\n\n## Values Extracted / Impact\n${args.valueExtracted || 'N/A'}\n\n## Run Instructions\n\`\`\`bash\nforge test --match-path Exploit.t.sol -vvv\n\`\`\`\n`;
-                                await fs.writeFile(path.join(reportDir, 'README.md'), readmeContent);
-
-                                // 3. Basic foundry.toml
-                                const foundryToml = `[profile.default]\nsrc = "src"\nout = "out"\nlibs = ["lib"]\n`;
-                                await fs.writeFile(path.join(reportDir, 'foundry.toml'), foundryToml);
-
-                                console.log(chalk.green(`\n💾 [EXPORT] Proof of Hack bundled into directory: ${reportDir}`));
-                            } catch (e) {
-                                console.error(chalk.red(`\n❌ Failed to write PoC export: ${e}`));
-                            }
-
-                            return { status: 'exploited', details: args.exploitSummary };
-                        }
-                        if (actionName === 'finish_secure') {
-                            return { status: 'secure', details: args.reasoning };
-                        }
-
-                        // Execute standard tool
-                        const tool = getToolDefinition(actionName);
-                        let observation = '';
-
-                        if (tool) {
-                            // Inject runId automatically if the tool asks for it
-                            if (tool.definition.parameters?.properties?.runId) {
-                                args.runId = this.runId;
-                            }
-                            observation = await tool.execute(args);
-                        } else {
-                            observation = `Error: Tool ${actionName} not found.`;
-                        }
-
-                        // Limit observation size to prevent context overflow (especially for source code)
-                        if (observation.length > 15000) {
-                            observation = observation.substring(0, 15000) + '\n...[TRUNCATED FOR LENGTH]...';
-                        }
-
-                        console.log(chalk.green(`\n👀 Observation: \n${observation.substring(0, 500)}${observation.length > 500 ? '...' : ''} `));
-                        if (this.onObservation) this.onObservation(observation);
-
-                        this.memory.addMessage('tool', observation, actionName, toolCall.id);
-                    }
-                } else {
-                    // No tool call, but not finished. Prompt it to use a tool or finish.
-                    this.memory.addMessage('user', 'You did not invoke a tool or finish. You must use tools to gather intel or exploit, or call finish_secure/finish_exploit to halt.');
+                if (!message.tool_calls || message.tool_calls.length === 0) {
+                    this.memory.addMessage('user', 'You must call a tool or call finish_secure/finish_exploit.');
+                    continue;
                 }
 
+                for (let idx = 0; idx < message.tool_calls.length; idx++) {
+                    const toolCall = message.tool_calls[idx];
+                    const actionName = toolCall.function.name;
+                    const args = JSON.parse(toolCall.function.arguments || '{}');
+
+                    console.log(chalk.yellow(`\n🛠️  Action: ${actionName}(${JSON.stringify(args)})`));
+                    if (this.onAction) this.onAction(actionName, args);
+
+                    const nodeId = `step_${steps}_${idx}_${actionName}`;
+                    appendAttackTreeNode(this.runId, {
+                        id: nodeId,
+                        label: actionName,
+                        type: 'action',
+                        status: 'active',
+                        metadata: { args },
+                    });
+
+                    if (actionName === 'finish_exploit') {
+                        const history = this.memory.getHistory();
+                        const pocCode = extractLatestTestCode(history);
+                        const executionResult = extractLatestExecutionResult(history);
+
+                        const exportPath = await exportProofBundle({
+                            runId: this.runId,
+                            target,
+                            chain,
+                            status: 'exploited',
+                            summary: args.exploitSummary,
+                            valueExtracted: args.valueExtracted,
+                            pocCode,
+                            executionResult,
+                        });
+
+                        updateEngagement(this.runId, {
+                            reactStatus: 'exploited',
+                            reactDetails: args.exploitSummary,
+                        });
+
+                        appendEvidence(this.runId, {
+                            type: 'terminal',
+                            action: 'finish_exploit',
+                            summary: args.exploitSummary,
+                        });
+
+                        updateAttackTreeNodeStatus(this.runId, nodeId, 'complete');
+
+                        return {
+                            status: 'exploited',
+                            details: args.exploitSummary,
+                            exportPath,
+                        };
+                    }
+
+                    if (actionName === 'finish_secure') {
+                        const exportPath = await exportProofBundle({
+                            runId: this.runId,
+                            target,
+                            chain,
+                            status: 'secure',
+                            summary: args.reasoning,
+                        });
+
+                        updateEngagement(this.runId, {
+                            reactStatus: 'secure',
+                            reactDetails: args.reasoning,
+                        });
+
+                        appendEvidence(this.runId, {
+                            type: 'terminal',
+                            action: 'finish_secure',
+                            summary: args.reasoning,
+                        });
+
+                        updateAttackTreeNodeStatus(this.runId, nodeId, 'complete');
+
+                        return {
+                            status: 'secure',
+                            details: args.reasoning,
+                            exportPath,
+                        };
+                    }
+
+                    const tool = getToolDefinition(actionName);
+                    let observation = '';
+
+                    if (!tool) {
+                        observation = JSON.stringify({ ok: false, error: `Tool ${actionName} not found.` });
+                    } else {
+                        if (tool.definition.parameters?.properties?.runId) {
+                            args.runId = this.runId;
+                        }
+                        observation = await tool.execute(args);
+                    }
+
+                    const parsedObservation = tryParseJson(observation);
+                    if (parsedObservation) {
+                        appendEvidence(this.runId, {
+                            type: 'tool_observation',
+                            actionName,
+                            observation: parsedObservation,
+                        });
+
+                        const status = parsedObservation.ok === false ? 'failed' : 'complete';
+                        updateAttackTreeNodeStatus(this.runId, nodeId, status);
+                    } else {
+                        updateAttackTreeNodeStatus(this.runId, nodeId, 'complete');
+                    }
+
+                    const safeObservation = observation.length > 15000
+                        ? `${observation.substring(0, 15000)}\n...[TRUNCATED FOR LENGTH]...`
+                        : observation;
+
+                    console.log(chalk.green(`\n👀 Observation:\n${safeObservation.substring(0, 500)}${safeObservation.length > 500 ? '...' : ''}`));
+                    if (this.onObservation) this.onObservation(safeObservation);
+
+                    this.memory.addMessage('tool', safeObservation, actionName, toolCall.id);
+                }
             } catch (error) {
-                console.error(chalk.red(`\n❌ ReAct Engine Error: ${(error as Error).message} `));
-                return { status: 'error', details: (error as Error).message };
+                const err = (error as Error).message;
+                console.error(chalk.red(`\n❌ ReAct Engine Error: ${err}`));
+                updateEngagement(this.runId, { reactStatus: 'error', reactDetails: err });
+
+                await exportProofBundle({
+                    runId: this.runId,
+                    target,
+                    chain,
+                    status: 'error',
+                    summary: err,
+                }).catch(() => undefined);
+
+                return { status: 'error', details: err };
             }
         }
 
-        return { status: 'timeout', details: `Hit max steps limit(${this.maxSteps}).` };
+        const timeoutDetails = `Hit max steps limit (${this.maxSteps}).`;
+        updateEngagement(this.runId, { reactStatus: 'timeout', reactDetails: timeoutDetails });
+
+        await exportProofBundle({
+            runId: this.runId,
+            target,
+            chain,
+            status: 'timeout',
+            summary: timeoutDetails,
+        }).catch(() => undefined);
+
+        return {
+            status: 'timeout',
+            details: timeoutDetails,
+        };
     }
 }

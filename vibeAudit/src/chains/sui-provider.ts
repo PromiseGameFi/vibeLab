@@ -7,7 +7,7 @@
 const { SuiClient } = require('@mysten/sui/client') as { SuiClient: any };
 import OpenAI from 'openai';
 import {
-    ChainProvider, ChainType, ChainIntel, ProgramInfo, TxInfo, SimResult,
+    ChainProvider, ChainType, ChainIntel, ProgramInfo, TxInfo, SimResult, SimulationAction,
 } from './chain-provider';
 
 let _openai: OpenAI | null = null;
@@ -312,6 +312,56 @@ export class SUIProvider implements ChainProvider {
     }
 
     canSimulate(): boolean {
-        return false; // No fork simulation for SUI (would need sui move test with source)
+        return true; // Live RPC simulation via devInspectTransactionBlock
+    }
+
+    async simulateAction(action: SimulationAction): Promise<SimResult> {
+        const client = this.getClient();
+        const start = Date.now();
+
+        if (!action.sender || !action.transactionBlock) {
+            return {
+                supported: true,
+                passed: false,
+                chain: this.chainName,
+                error: 'Missing sender or transactionBlock for SUI simulation.',
+            };
+        }
+
+        try {
+            const result = await client.devInspectTransactionBlock({
+                sender: action.sender,
+                transactionBlock: action.transactionBlock,
+                gasPrice: action.payload?.gasPrice,
+            });
+
+            const status = result?.effects?.status?.status || 'failure';
+
+            return {
+                supported: true,
+                passed: status === 'success',
+                chain: this.chainName,
+                output: JSON.stringify(result),
+                error: status === 'success' ? undefined : JSON.stringify(result?.effects?.status),
+                duration: Date.now() - start,
+            };
+        } catch (error) {
+            return {
+                supported: true,
+                passed: false,
+                chain: this.chainName,
+                error: (error as Error).message,
+                duration: Date.now() - start,
+            };
+        }
+    }
+
+    async broadcastAction(_action: SimulationAction): Promise<SimResult> {
+        return {
+            supported: false,
+            passed: false,
+            chain: this.chainName,
+            error: 'Broadcast is disabled by default in authorized defensive mode.',
+        };
     }
 }

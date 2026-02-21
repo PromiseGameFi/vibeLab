@@ -1,6 +1,5 @@
 import { ReActTool } from './index';
 import OpenAI from 'openai';
-import { getProvider } from '../../../chains';
 
 export class AnalyzeCodeTool implements ReActTool {
     definition = {

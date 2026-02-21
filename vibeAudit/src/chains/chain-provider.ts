@@ -63,13 +63,29 @@ export interface TxInfo {
     methodName?: string;
 }
 
+export interface SimulationAction {
+    chain: string;
+    target?: string;
+    from?: string;
+    to?: string;
+    data?: string;
+    value?: string;
+    blockTag?: string | number;
+    rawTransactionBase64?: string;
+    transactionBlock?: string;
+    sender?: string;
+    payload?: Record<string, unknown>;
+}
+
 export interface SimResult {
     supported: boolean;            // Can this chain simulate exploits?
     passed: boolean;
+    chain?: string;
     output?: string;
     error?: string;
     duration?: number;
     gasUsed?: string;
+    details?: Record<string, unknown>;
 }
 
 // ─── Chain Provider Interface ───────────────────────────────────────
@@ -101,6 +117,12 @@ export interface ChainProvider {
 
     /** Whether this chain supports fork-based exploit simulation */
     canSimulate(): boolean;
+
+    /** Simulate an action against live chain state (defensive mode). */
+    simulateAction(action: SimulationAction): Promise<SimResult>;
+
+    /** Optional broadcast action. Disabled in defensive mode by default. */
+    broadcastAction?(action: SimulationAction): Promise<SimResult>;
 }
 
 // ─── Default RPC URLs ────────────────────────────────────────────────
@@ -113,6 +135,8 @@ export const DEFAULT_RPCS: Record<string, string> = {
     'bsc-testnet': 'https://data-seed-prebsc-1-s1.binance.org:8545',
     arbitrum: 'https://arb1.arbitrum.io/rpc',
     base: 'https://mainnet.base.org',
+    somnia: 'https://dream-rpc.somnia.network',
+    'somnia-testnet': 'https://dream-rpc.somnia.network',
 
     // Solana
     'solana': 'https://api.mainnet-beta.solana.com',
@@ -131,6 +155,14 @@ export function getChainType(chain: string): ChainType {
     if (solanaChains.includes(chain)) return 'solana';
     if (suiChains.includes(chain)) return 'sui';
     return 'evm';
+}
+
+export function normalizeChainName(chain: string): string {
+    const normalized = chain.trim().toLowerCase();
+    if (normalized === 'eth' || normalized === 'mainnet') return 'ethereum';
+    if (normalized === 'arb') return 'arbitrum';
+    if (normalized === 'bnb') return 'bsc';
+    return normalized;
 }
 
 /** Get the smart contract language for a chain */

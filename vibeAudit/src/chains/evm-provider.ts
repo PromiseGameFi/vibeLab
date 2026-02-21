@@ -7,7 +7,7 @@ import { ethers, JsonRpcProvider } from 'ethers';
 import axios from 'axios';
 import OpenAI from 'openai';
 import {
-    ChainProvider, ChainType, ChainIntel, ProgramInfo, TxInfo, SimResult,
+    ChainProvider, ChainType, ChainIntel, ProgramInfo, TxInfo, SimResult, SimulationAction,
 } from './chain-provider';
 import { CHAIN_METADATA } from './chain-data';
 
@@ -256,5 +256,59 @@ export class EVMProvider implements ChainProvider {
 
     canSimulate(): boolean {
         return true; // EVM supports Foundry fork testing
+    }
+
+    async simulateAction(action: SimulationAction): Promise<SimResult> {
+        const provider = this.getProvider();
+        const start = Date.now();
+
+        if (!action.to || !action.data) {
+            return {
+                supported: true,
+                passed: false,
+                chain: this.chainName,
+                error: 'Missing required fields: to, data',
+            };
+        }
+
+        try {
+            const tx = {
+                from: action.from,
+                to: action.to,
+                data: action.data,
+                value: action.value ? BigInt(action.value) : undefined,
+            };
+
+            const [output, gasEstimate] = await Promise.all([
+                provider.call(tx as any),
+                provider.estimateGas(tx as any).catch(() => undefined),
+            ]);
+
+            return {
+                supported: true,
+                passed: true,
+                chain: this.chainName,
+                output,
+                gasUsed: gasEstimate ? gasEstimate.toString() : undefined,
+                duration: Date.now() - start,
+            };
+        } catch (error) {
+            return {
+                supported: true,
+                passed: false,
+                chain: this.chainName,
+                error: (error as Error).message,
+                duration: Date.now() - start,
+            };
+        }
+    }
+
+    async broadcastAction(_action: SimulationAction): Promise<SimResult> {
+        return {
+            supported: false,
+            passed: false,
+            chain: this.chainName,
+            error: 'Broadcast is disabled by default in authorized defensive mode.',
+        };
     }
 }

@@ -1,11 +1,19 @@
 import { ReActTool } from './index';
 import OpenAI from 'openai';
 import chalk from 'chalk';
+import { LoadProjectFilesTool } from './load-project-files';
+
+interface AnalyzeArchitectureArgs {
+    files?: { path: string; content: string }[];
+    projectType?: string;
+    projectPath?: string;
+    focusArea?: string;
+}
 
 export class AnalyzeArchitectureTool implements ReActTool {
     definition = {
         name: 'analyze_architecture',
-        description: 'Performs a deep, project-level security audit across multiple interconnected smart contracts. Use this when you have fetched the source code of an entire repository or multiple linked contracts and need to understand the systemic risk.',
+        description: 'Performs a deep project-level security analysis across interconnected smart contract files and returns attack tree guidance.',
         parameters: {
             type: 'object',
             properties: {
@@ -14,73 +22,108 @@ export class AnalyzeArchitectureTool implements ReActTool {
                     items: {
                         type: 'object',
                         properties: {
-                            path: { type: 'string', description: 'The file path or name (e.g., "src/Vault.sol").' },
-                            content: { type: 'string', description: 'The source code content of the file.' }
+                            path: { type: 'string', description: 'File path relative to the project root.' },
+                            content: { type: 'string', description: 'Source code content.' },
                         },
-                        required: ['path', 'content']
+                        required: ['path', 'content'],
                     },
-                    description: 'An array of source files to analyze as a single holistic system.',
+                    description: 'Optional: explicit source files to analyze as a system.',
                 },
                 projectType: {
                     type: 'string',
-                    description: 'The ecosystem or main language (e.g., "EVM/Solidity", "Solana/Rust", "Sui/Move").',
+                    description: 'Optional explicit project ecosystem (EVM/Solidity, Solana/Rust, Sui/Move).',
+                },
+                projectPath: {
+                    type: 'string',
+                    description: 'Optional local path or repository URL. If provided and files are not provided, load_project_files is used automatically.',
                 },
                 focusArea: {
                     type: 'string',
-                    description: 'Optional. Specific threat vectors to prioritize (e.g., "Access Control", "Flash Loan Dependencies", "Cross-Contract Reentrancy").',
-                }
+                    description: 'Optional focus area such as Access Control, Flash Loan Dependencies, or Cross-Contract Reentrancy.',
+                },
             },
-            required: ['files', 'projectType'],
         },
     };
 
-    async execute(args: { files: { path: string; content: string }[]; projectType: string; focusArea?: string }): Promise<string> {
-        if (!args.files || args.files.length === 0 || !args.projectType) {
-            return 'Error: Missing required arguments. Must provide an array of files and a projectType.';
+    async execute(args: AnalyzeArchitectureArgs): Promise<string> {
+        let files = args.files;
+        let projectType = args.projectType;
+
+        if ((!files || files.length === 0) && args.projectPath) {
+            const loader = new LoadProjectFilesTool();
+            const loadedRaw = await loader.execute({ projectPath: args.projectPath });
+            const loaded = JSON.parse(loadedRaw);
+
+            if (!loaded.ok) {
+                return JSON.stringify({
+                    ok: false,
+                    error: `Failed to load project files: ${loaded.error}`,
+                });
+            }
+
+            files = loaded.files;
+            projectType = loaded.projectType;
+        }
+
+        if (!files || files.length === 0 || !projectType) {
+            return JSON.stringify({
+                ok: false,
+                error: 'Missing required arguments. Provide files+projectType or provide projectPath.',
+            });
         }
 
         try {
-            console.log(chalk.cyan(`\n🧠 Initiating system-level architecture analysis across ${args.files.length} file(s)...`));
+            console.log(chalk.cyan(`\n🧠 Initiating architecture analysis across ${files.length} file(s)...`));
 
             const openai = new OpenAI({
                 apiKey: process.env.GROQ_API_KEY || 'dummy',
                 baseURL: 'https://api.groq.com/openai/v1',
             });
 
-            // Reconstruct the codebase into a single systemic context prompt
             let codeContext = '';
-            for (const file of args.files) {
-                // Truncate massively large files just in case, though Groq context is large
-                const safeSize = file.content.length > 20000 ? file.content.substring(0, 20000) + '\\n...[TRUNCATED]' : file.content;
+            for (const file of files) {
+                const safeSize = file.content.length > 20000
+                    ? `${file.content.substring(0, 20000)}\n...[TRUNCATED]`
+                    : file.content;
                 codeContext += `\n\n--- FILE: ${file.path} ---\n${safeSize}`;
             }
 
-            const focusString = args.focusArea ? `\n\nPlease heavily prioritize the following attack vectors: ${args.focusArea}` : '';
+            const focusString = args.focusArea
+                ? `\n\nPrioritize these vectors: ${args.focusArea}`
+                : '';
 
-            const prompt = `You are an elite Smart Contract Security Architect. I am providing you with the source code for a complete ${args.projectType} project containing multiple interconnected files.
+            const prompt = `You are an elite smart contract security architect. Analyze this ${projectType} project as an interconnected system.
 
-Your task is to analyze the SYSTEMIC and ARCHITECTURAL risks across the entire project. Do not just look at individual files in isolation; map how they interact. 
-Look for:
-1. Cross-contract reentrancy or state synchronization failures.
-2. Inconsistent access control across modular boundaries.
-3. Oracle manipulation dependencies across the system.
-4. Upgradeability proxy storage collisions or initialization flaws.
+Identify:
+1. Cross-contract state desynchronization risks.
+2. Access control inconsistencies across module boundaries.
+3. Oracle, bridge, and dependency trust assumptions.
+4. Upgradeability and initialization hazards.
 ${focusString}
 
-Here is the codebase:
+Project Source:
 ${codeContext}
 
-Return a comprehensive, highly technical Markdown report detailing systemic vulnerabilities and a proposed Attack Tree for the agent to follow.`;
+Return JSON with fields:
+- architectureSummary (string)
+- systemicRisks (array of {title,severity,reasoning,affectedFiles})
+- attackTreeSeeds (array of {vector,rationale,entrypoints})`;
 
             const completion = await openai.chat.completions.create({
-                model: 'llama-3.3-70b-versatile',
+                model: process.env.AI_MODEL || 'llama-3.3-70b-versatile',
                 messages: [{ role: 'user', content: prompt }],
+                response_format: { type: 'json_object' },
                 temperature: 0.1,
             });
 
-            return completion.choices[0]?.message?.content || 'Error: No architecture analysis generated.';
+            const content = completion.choices[0]?.message?.content;
+            if (!content) {
+                return JSON.stringify({ ok: false, error: 'No architecture analysis generated.' });
+            }
+
+            return JSON.stringify({ ok: true, projectType, fileCount: files.length, analysis: JSON.parse(content) });
         } catch (error) {
-            return `Error executing analyze_architecture: ${(error as Error).message}`;
+            return JSON.stringify({ ok: false, error: `Error executing analyze_architecture: ${(error as Error).message}` });
         }
     }
 }
