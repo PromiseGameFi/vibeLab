@@ -6,39 +6,73 @@ import { motion } from "framer-motion";
 export default function VibeAuditDashboard() {
   const [isRunning, setIsRunning] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
+  const [stats, setStats] = useState({ linesScanned: 0, riskScore: 0 });
+  const [findings, setFindings] = useState<any[]>([]);
 
-  // Simulation of live logs
+  // Stream parsing logic
   useEffect(() => {
     if (!isRunning) return;
 
-    const sampleLogs = [
-      "[INFO] Initializing VibeAudit Agent...",
-      "[RECON] Fetching contract source from Etherscan...",
-      "[RECON] Source code fetched successfully. 1,432 LOC.",
-      "[MAPPING] Building AST and mapping entry points...",
-      "[MAPPING] Identified 12 public functions and 4 state variables.",
-      "[ANALYSIS] Running static analysis heuristics...",
-      "[WARN] Potential unauthenticated state change in `transferOwnership`.",
-      "[AI] Analyzing control flow graph around line 142...",
-      "[AI] Hypothesis generated: Missing `onlyOwner` modifier.",
-      "[VALIDATE] Forking mainnet state at block 19234123...",
-      "[VALIDATE] Building PoC exploit contract...",
-      "[VALIDATE] Executing exploit against local fork...",
-      "[ALERT] CRITICAL: Exploit successful. Contract ownership hijacked.",
-    ];
+    setLogs([]);
+    setStats({ linesScanned: 0, riskScore: 0 });
+    setFindings([]);
 
-    let i = 0;
-    const interval = setInterval(() => {
-      if (i < sampleLogs.length) {
-        setLogs((prev) => [...prev, sampleLogs[i]]);
-        i++;
-      } else {
-        setIsRunning(false);
-        clearInterval(interval);
+    const abortController = new AbortController();
+
+    const startAudit = async () => {
+      try {
+        const response = await fetch("/api/audit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target: "0x123", network: "Ethereum", intensity: "Balanced" }),
+          signal: abortController.signal
+        });
+
+        if (!response.body) return;
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let chunkRemainder = "";
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = (chunkRemainder + chunk).split("\n\n");
+
+          chunkRemainder = lines.pop() || "";
+
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              try {
+                const parsed = JSON.parse(line.slice(6));
+                if (parsed.message) {
+                  setLogs((prev) => [...prev, parsed.message]);
+                } else if (parsed.action === "updateStats") {
+                  setStats((prev) => ({ ...prev, ...parsed.data }));
+                } else if (parsed.action === "addFinding") {
+                  setFindings((prev) => [...prev, parsed.data]);
+                } else if (parsed.action === "done") {
+                  setIsRunning(false);
+                }
+              } catch (e) {
+                console.error("Parse error", e);
+              }
+            }
+          }
+        }
+      } catch (err: any) {
+        if (err.name !== "AbortError") {
+          console.error("Stream error", err);
+          setIsRunning(false);
+        }
       }
-    }, 1200);
+    };
 
-    return () => clearInterval(interval);
+    startAudit();
+
+    return () => abortController.abort();
   }, [isRunning]);
 
   return (
@@ -61,10 +95,7 @@ export default function VibeAuditDashboard() {
 
           <div className="flex items-center space-x-4">
             <button
-              onClick={() => {
-                if (!isRunning) setLogs([]);
-                setIsRunning(!isRunning);
-              }}
+              onClick={() => setIsRunning(!isRunning)}
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${isRunning
                 ? "bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20"
                 : "bg-vibe-primary text-white hover:bg-vibe-primary/90 shadow-lg shadow-vibe-primary/20"
@@ -123,13 +154,15 @@ export default function VibeAuditDashboard() {
             <div className="glass-panel p-4 flex flex-col justify-center relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-16 h-16 bg-vibe-primary/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
               <FileCode2 className="w-5 h-5 text-vibe-primary mb-2" />
-              <div className="text-2xl font-bold">1,432</div>
+              <div className="text-2xl font-bold">{stats.linesScanned.toLocaleString()}</div>
               <div className="text-xs text-gray-400">Lines Scanned</div>
             </div>
             <div className="glass-panel p-4 flex flex-col justify-center relative overflow-hidden group border-vibe-danger/20">
               <div className="absolute top-0 right-0 w-16 h-16 bg-vibe-danger/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
               <ShieldAlert className="w-5 h-5 text-vibe-danger mb-2" />
-              <div className="text-2xl font-bold text-white">1</div>
+              <div className="text-2xl font-bold text-white">
+                {findings.filter(f => f.severity === "High").length}
+              </div>
               <div className="text-xs text-vibe-danger">Critical Findings</div>
             </div>
             <div className="glass-panel p-4 flex flex-col justify-center col-span-2 relative overflow-hidden">
@@ -139,15 +172,15 @@ export default function VibeAuditDashboard() {
                   <div className="text-xs text-gray-400">Current Risk Score</div>
                 </div>
                 <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">
-                  84/100
+                  {stats.riskScore}/100
                 </div>
               </div>
               <div className="w-full h-1.5 bg-background rounded-full overflow-hidden">
                 <motion.div
                   className="h-full bg-gradient-to-r from-vibe-accent via-yellow-500 to-red-500"
                   initial={{ width: "0%" }}
-                  animate={{ width: "84%" }}
-                  transition={{ duration: 1.5, ease: "easeOut" }}
+                  animate={{ width: `${stats.riskScore}%` }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
                 />
               </div>
             </div>
@@ -184,11 +217,11 @@ export default function VibeAuditDashboard() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     className={`
-                      ${log.includes("[CRITICAL]") || log.includes("[ALERT]") ? "text-red-400" : ""}
-                      ${log.includes("[WARN]") ? "text-yellow-400" : ""}
-                      ${log.includes("[AI]") ? "text-vibe-secondary font-medium tracking-wide" : ""}
-                      ${log.includes("[VALIDATE]") ? "text-vibe-primary" : ""}
-                      ${log.includes("[INFO]") || log.includes("[RECON]") || log.includes("[MAPPING]") ? "text-gray-400" : ""}
+              ${log.includes("[CRITICAL]") || log.includes("[ALERT]") ? "text-red-400" : ""}
+              ${log.includes("[WARN]") ? "text-yellow-400" : ""}
+              ${log.includes("[AI]") ? "text-vibe-secondary font-medium tracking-wide" : ""}
+              ${log.includes("[VALIDATE]") ? "text-vibe-primary" : ""}
+              ${log.includes("[INFO]") || log.includes("[RECON]") || log.includes("[MAPPING]") ? "text-gray-400" : ""}
                     `}
                   >
                     {log}
@@ -218,19 +251,23 @@ export default function VibeAuditDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/30">
-                  {logs.some(l => l.includes("CRITICAL")) ? (
-                    <tr className="bg-red-500/5 hover:bg-red-500/10 transition-colors">
-                      <td className="px-5 py-3">
-                        <span className="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs font-semibold border border-red-500/20">High</span>
-                      </td>
-                      <td className="px-5 py-3 text-gray-200 font-medium">Missing Access Control</td>
-                      <td className="px-5 py-3 text-gray-400 font-mono text-xs">Contract.sol:142</td>
-                      <td className="px-5 py-3">
-                        <span className="flex items-center text-vibe-accent text-xs">
-                          <ShieldAlert className="w-3 h-3 mr-1" /> PoC Validated
-                        </span>
-                      </td>
-                    </tr>
+                  {findings.length > 0 ? (
+                    findings.map((finding, idx) => (
+                      <tr key={idx} className="bg-red-500/5 hover:bg-red-500/10 transition-colors">
+                        <td className="px-5 py-3">
+                          <span className="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs font-semibold border border-red-500/20">
+                            {finding.severity}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-gray-200 font-medium">{finding.vulnerability}</td>
+                        <td className="px-5 py-3 text-gray-400 font-mono text-xs">{finding.location}</td>
+                        <td className="px-5 py-3">
+                          <span className="flex items-center text-vibe-accent text-xs">
+                            <ShieldAlert className="w-3 h-3 mr-1" /> {finding.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
                   ) : (
                     <tr>
                       <td colSpan={4} className="px-5 py-8 text-center text-gray-500 text-xs italic">
@@ -244,7 +281,7 @@ export default function VibeAuditDashboard() {
           </section>
 
         </div>
-      </main>
-    </div>
+      </main >
+    </div >
   );
 }
