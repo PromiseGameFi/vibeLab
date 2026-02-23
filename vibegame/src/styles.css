@@ -1,0 +1,199 @@
+:root {
+  --bg-0: #03030a;
+  --bg-1: #060b1d;
+  --bg-2: #0a1a33;
+  --cyan: #4df6ff;
+  --lime: #b6ff54;
+  --ink: #e7f4ff;
+  --panel: rgba(8, 18, 36, 0.72);
+  --panel-border: rgba(108, 195, 255, 0.34);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 20% 15%, rgba(44, 172, 255, 0.12), transparent 60%),
+    radial-gradient(100% 120% at 85% 100%, rgba(126, 255, 103, 0.1), transparent 62%),
+    linear-gradient(180deg, var(--bg-0), var(--bg-1) 60%, var(--bg-2));
+  color: var(--ink);
+  font-family: "Space Grotesk", "Sora", "Segoe UI", sans-serif;
+}
+
+.game-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.game-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 0.95rem;
+  justify-items: center;
+  text-align: center;
+  background:
+    radial-gradient(circle at 50% 25%, rgba(84, 188, 255, 0.14), transparent 46%),
+    radial-gradient(circle at 55% 95%, rgba(181, 255, 92, 0.1), transparent 48%),
+    rgba(2, 5, 12, 0.62);
+  backdrop-filter: blur(8px);
+  z-index: 10;
+  padding: 2rem;
+}
+
+.overlay[hidden] {
+  display: none;
+}
+
+.overlay__title {
+  margin: 0;
+  font-size: clamp(2rem, 7vw, 3.8rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #f1fcff;
+  text-shadow: 0 0 24px rgba(99, 255, 251, 0.4);
+}
+
+.overlay__message {
+  margin: 0;
+  max-width: min(90vw, 560px);
+  color: rgba(224, 241, 255, 0.92);
+  font-size: clamp(0.92rem, 2.8vw, 1.05rem);
+  line-height: 1.5;
+}
+
+.overlay__button {
+  border: 1px solid rgba(132, 239, 255, 0.6);
+  color: #e9fdff;
+  background: linear-gradient(135deg, rgba(30, 105, 186, 0.8), rgba(20, 164, 172, 0.78));
+  border-radius: 999px;
+  padding: 0.82rem 1.5rem;
+  min-width: 160px;
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 120ms ease, filter 150ms ease;
+}
+
+.overlay__button:hover:enabled {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.overlay__button:disabled {
+  cursor: progress;
+  filter: grayscale(0.25);
+  opacity: 0.8;
+}
+
+.overlay--error .overlay__button {
+  border-color: rgba(255, 112, 112, 0.6);
+  background: linear-gradient(135deg, rgba(168, 47, 63, 0.82), rgba(220, 98, 65, 0.82));
+}
+
+.controls {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: grid;
+  gap: 0.55rem;
+  z-index: 5;
+  width: min(76vw, 260px);
+  padding: 0.75rem;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 28px rgba(6, 14, 35, 0.42);
+}
+
+.controls[hidden] {
+  display: none;
+}
+
+.controls__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.84rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(218, 239, 255, 0.95);
+}
+
+.controls__row input[type="checkbox"] {
+  accent-color: var(--cyan);
+}
+
+.controls__row select {
+  border: 1px solid rgba(132, 225, 255, 0.4);
+  border-radius: 9px;
+  padding: 0.35rem 0.48rem;
+  font: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(3, 13, 29, 0.9);
+  color: #e6faff;
+}
+
+.controls__button {
+  border: 1px solid rgba(130, 223, 255, 0.44);
+  border-radius: 10px;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  color: #eaf8ff;
+  background: linear-gradient(135deg, rgba(21, 86, 142, 0.8), rgba(17, 146, 161, 0.75));
+  cursor: pointer;
+}
+
+.controls__button:hover {
+  filter: brightness(1.07);
+}
+
+.hud {
+  font-size: 0.74rem;
+  line-height: 1.35;
+  color: rgba(180, 249, 255, 0.95);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(2, 12, 24, 0.68);
+  border: 1px solid rgba(120, 212, 255, 0.23);
+  border-radius: 9px;
+  padding: 0.46rem 0.52rem;
+}
+
+@media (max-width: 720px) {
+  .controls {
+    right: 0.75rem;
+    width: min(54vw, 250px);
+    top: 0.75rem;
+    transform: none;
+  }
+
+  .overlay {
+    padding: 1.3rem;
+  }
+
+  .overlay__button {
+    width: min(75vw, 220px);
+  }
+}
